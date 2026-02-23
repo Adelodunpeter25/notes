@@ -1,9 +1,10 @@
-import { FlatList, Text, View, Alert, Pressable } from "react-native";
+import { FlatList, Text, View, Pressable } from "react-native";
 import { Pin, Trash2 } from "lucide-react-native";
 import { Swipeable } from "react-native-gesture-handler";
+import { useState, useRef } from "react";
 
 import type { Note } from "@shared/notes";
-import { ListItem, Skeleton } from "@/components/common";
+import { ListItem, Skeleton, ConfirmDialog } from "@/components/common";
 import { deriveNotePreviewFromHtml, deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { formatNoteDate } from "@/utils/formatDate";
 import { useDeleteNoteMutation } from "@/hooks";
@@ -26,22 +27,14 @@ export function NoteList({
   onSelectNote,
 }: NoteListProps) {
   const deleteNoteMutation = useDeleteNoteMutation();
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
-  const handleDelete = (note: Note) => {
-    Alert.alert(
-      "Delete Note",
-      "Are you sure you want to delete this note?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void deleteNoteMutation.mutateAsync(note.id);
-          }
-        },
-      ]
-    );
+  const handleDelete = async () => {
+    if (noteToDelete) {
+      await deleteNoteMutation.mutateAsync(noteToDelete.id);
+      setNoteToDelete(null);
+    }
   };
 
   if (isLoading) {
@@ -62,44 +55,63 @@ export function NoteList({
     );
   }
 
-  const renderRightActions = (note: Note) => {
+  const renderLeftActions = () => {
     return (
-      <Pressable
-        onPress={() => handleDelete(note)}
-        className="bg-danger w-20 items-center justify-center"
-      >
+      <View className="bg-danger w-24 items-center justify-center">
         <Trash2 size={24} color="#ffffff" />
-      </Pressable>
+      </View>
     );
   };
 
   return (
-    <FlatList
-      data={notes}
-      keyExtractor={(item) => item.id}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      renderItem={({ item }) => {
-        const title = deriveNoteTitleFromHtml(item.content || "") || item.title?.trim() || "Untitled";
-        const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
-        const preview = deriveNotePreviewFromHtml(item.content || "");
+    <>
+      <FlatList
+        data={notes}
+        keyExtractor={(item) => item.id}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        renderItem={({ item }) => {
+          const title = deriveNoteTitleFromHtml(item.content || "") || item.title?.trim() || "Untitled";
+          const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
+          const preview = deriveNotePreviewFromHtml(item.content || "");
 
-        return (
-          <Swipeable
-            renderRightActions={() => renderRightActions(item)}
-            friction={2}
-            rightThreshold={40}
-          >
-            <ListItem
-              title={title}
-              subtitle={`${dateStr} ${preview}`.trim()}
-              icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
-              onPress={() => onSelectNote?.(item)}
-              showChevron={false}
-            />
-          </Swipeable>
-        );
-      }}
-    />
+          return (
+            <Swipeable
+              ref={(ref) => { swipeableRefs.current[item.id] = ref; }}
+              renderLeftActions={renderLeftActions}
+              onSwipeableLeftOpen={() => {
+                setNoteToDelete(item);
+                // Briefly keep it open so the user sees the color, but the modal will grab focus
+              }}
+              friction={2}
+              leftThreshold={80}
+            >
+              <ListItem
+                title={title}
+                subtitle={`${dateStr} ${preview}`.trim()}
+                icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
+                onPress={() => onSelectNote?.(item)}
+                showChevron={false}
+              />
+            </Swipeable>
+          );
+        }}
+      />
+
+      <ConfirmDialog
+        visible={!!noteToDelete}
+        title="Delete Note"
+        description="Are you sure you want to delete this note? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => {
+          if (noteToDelete) {
+            swipeableRefs.current[noteToDelete.id]?.close();
+          }
+          setNoteToDelete(null);
+        }}
+      />
+    </>
   );
 }

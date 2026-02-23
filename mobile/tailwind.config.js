@@ -13,6 +13,7 @@ module.exports = {
         accent: "#eab308",
         text: "#ffffff",
         textMuted: "#a0a0a0",
+        danger: "#ff4444",
       },
     },
   },
