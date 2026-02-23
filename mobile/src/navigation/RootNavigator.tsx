@@ -52,7 +52,6 @@ function MainNavigator() {
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isBootstrappingAuth, setIsBootstrappingAuth] = useState(true);
@@ -60,19 +59,25 @@ export function RootNavigator() {
   useEffect(() => {
     let active = true;
 
-    async function bootstrapAuth() {
-      if (!hasHydrated) {
-        return;
+    // Safety fallback to hide loading screen if bootstrap hangs
+    const timeout = setTimeout(() => {
+      if (active) {
+        setIsBootstrappingAuth(false);
       }
+    }, 5000);
 
+    async function bootstrapAuth() {
       try {
+        // 1. Wait for AsyncStorage to load into Zustand
+        await useAuthStore.persist.rehydrate();
+
         const token = useAuthStore.getState().token;
         if (!token) {
-          setIsBootstrappingAuth(false);
+          if (active) setIsBootstrappingAuth(false);
           return;
         }
 
-        // Validate token by fetching user data
+        // 2. Validate token with server
         const response = await apiClient.instance.get<AuthUser>("/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -81,14 +86,14 @@ export function RootNavigator() {
           setAuth({ token, user: response.data });
         }
       } catch (error: any) {
-        // If it's a 401, clear auth. Otherwise, maybe it's just a network issue.
-        // We can stay "authenticated" if it's a network error to allow offline cache usage.
+        // Only clear if server says token is invalid (401)
         if (error?.status === 401) {
           clearAuth();
         }
       } finally {
         if (active) {
           setIsBootstrappingAuth(false);
+          clearTimeout(timeout);
         }
       }
     }
@@ -97,8 +102,9 @@ export function RootNavigator() {
 
     return () => {
       active = false;
+      clearTimeout(timeout);
     };
-  }, [hasHydrated, clearAuth, setAuth]);
+  }, [clearAuth, setAuth]);
 
   if (isBootstrappingAuth) {
     return (

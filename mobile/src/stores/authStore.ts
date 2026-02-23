@@ -8,10 +8,8 @@ type AuthState = {
     token: string | null;
     user: AuthUser | null;
     isAuthenticated: boolean;
-    hasHydrated: boolean;
     setAuth: (payload: { token: string; user: AuthUser }) => void;
     clearAuth: () => void;
-    setHasHydrated: (state: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -20,21 +18,16 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             user: null,
             isAuthenticated: false,
-            hasHydrated: false,
             setAuth: ({ token, user }) => {
                 set({ token, user, isAuthenticated: true });
             },
             clearAuth: () => {
                 set({ token: null, user: null, isAuthenticated: false });
             },
-            setHasHydrated: (state) => set({ hasHydrated: state }),
         }),
         {
             name: "auth-storage",
             storage: createJSONStorage(() => AsyncStorage),
-            onRehydrateStorage: () => (state) => {
-                state?.setHasHydrated(true);
-            },
         }
     )
 );
