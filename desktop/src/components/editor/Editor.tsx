@@ -43,7 +43,7 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                 anchor.setAttribute("href", nextHref);
             }
 
-            anchor.setAttribute("class", "editor-link text-accent hover:text-accent/80 underline underline-offset-2 cursor-pointer transition-colors");
+            anchor.setAttribute("class", "editor-link underline underline-offset-2");
             anchor.setAttribute("target", "_blank");
             anchor.setAttribute("rel", "noopener noreferrer");
         });
@@ -70,7 +70,7 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                 linkOnPaste: true,
                 openOnClick: false,
                 HTMLAttributes: {
-                    class: "editor-link text-accent hover:text-accent/80 underline underline-offset-2 cursor-pointer transition-colors",
+                    class: "editor-link underline underline-offset-2",
                     rel: "noopener noreferrer",
                     target: "_blank",
                 },
@@ -145,6 +145,36 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
             editorRef.current = editor;
         }
     }, [editor, editorRef]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.metaKey || e.ctrlKey) {
+                document.body.classList.add('editor-modifier-active');
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.metaKey && !e.ctrlKey) {
+                document.body.classList.remove('editor-modifier-active');
+            }
+        };
+
+        // Also remove class when window loses focus
+        const handleBlur = () => {
+            document.body.classList.remove('editor-modifier-active');
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+            document.body.classList.remove('editor-modifier-active');
+        };
+    }, []);
 
     useEffect(() => {
         if (editor && content !== undefined) {
