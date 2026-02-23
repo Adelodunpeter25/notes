@@ -1,4 +1,5 @@
 import { AppleNotesIcon } from "./AppleNotesIcon";
+import { createPortal } from "react-dom";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -24,8 +25,9 @@ export function ConfirmDialog({
   destructive = false,
 }: ConfirmDialogProps) {
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity">
       <div
         className="w-full max-w-[260px] rounded-[14px] bg-[#3B3B3D] p-4 shadow-2xl flex flex-col items-center border border-white/10"
@@ -64,6 +66,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
