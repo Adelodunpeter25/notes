@@ -3,7 +3,10 @@ import { Pin } from "lucide-react-native";
 
 import type { Note } from "@shared/notes";
 import { ListItem, Skeleton } from "@/components/common";
-import { EditorPreview } from "@/components/editor";
+
+const stripHtml = (html: string) => {
+  return html.replace(/<[^>]*>?/gm, "").trim();
+};
 
 type NoteListProps = {
   notes: Note[];
@@ -52,7 +55,7 @@ export function NoteList({
         return (
           <ListItem
             title={title}
-            subtitle={<EditorPreview content={item.content || ""} />}
+            subtitle={stripHtml(item.content || "")}
             icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
             onPress={() => onSelectNote?.(item)}
             showChevron={false}
