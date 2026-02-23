@@ -13,10 +13,6 @@ export const getTiptapHtml = ({
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tiptap Editor</title>
-    <script 
-        src="https://unpkg.com/@tiptap/standalone@2.2.4/dist/index.js"
-        onerror="window.ReactNativeWebView.postMessage(JSON.stringify({type:'ERROR', message:'Failed to load Tiptap script'}))"
-    ></script>
     <style>
         body {
             margin: 0;
@@ -135,51 +131,80 @@ export const getTiptapHtml = ({
     <div id="editor"></div>
 
     <script>
-        const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Link } = Tiptap;
-
+        const tiptapSources = [
+            'https://cdn.jsdelivr.net/npm/@tiptap/standalone@2.2.4/dist/index.umd.js',
+            'https://unpkg.com/@tiptap/standalone@2.2.4/dist/index.umd.js',
+            'https://unpkg.com/@tiptap/standalone@2.2.4/dist/index.js'
+        ];
+        let editor = null;
         let isInternalUpdate = false;
 
-        const editor = new Editor({
-            element: document.querySelector('#editor'),
-            extensions: [
-                StarterKit,
-                Underline,
-                TaskList,
-                TaskItem.configure({
-                    nested: true,
-                }),
-                Link.configure({
-                    autolink: true,
-                    openOnClick: false,
-                    HTMLAttributes: {
-                        class: 'editor-link',
-                    },
-                }),
-                Placeholder.configure({
-                    placeholder: ${JSON.stringify(placeholder)},
-                }),
-            ],
-            content: ${JSON.stringify(initialContent)},
-            onUpdate: ({ editor }) => {
-                if (isInternalUpdate) return;
-                
-                const html = editor.getHTML();
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'UPDATE',
-                    content: html
-                }));
-            },
-            onFocus: () => {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'FOCUS'
-                }));
+        function post(type, payload = {}) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type, ...payload }));
+        }
+
+        function initEditor() {
+            if (!window.Tiptap) {
+                post('ERROR', { message: 'Tiptap global is not available after script load' });
+                return;
             }
-        });
+
+            const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Link } = window.Tiptap;
+
+            editor = new Editor({
+                element: document.querySelector('#editor'),
+                extensions: [
+                    StarterKit,
+                    Underline,
+                    TaskList,
+                    TaskItem.configure({
+                        nested: true,
+                    }),
+                    Link.configure({
+                        autolink: true,
+                        openOnClick: false,
+                        HTMLAttributes: {
+                            class: 'editor-link',
+                        },
+                    }),
+                    Placeholder.configure({
+                        placeholder: ${JSON.stringify(placeholder)},
+                    }),
+                ],
+                content: ${JSON.stringify(initialContent)},
+                onUpdate: ({ editor }) => {
+                    if (isInternalUpdate) return;
+                    post('UPDATE', { content: editor.getHTML() });
+                },
+            });
+
+            post('READY');
+            setTimeout(() => {
+                editor.commands.focus('end');
+            }, 0);
+        }
+
+        function tryLoadTiptap(index) {
+            if (index >= tiptapSources.length) {
+                post('ERROR', { message: 'Failed to load Tiptap from all configured CDNs' });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = tiptapSources[index];
+            script.async = true;
+            script.onload = initEditor;
+            script.onerror = () => tryLoadTiptap(index + 1);
+            document.head.appendChild(script);
+        }
 
         function handleIncomingMessage(event) {
             try {
                 const rawData = typeof event.data === 'string' ? event.data : event?.data?.data;
                 const message = JSON.parse(rawData);
+                if (!editor) {
+                    return;
+                }
                 if (message.type === 'SET_CONTENT') {
                     isInternalUpdate = true;
                     const decodedContent = decodeURIComponent(message.content);
@@ -207,14 +232,7 @@ export const getTiptapHtml = ({
 
         window.addEventListener('message', handleIncomingMessage);
         document.addEventListener('message', handleIncomingMessage);
-
-        // Notify that the editor is ready
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'READY'
-        }));
-        setTimeout(() => {
-            editor.commands.focus('end');
-        }, 0);
+        tryLoadTiptap(0);
     </script>
 </body>
 </html>
