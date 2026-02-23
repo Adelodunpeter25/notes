@@ -7,8 +7,8 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout";
 import { Editor } from "@/components/editor";
-import { useDebounce, useNotesQuery, useUpdateNoteMutation } from "@/hooks";
-import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
+import { useDebounce, useNotesQuery, useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks";
+import { deriveNoteTitleFromHtml, isEmptyDraftNote } from "@/utils/noteContent";
 import { formatNoteDateTime } from "@/utils/formatDate";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
@@ -21,6 +21,7 @@ export function NoteEditorScreen() {
 
   const notesQuery = useNotesQuery();
   const updateNoteMutation = useUpdateNoteMutation();
+  const deleteNoteMutation = useDeleteNoteMutation();
 
   const note = useMemo(
     () => (notesQuery.data ?? []).find((currentNote) => currentNote.id === noteId),
@@ -88,13 +89,24 @@ export function NoteEditorScreen() {
       event.preventDefault();
       isLeavingRef.current = true;
 
+      const derivedTitle = deriveNoteTitleFromHtml(content);
+      const isDraft = isEmptyDraftNote({ title: derivedTitle, content, isPinned: note?.isPinned });
+
+      if (isDraft && note) {
+        // If it's an empty draft, just delete it and leave
+        void deleteNoteMutation.mutateAsync(note.id).finally(() => {
+          navigation.dispatch(event.data.action);
+        });
+        return;
+      }
+
       void saveNow().finally(() => {
         navigation.dispatch(event.data.action);
       });
     });
 
     return unsubscribe;
-  }, [navigation, saveNow]);
+  }, [navigation, saveNow, content, note, deleteNoteMutation]);
 
   useEffect(() => {
     if (!note) {
@@ -133,16 +145,27 @@ export function NoteEditorScreen() {
 
   return (
     <ScreenContainer className="bg-black">
-      <View className="bg-black px-4 pt-6 pb-4">
+      <View className="bg-black px-2 pt-2 pb-1">
         <Pressable
-          onPress={() => {
+          onPress={async () => {
+            if (isLeavingRef.current) return;
             isLeavingRef.current = true;
-            void saveNow().finally(() => navigation.goBack());
+
+            const derivedTitle = deriveNoteTitleFromHtml(content);
+            const isDraft = isEmptyDraftNote({ title: derivedTitle, content, isPinned: note?.isPinned });
+
+            if (isDraft && note) {
+              await deleteNoteMutation.mutateAsync(note.id);
+            } else {
+              await saveNow();
+            }
+            navigation.goBack();
           }}
-          className="flex-row items-center self-start rounded-md p-7"
+          hitSlop={20}
+          className="flex-row items-center self-start rounded-md px-2 py-1"
         >
-          <ChevronLeft size={18} color="#eab308" />
-          <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
+          <ChevronLeft size={20} color="#eab308" />
+          <Text className="ml-0.5 text-sm font-medium text-accent">Back</Text>
         </Pressable>
       </View>
 

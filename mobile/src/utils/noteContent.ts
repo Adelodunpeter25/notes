@@ -42,3 +42,18 @@ export function deriveNotePreviewFromHtml(html: string): string {
   if (lines.length <= 1) return "";
   return lines.slice(1).join(" ").trim();
 }
+
+export function hasMeaningfulHtmlContent(content: string): boolean {
+  if (!content) return false;
+  const text = htmlToPlainText(content).trim();
+  return text.length > 0;
+}
+
+export function isEmptyDraftNote(note: { title?: string; content?: string; isPinned?: boolean }): boolean {
+  const normalizedTitle = (note.title || "").trim();
+  const hasContent = hasMeaningfulHtmlContent(note.content || "");
+
+  // A note is an empty draft if it's not pinned, has no content, 
+  // and has no title or the default "Untitled" title
+  return !note.isPinned && !hasContent && (normalizedTitle === "" || normalizedTitle === "Untitled");
+}
