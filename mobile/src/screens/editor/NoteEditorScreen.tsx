@@ -92,7 +92,7 @@ export function NoteEditorScreen() {
       </View>
 
       <View className="flex-1">
-        <Editor value={content} onChange={handleEditorChange} />
+        <Editor key={noteId} value={content} onChange={handleEditorChange} />
       </View>
     </ScreenContainer>
   );
