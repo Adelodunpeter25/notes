@@ -9,6 +9,7 @@ import { ScreenContainer } from "@/components/layout";
 import { Editor } from "@/components/editor";
 import { useDebounce, useNotesQuery, useUpdateNoteMutation } from "@/hooks";
 import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
+import { formatNoteDateTime } from "@/utils/formatDate";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
@@ -129,12 +130,6 @@ export function NoteEditorScreen() {
     });
   }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
 
-  const headerTitle = useMemo(() => {
-    if (content.trim()) {
-      return deriveNoteTitleFromHtml(content);
-    }
-    return note?.title || "Untitled";
-  }, [content, note?.title]);
 
   return (
     <ScreenContainer>
@@ -149,7 +144,9 @@ export function NoteEditorScreen() {
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-text" numberOfLines={1}>{headerTitle}</Text>
+        <Text className="text-xs font-medium text-textMuted uppercase tracking-wider">
+          {formatNoteDateTime(note?.updatedAt || note?.createdAt)}
+        </Text>
       </View>
 
       <View className="flex-1">
