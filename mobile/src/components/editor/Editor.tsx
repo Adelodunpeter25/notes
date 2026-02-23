@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { ScrollView, Platform, KeyboardAvoidingView, View, Text } from "react-native";
 import { formatNoteDateTime } from "@/utils/formatDate";
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
@@ -15,11 +15,25 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
   const richText = useRef<RichEditor>(null);
   const insets = useSafeAreaInsets();
   const latestValueRef = useRef(value);
+  const lastEditorContentRef = useRef(value || "");
 
   useEffect(() => {
-    latestValueRef.current = value;
-    richText.current?.setContentHTML(value || "");
+    const nextValue = value || "";
+    latestValueRef.current = nextValue;
+
+    // Prevent cursor jump: don't re-set HTML when change originated from editor typing
+    if (nextValue === lastEditorContentRef.current) {
+      return;
+    }
+
+    lastEditorContentRef.current = nextValue;
+    richText.current?.setContentHTML(nextValue);
   }, [value]);
+
+  const handleChange = useCallback((nextContent: string) => {
+    lastEditorContentRef.current = nextContent || "";
+    onChange(nextContent);
+  }, [onChange]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -46,7 +60,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
         <RichEditor
           ref={richText}
           initialContentHTML={value}
-          onChange={onChange}
+          onChange={handleChange}
           editorInitializedCallback={() => {
             richText.current?.setContentHTML(latestValueRef.current || "");
             richText.current?.focusContentEditor();
