@@ -16,6 +16,7 @@ type NoteListProps = {
   onRefresh?: () => void;
   emptyText?: string;
   onSelectNote?: (note: Note) => void;
+  onLongPressNote?: (note: Note) => void;
 };
 
 export function NoteList({
@@ -25,6 +26,7 @@ export function NoteList({
   onRefresh,
   emptyText = "No notes yet.",
   onSelectNote,
+  onLongPressNote,
 }: NoteListProps) {
   const deleteNoteMutation = useDeleteNoteMutation();
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
@@ -93,6 +95,7 @@ export function NoteList({
                 subtitle={`${dateStr} ${preview}`.trim()}
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
                 onPress={() => onSelectNote?.(item)}
+                onLongPress={() => onLongPressNote?.(item)}
                 showChevron={false}
               />
             </Swipeable>

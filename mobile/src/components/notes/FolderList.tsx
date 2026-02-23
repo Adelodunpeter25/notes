@@ -10,6 +10,7 @@ type FolderListProps = {
   refreshing?: boolean;
   onRefresh?: () => void;
   onSelectFolder: (folder: Folder) => void;
+  onLongPressFolder?: (folder: Folder) => void;
 };
 
 export function FolderList({
@@ -18,6 +19,7 @@ export function FolderList({
   refreshing = false,
   onRefresh,
   onSelectFolder,
+  onLongPressFolder,
 }: FolderListProps) {
   if (isLoading) {
     return (
@@ -49,6 +51,7 @@ export function FolderList({
           count={item.notesCount}
           icon={<FolderIcon size={18} color="#eab308" />}
           onPress={() => onSelectFolder(item)}
+          onLongPress={() => onLongPressFolder?.(item)}
         />
       )}
     />

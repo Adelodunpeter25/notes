@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Text, View, Alert } from "react-native";
 import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
@@ -6,10 +6,20 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { Search, Plus } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
-import { FolderList, NoteList } from "@/components/notes";
+import { FolderList, NoteList, NoteContextMenu, FolderContextMenu } from "@/components/notes";
+import { ConfirmDialog } from "@/components/common";
 import { BottomBar } from "@/components/layout";
-import { useFoldersQuery, useNotesQuery, useCreateNoteMutation } from "@/hooks";
+import {
+  useFoldersQuery,
+  useNotesQuery,
+  useCreateNoteMutation,
+  useDeleteFolderMutation,
+  useDeleteNoteMutation,
+  useUpdateNoteMutation,
+} from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
+import type { Note } from "@shared/notes";
+import type { Folder } from "@shared/folders";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
 
@@ -19,6 +29,12 @@ export function DashboardScreen() {
   const foldersQuery = useFoldersQuery();
   const notesQuery = useNotesQuery();
   const createNoteMutation = useCreateNoteMutation();
+  const updateNoteMutation = useUpdateNoteMutation();
+  const deleteNoteMutation = useDeleteNoteMutation();
+  const deleteFolderMutation = useDeleteFolderMutation();
+  const [menuNote, setMenuNote] = useState<Note | null>(null);
+  const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
 
   const handleCreateNote = async () => {
     try {
@@ -30,6 +46,27 @@ export function DashboardScreen() {
     } catch (error) {
       console.error("Failed to create note:", error);
     }
+  };
+
+  const handlePinNote = async (note: Note) => {
+    await updateNoteMutation.mutateAsync({
+      noteId: note.id,
+      payload: { isPinned: !note.isPinned },
+    });
+  };
+
+  const handleDeleteNote = async (note: Note) => {
+    await deleteNoteMutation.mutateAsync(note.id);
+  };
+
+  const handleMoveNote = (_note: Note) => {
+    Alert.alert("Not yet", "Move to folder will be added next.");
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folderToDelete) return;
+    await deleteFolderMutation.mutateAsync(folderToDelete.id);
+    setFolderToDelete(null);
   };
 
   return (
@@ -53,6 +90,7 @@ export function DashboardScreen() {
               onRefresh={() => {
                 void foldersQuery.refetch();
               }}
+              onLongPressFolder={(folder) => setMenuFolder(folder)}
               onSelectFolder={(folder) => {
                 navigation.navigate("FolderDetails", {
                   folderId: folder.id,
@@ -74,6 +112,7 @@ export function DashboardScreen() {
               onSelectNote={(note) => {
                 navigation.navigate("Editor", { noteId: note.id });
               }}
+              onLongPressNote={(note) => setMenuNote(note)}
             />
           </View>
         )}
@@ -88,6 +127,38 @@ export function DashboardScreen() {
       </Pressable>
 
       <BottomBar activeTab={activeTab} onChangeTab={setActiveTab} />
+
+      <NoteContextMenu
+        visible={!!menuNote}
+        note={menuNote}
+        onClose={() => setMenuNote(null)}
+        onPin={handlePinNote}
+        onMove={handleMoveNote}
+        onDelete={handleDeleteNote}
+      />
+
+      <FolderContextMenu
+        visible={!!menuFolder}
+        folder={menuFolder}
+        onClose={() => setMenuFolder(null)}
+        onRename={() => {
+          Alert.alert("Not yet", "Rename folder will be added next.");
+        }}
+        onDelete={(folder) => {
+          setFolderToDelete(folder);
+          setMenuFolder(null);
+        }}
+      />
+
+      <ConfirmDialog
+        visible={!!folderToDelete}
+        title="Delete Folder"
+        description="Are you sure you want to delete this folder?"
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDeleteFolder}
+        onCancel={() => setFolderToDelete(null)}
+      />
     </ScreenContainer>
   );
 }

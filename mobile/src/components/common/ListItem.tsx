@@ -9,6 +9,7 @@ interface ListItemProps {
     icon?: React.ReactNode;
     count?: number;
     onPress: () => void;
+    onLongPress?: () => void;
     className?: string;
     showChevron?: boolean;
     isActive?: boolean;
@@ -20,6 +21,7 @@ export function ListItem({
     icon,
     count,
     onPress,
+    onLongPress,
     className,
     showChevron = true,
     isActive = false,
@@ -27,6 +29,7 @@ export function ListItem({
     return (
         <TouchableOpacity
             onPress={onPress}
+            onLongPress={onLongPress}
             activeOpacity={0.6}
             className={cn(
                 "flex-row items-center justify-between py-3.5 px-4 border-b border-border/50",
