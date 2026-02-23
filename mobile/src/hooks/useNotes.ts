@@ -64,6 +64,9 @@ export function useUpdateNoteMutation() {
       if (variables.payload.folderId !== undefined) {
         queryClient.invalidateQueries({ queryKey: ["folders"] });
       }
+
+      // Always invalidate to ensure freshness across all filter variations
+      queryClient.invalidateQueries({ queryKey: notesKeys.all });
     },
   });
 }
