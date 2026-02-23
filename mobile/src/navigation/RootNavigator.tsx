@@ -17,6 +17,7 @@ function AuthNavigator() {
       initialRouteName="Login"
       screenOptions={{
         headerShown: false,
+        animationEnabled: false,
         cardStyle: { backgroundColor: colors.background },
       }}
     >
@@ -31,6 +32,7 @@ function MainNavigator() {
     <AppStack.Navigator
       screenOptions={{
         headerShown: false,
+        animationEnabled: false,
         cardStyle: { backgroundColor: colors.background },
       }}
     >

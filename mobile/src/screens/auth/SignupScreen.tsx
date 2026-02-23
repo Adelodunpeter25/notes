@@ -4,7 +4,7 @@ import { Eye, EyeOff } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
-import { Button, AppleNotesIcon } from "@/components/common";
+import { Button } from "@/components/common";
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { useSignupMutation } from "@/hooks";
 import type { AuthStackParamList } from "@/navigation/types";
@@ -60,8 +60,7 @@ export function SignupScreen() {
       <View className="flex-1 items-center justify-center">
         <View className="w-full max-w-[420px] rounded-2xl border border-border bg-surface p-5">
           <View className="mb-5 items-center">
-            <AppleNotesIcon />
-            <Text className="mt-3 text-xl font-semibold text-text">Create account</Text>
+            <Text className="text-xl font-semibold text-text">Create account</Text>
             <Text className="mt-1 text-sm text-textMuted">Start your notes workspace.</Text>
           </View>
 
