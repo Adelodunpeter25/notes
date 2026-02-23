@@ -52,33 +52,18 @@ export function useUpdateNoteMutation() {
   return useMutation({
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
       apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
-    onMutate: async ({ noteId, payload }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: notesKeys.all });
+    onSuccess: (updatedNote, variables) => {
+      queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (currentNotes) => {
+        if (!currentNotes) {
+          return currentNotes;
+        }
 
-      // Snapshot the previous value
-      const previousTotalNotes = queryClient.getQueryData<Note[]>(notesKeys.all);
+        return currentNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note));
+      });
 
-      // Optimistically update to the new value
-      if (previousTotalNotes) {
-        queryClient.setQueryData<Note[]>(
-          notesKeys.all,
-          previousTotalNotes.map((n) =>
-            n.id === noteId ? { ...n, ...payload, updatedAt: new Date().toISOString() } : n
-          )
-        );
+      if (variables.payload.folderId !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ["folders"] });
       }
-
-      return { previousTotalNotes };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousTotalNotes) {
-        queryClient.setQueryData(notesKeys.all, context.previousTotalNotes);
-      }
-    },
-    onSettled: (data, error, variables) => {
-      // Still invalidate folders to keep counts in sync, but maybe not notes if we want to avoid the loop
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
     },
   });
 }

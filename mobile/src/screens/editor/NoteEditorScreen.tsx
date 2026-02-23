@@ -30,14 +30,17 @@ export function NoteEditorScreen() {
   const prevNoteId = useRef<string | null>(null);
   const hasInitializedContent = useRef(false);
   const hasUserEdited = useRef(false);
+  const lastSavedContent = useRef("");
 
   useEffect(() => {
     // Only set content if we switched to a different note
     if (note && note.id !== prevNoteId.current) {
-      setContent(note.content || "");
+      const initialContent = note.content || "";
+      setContent(initialContent);
       prevNoteId.current = note.id;
       hasInitializedContent.current = true;
       hasUserEdited.current = false;
+      lastSavedContent.current = initialContent;
     }
   }, [note]);
 
@@ -56,7 +59,10 @@ export function NoteEditorScreen() {
     if (!hasUserEdited.current) {
       return;
     }
-    if (debouncedContent === note.content) {
+    if (debouncedContent === lastSavedContent.current) {
+      return;
+    }
+    if (updateNoteMutation.isPending) {
       return;
     }
 
@@ -65,8 +71,12 @@ export function NoteEditorScreen() {
       payload: {
         content: debouncedContent,
       },
+    }, {
+      onSuccess: () => {
+        lastSavedContent.current = debouncedContent;
+      },
     });
-  }, [debouncedContent, note, updateNoteMutation]);
+  }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
 
   return (
     <ScreenContainer>
