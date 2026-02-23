@@ -8,6 +8,8 @@ import { EditorPreview } from "@/components/editor";
 type NoteListProps = {
   notes: Note[];
   isLoading?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
   emptyText?: string;
   onSelectNote?: (note: Note) => void;
 };
@@ -15,6 +17,8 @@ type NoteListProps = {
 export function NoteList({
   notes,
   isLoading = false,
+  refreshing = false,
+  onRefresh,
   emptyText = "No notes yet.",
   onSelectNote,
 }: NoteListProps) {
@@ -40,6 +44,8 @@ export function NoteList({
     <FlatList
       data={notes}
       keyExtractor={(item) => item.id}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       renderItem={({ item }) => {
         const title = item.title?.trim() || "Untitled";
 

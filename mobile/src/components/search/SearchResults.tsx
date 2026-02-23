@@ -7,9 +7,17 @@ type SearchResultsProps = {
   query: string;
   notes: Note[];
   isLoading?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
-export function SearchResults({ query, notes, isLoading = false }: SearchResultsProps) {
+export function SearchResults({
+  query,
+  notes,
+  isLoading = false,
+  refreshing = false,
+  onRefresh,
+}: SearchResultsProps) {
   if (!query.trim()) {
     return (
       <View className="items-center justify-center px-6 py-10">
@@ -22,6 +30,8 @@ export function SearchResults({ query, notes, isLoading = false }: SearchResults
     <NoteList
       notes={notes}
       isLoading={isLoading}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       emptyText={`No results for "${query}"`}
     />
   );

@@ -37,6 +37,10 @@ export function DashboardScreen() {
             <FolderList
               folders={foldersQuery.data ?? []}
               isLoading={foldersQuery.isLoading}
+              refreshing={foldersQuery.isRefetching}
+              onRefresh={() => {
+                void foldersQuery.refetch();
+              }}
               onSelectFolder={(folder) => {
                 navigation.navigate("FolderDetails", {
                   folderId: folder.id,
@@ -50,12 +54,16 @@ export function DashboardScreen() {
             <View className="px-4 py-3">
               <Text className="text-base font-semibold text-text">All Notes</Text>
             </View>
-          <NoteList
-            notes={notesQuery.data ?? []}
-            isLoading={notesQuery.isLoading}
-            emptyText="No notes yet."
-            onSelectNote={(note) => {
-              navigation.navigate("Editor", { noteId: note.id });
+            <NoteList
+              notes={notesQuery.data ?? []}
+              isLoading={notesQuery.isLoading}
+              refreshing={notesQuery.isRefetching}
+              onRefresh={() => {
+                void notesQuery.refetch();
+              }}
+              emptyText="No notes yet."
+              onSelectNote={(note) => {
+                navigation.navigate("Editor", { noteId: note.id });
             }}
           />
         </View>

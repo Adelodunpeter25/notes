@@ -37,6 +37,10 @@ export function FolderDetailsScreen() {
         <NoteList
           notes={notesQuery.data ?? []}
           isLoading={notesQuery.isLoading}
+          refreshing={notesQuery.isRefetching}
+          onRefresh={() => {
+            void notesQuery.refetch();
+          }}
           emptyText="No notes in this folder."
           onSelectNote={(note) => {
             navigation.navigate("Editor", { noteId: note.id });

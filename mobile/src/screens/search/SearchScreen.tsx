@@ -48,6 +48,10 @@ export function SearchScreen() {
           query={searchQuery}
           notes={resultsQuery.data ?? []}
           isLoading={resultsQuery.isLoading}
+          refreshing={resultsQuery.isRefetching}
+          onRefresh={() => {
+            void resultsQuery.refetch();
+          }}
         />
       </View>
     </ScreenContainer>

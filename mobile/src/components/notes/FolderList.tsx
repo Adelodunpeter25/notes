@@ -7,10 +7,18 @@ import { ListItem, Skeleton } from "@/components/common";
 type FolderListProps = {
   folders: Folder[];
   isLoading?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
   onSelectFolder: (folder: Folder) => void;
 };
 
-export function FolderList({ folders, isLoading = false, onSelectFolder }: FolderListProps) {
+export function FolderList({
+  folders,
+  isLoading = false,
+  refreshing = false,
+  onRefresh,
+  onSelectFolder,
+}: FolderListProps) {
   if (isLoading) {
     return (
       <View className="px-4 pt-2">
@@ -33,6 +41,8 @@ export function FolderList({ folders, isLoading = false, onSelectFolder }: Folde
     <FlatList
       data={folders}
       keyExtractor={(item) => item.id}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       renderItem={({ item }) => (
         <ListItem
           title={item.name}
