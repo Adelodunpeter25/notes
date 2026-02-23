@@ -61,7 +61,7 @@ export function NoteEditorScreen() {
         <Text className="text-lg font-semibold text-text">{note?.title || "Untitled"}</Text>
       </View>
 
-      <View className="flex-1 px-4 py-4">
+      <View className="flex-1">
         <Editor value={content} onChange={setContent} />
       </View>
     </ScreenContainer>

@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from "react";
-import { View, Platform } from "react-native";
+import { View, Platform, KeyboardAvoidingView } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { getTiptapHtml } from "./TiptapWebView";
+import { EditorToolbar } from "./EditorToolbar";
 
 type EditorProps = {
   value: string;
@@ -34,20 +35,33 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
     }
   };
 
+  const handleAction = (type: string) => {
+    if (webViewRef.current) {
+      const message = JSON.stringify({ type });
+      webViewRef.current.postMessage(message);
+    }
+  };
+
   return (
-    <View className="flex-1 bg-background overflow-hidden">
-      <WebView
-        ref={webViewRef}
-        originWhitelist={["*"]}
-        source={{ html: getTiptapHtml(value) }}
-        onMessage={onMessage}
-        scrollEnabled={true}
-        className="flex-1 bg-background"
-        style={{ backgroundColor: "#1e1e1e" }}
-        autoFocus={true}
-        keyboardDisplayRequiresUserAction={false}
-        textInteractionEnabled={true}
-      />
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      className="flex-1"
+    >
+      <View className="flex-1 bg-background overflow-hidden">
+        <WebView
+          ref={webViewRef}
+          originWhitelist={["*"]}
+          source={{ html: getTiptapHtml(value) }}
+          onMessage={onMessage}
+          scrollEnabled={true}
+          className="flex-1 bg-background"
+          style={{ backgroundColor: "#1e1e1e" }}
+          keyboardDisplayRequiresUserAction={false}
+          textInteractionEnabled={true}
+          hideKeyboardAccessoryView={true}
+        />
+        <EditorToolbar onAction={handleAction} />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
