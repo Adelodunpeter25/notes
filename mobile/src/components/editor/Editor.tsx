@@ -44,7 +44,7 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior="padding"
       className="flex-1"
     >
       <View className="flex-1 bg-background overflow-hidden">
