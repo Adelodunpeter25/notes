@@ -35,7 +35,9 @@ export function DashboardScreen() {
   return (
     <ScreenContainer>
       <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-        <Text className="text-xl font-semibold text-text">Notes</Text>
+        <Text className="text-xl font-semibold text-text">
+          {activeTab === "folders" ? "Folders" : "Notes"}
+        </Text>
         <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
           <Search size={18} color="#eab308" />
         </Pressable>
@@ -44,9 +46,6 @@ export function DashboardScreen() {
       <View className="flex-1">
         {activeTab === "folders" ? (
           <View className="flex-1">
-            <View className="px-4 py-3">
-              <Text className="text-base font-semibold text-text">Folders</Text>
-            </View>
             <FolderList
               folders={foldersQuery.data ?? []}
               isLoading={foldersQuery.isLoading}
@@ -64,9 +63,6 @@ export function DashboardScreen() {
           </View>
         ) : (
           <View className="flex-1">
-            <View className="px-4 py-3">
-              <Text className="text-base font-semibold text-text">All Notes</Text>
-            </View>
             <NoteList
               notes={notesQuery.data ?? []}
               isLoading={notesQuery.isLoading}
@@ -86,9 +82,9 @@ export function DashboardScreen() {
       <Pressable
         onPress={handleCreateNote}
         disabled={createNoteMutation.isPending}
-        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
-        <Plus size={30} color="#000000" />
+        <Plus size={32} color="#000000" />
       </Pressable>
 
       <BottomBar activeTab={activeTab} onChangeTab={setActiveTab} />
