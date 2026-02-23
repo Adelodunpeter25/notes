@@ -57,7 +57,7 @@ export function NoteList({
 
   const renderLeftActions = () => {
     return (
-      <View className="bg-danger h-full absolute left-0 right-0 items-start justify-center pl-8">
+      <View className="bg-danger w-28 h-full items-center justify-center">
         <Trash2 size={24} color="#ffffff" />
       </View>
     );
@@ -85,7 +85,8 @@ export function NoteList({
                 swipeableRefs.current[item.id]?.close();
               }}
               friction={1}
-              overshootLeft={false}
+              leftThreshold={40}
+              overshootLeft={true}
             >
               <ListItem
                 title={title}
