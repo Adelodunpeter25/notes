@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { View, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Platform, KeyboardAvoidingView, TextInput } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { getTiptapHtml } from "./TiptapWebView";
 import { EditorToolbar } from "./EditorToolbar";
@@ -14,6 +14,7 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
   const webViewRef = useRef<WebView>(null);
   const isReady = useRef(false);
   const lastContent = useRef(value);
+  const [hasWebViewError, setHasWebViewError] = React.useState(false);
 
   // Initialize source once to prevent reloading the WebView when value changes
   const source = React.useMemo(
@@ -40,6 +41,8 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
           webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
           webViewRef.current.postMessage(JSON.stringify({ type: "FOCUS_EDITOR" }));
         }
+      } else if (data.type === "ERROR") {
+        setHasWebViewError(true);
       } else if (data.type === "UPDATE") {
         lastContent.current = data.content;
         onChange(data.content);
@@ -58,23 +61,37 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1"
+      style={{ flex: 1 }}
     >
-      <View className="flex-1 bg-background overflow-hidden">
-        <WebView
-          ref={webViewRef}
-          originWhitelist={["*"]}
-          source={source}
-          onMessage={onMessage}
-          scrollEnabled={true}
-          className="flex-1 bg-background"
-          style={{ backgroundColor: "#1e1e1e" }}
-          keyboardDisplayRequiresUserAction={false}
-          textInteractionEnabled={true}
-          hideKeyboardAccessoryView={true}
-          domStorageEnabled={true}
-          javaScriptEnabled={true}
-        />
+      <View style={{ flex: 1, backgroundColor: "#1e1e1e", overflow: "hidden" }}>
+        {hasWebViewError ? (
+          <View style={{ flex: 1, padding: 12 }}>
+            <TextInput
+              multiline
+              autoFocus
+              value={value}
+              onChangeText={onChange}
+              placeholder={placeholder}
+              placeholderTextColor="#6f6f6f"
+              textAlignVertical="top"
+              style={{ flex: 1, color: "#fff", fontSize: 16, lineHeight: 24 }}
+            />
+          </View>
+        ) : (
+          <WebView
+            ref={webViewRef}
+            originWhitelist={["*"]}
+            source={source}
+            onMessage={onMessage}
+            scrollEnabled={true}
+            style={{ flex: 1, backgroundColor: "#1e1e1e" }}
+            keyboardDisplayRequiresUserAction={false}
+            textInteractionEnabled={true}
+            hideKeyboardAccessoryView={true}
+            domStorageEnabled={true}
+            javaScriptEnabled={true}
+          />
+        )}
         <EditorToolbar onAction={handleAction} />
       </View>
     </KeyboardAvoidingView>
