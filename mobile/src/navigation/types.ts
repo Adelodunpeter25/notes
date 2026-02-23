@@ -5,4 +5,5 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   Dashboard: undefined;
+  FolderDetails: { folderId: string; folderName: string };
 };
