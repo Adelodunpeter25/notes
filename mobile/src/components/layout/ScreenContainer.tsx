@@ -1,7 +1,6 @@
 import React from "react";
-import { View, StyleSheet, type ViewProps } from "react-native";
+import { View, type ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/theme/colors";
 import { cn } from "@/utils/cn";
 
 interface ScreenContainerProps extends ViewProps {

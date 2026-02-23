@@ -3,17 +3,13 @@ import "react-native-gesture-handler";
 import React, { useEffect } from "react";
 import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as NavigationBar from "expo-navigation-bar";
-import { cssInterop } from "nativewind";
 
 import { queryClient } from "@/api/queryClient";
 import { RootNavigator } from "@/navigation";
-
-// Fix for className on SafeAreaView
-cssInterop(SafeAreaView, { className: "style" });
 
 export default function App() {
   useEffect(() => {
@@ -27,10 +23,8 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <SafeAreaView className="flex-1 bg-surface">
-            <RootNavigator />
-            <StatusBar style="light" backgroundColor="#252525" />
-          </SafeAreaView>
+          <RootNavigator />
+          <StatusBar style="light" backgroundColor="#252525" />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
