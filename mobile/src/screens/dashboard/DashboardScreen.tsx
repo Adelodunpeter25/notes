@@ -9,14 +9,7 @@ import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu } from "@/components/notes";
 import { ConfirmDialog } from "@/components/common";
 import { BottomBar } from "@/components/layout";
-import {
-  useFoldersQuery,
-  useNotesQuery,
-  useCreateNoteMutation,
-  useDeleteFolderMutation,
-  useDeleteNoteMutation,
-  useUpdateNoteMutation,
-} from "@/hooks";
+import { useDashboardData } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
@@ -26,22 +19,14 @@ type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<"notes" | "folders">("notes");
-  const foldersQuery = useFoldersQuery();
-  const notesQuery = useNotesQuery();
-  const createNoteMutation = useCreateNoteMutation();
-  const updateNoteMutation = useUpdateNoteMutation();
-  const deleteNoteMutation = useDeleteNoteMutation();
-  const deleteFolderMutation = useDeleteFolderMutation();
+  const dashboard = useDashboardData();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
 
   const handleCreateNote = async () => {
     try {
-      const note = await createNoteMutation.mutateAsync({
-        title: "",
-        content: "",
-      });
+      const note = await dashboard.createNote();
       navigation.navigate("Editor", { noteId: note.id });
     } catch (error) {
       console.error("Failed to create note:", error);
@@ -49,14 +34,11 @@ export function DashboardScreen() {
   };
 
   const handlePinNote = async (note: Note) => {
-    await updateNoteMutation.mutateAsync({
-      noteId: note.id,
-      payload: { isPinned: !note.isPinned },
-    });
+    await dashboard.saveNote(note.id, { isPinned: !note.isPinned });
   };
 
   const handleDeleteNote = async (note: Note) => {
-    await deleteNoteMutation.mutateAsync(note.id);
+    await dashboard.deleteNote(note.id);
   };
 
   const handleMoveNote = (_note: Note) => {
@@ -65,7 +47,7 @@ export function DashboardScreen() {
 
   const handleDeleteFolder = async () => {
     if (!folderToDelete) return;
-    await deleteFolderMutation.mutateAsync(folderToDelete.id);
+    await dashboard.deleteFolder(folderToDelete.id);
     setFolderToDelete(null);
   };
 
@@ -84,11 +66,11 @@ export function DashboardScreen() {
         {activeTab === "folders" ? (
           <View className="flex-1">
             <FolderList
-              folders={foldersQuery.data ?? []}
-              isLoading={foldersQuery.isLoading}
-              refreshing={foldersQuery.isRefetching}
+              folders={dashboard.folders}
+              isLoading={dashboard.isFoldersLoading}
+              refreshing={dashboard.isFoldersRefreshing}
               onRefresh={() => {
-                void foldersQuery.refetch();
+                void dashboard.refetchFolders();
               }}
               onLongPressFolder={(folder) => setMenuFolder(folder)}
               onSelectFolder={(folder) => {
@@ -102,11 +84,11 @@ export function DashboardScreen() {
         ) : (
           <View className="flex-1">
             <NoteList
-              notes={notesQuery.data ?? []}
-              isLoading={notesQuery.isLoading}
-              refreshing={notesQuery.isRefetching}
+              notes={dashboard.notes}
+              isLoading={dashboard.isNotesLoading}
+              refreshing={dashboard.isNotesRefreshing}
               onRefresh={() => {
-                void notesQuery.refetch();
+                void dashboard.refetchNotes();
               }}
               emptyText="No notes yet."
               onSelectNote={(note) => {
@@ -120,7 +102,7 @@ export function DashboardScreen() {
 
       <Pressable
         onPress={handleCreateNote}
-        disabled={createNoteMutation.isPending}
+        disabled={dashboard.isCreatingNote}
         className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         <Plus size={32} color="#000000" />
