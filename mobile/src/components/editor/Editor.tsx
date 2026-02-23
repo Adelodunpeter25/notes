@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
-import { RichText, Toolbar, useEditorBridge } from "@10play/tentap-editor";
+import React, { useRef } from "react";
+import { ScrollView, Platform, KeyboardAvoidingView, View } from "react-native";
+import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type EditorProps = {
   value: string;
@@ -9,58 +10,61 @@ type EditorProps = {
 };
 
 export function Editor({ value, onChange, placeholder = "Start writing..." }: EditorProps) {
-  void placeholder;
-  const lastKnownContentRef = useRef(value);
-  const editorRef = useRef<ReturnType<typeof useEditorBridge> | null>(null);
-
-  const editor = useEditorBridge({
-    autofocus: true,
-    avoidIosKeyboard: true,
-    initialContent: value || "<p></p>",
-    onChange: () => {
-      void editorRef.current?.getHTML().then((html) => {
-        if (html === lastKnownContentRef.current) {
-          return;
-        }
-        lastKnownContentRef.current = html;
-        onChange(html);
-      });
-    },
-  });
-
-  editorRef.current = editor;
-
-  useEffect(() => {
-    if (!editorRef.current) {
-      return;
-    }
-    if (value === lastKnownContentRef.current) {
-      return;
-    }
-
-    lastKnownContentRef.current = value;
-    editorRef.current.setContent(value || "<p></p>");
-  }, [value]);
-
-  useEffect(() => {
-    if (!editorRef.current) {
-      return;
-    }
-
-    editorRef.current.focus("end");
-  }, [editor]);
+  const richText = useRef<RichEditor>(null);
+  const insets = useSafeAreaInsets();
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ flex: 1 }}
-    >
-      <View style={{ flex: 1, backgroundColor: "#1e1e1e" }}>
-        <RichText editor={editor} />
-        <View style={{ borderTopWidth: 1, borderTopColor: "#3e3e3e", backgroundColor: "#252525" }}>
-          <Toolbar editor={editor} />
+    <View className="flex-1 bg-background">
+      <ScrollView
+        className="flex-1"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
+        <RichEditor
+          ref={richText}
+          initialContentHTML={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          editorStyle={{
+            backgroundColor: "#1c1c1e",
+            color: "#ffffff",
+            placeholderColor: "#636366",
+            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px;",
+          }}
+          useContainer={false}
+          initialHeight={500}
+        />
+      </ScrollView>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <View
+          style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
+          className="bg-[#2c2c2e] border-t border-white/5"
+        >
+          <RichToolbar
+            editor={richText}
+            actions={[
+              actions.setBold,
+              actions.setItalic,
+              actions.setStrikethrough,
+              actions.insertBulletsList,
+              actions.insertOrderedList,
+              actions.checkboxList,
+              actions.undo,
+              actions.redo,
+            ]}
+            iconTint="#ffffff"
+            selectedIconTint="#eab308"
+            disabledIconTint="#48484a"
+            style={{
+              backgroundColor: "transparent",
+            }}
+          />
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
