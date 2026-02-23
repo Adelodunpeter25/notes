@@ -62,7 +62,7 @@ export async function showNoteContextMenu({
       },
       {
         id: "delete-note",
-        text: "⚠ Delete",
+        text: "Delete",
         action: onDelete,
       },
     ],
@@ -94,7 +94,7 @@ export async function showFolderContextMenu({
       },
       {
         id: "delete-folder",
-        text: "⚠ Delete Folder",
+        text: "Delete Folder",
         action: onDelete,
       },
     ],
