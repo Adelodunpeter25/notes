@@ -58,8 +58,11 @@ export async function showNoteContextMenu({
       },
       moveToSubmenu,
       {
+        item: "Separator",
+      },
+      {
         id: "delete-note",
-        text: "Delete",
+        text: "⚠ Delete",
         action: onDelete,
       },
     ],
@@ -87,8 +90,11 @@ export async function showFolderContextMenu({
         action: onRename,
       },
       {
+        item: "Separator",
+      },
+      {
         id: "delete-folder",
-        text: "Delete Folder",
+        text: "⚠ Delete Folder",
         action: onDelete,
       },
     ],
