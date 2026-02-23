@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type UiState = {
   selectedFolderId: string | null;
@@ -15,33 +16,45 @@ type UiState = {
   toggleSidebarCollapsed: () => void;
 };
 
-export const useUiStore = create<UiState>((set) => ({
-  selectedFolderId: null,
-  selectedNoteId: undefined,
-  searchQuery: "",
-  isSearchExpanded: false,
-  manualClearCount: 0,
-  isSidebarCollapsed: false,
-  setSelectedFolderId: (folderId) => {
-    set({ selectedFolderId: folderId, selectedNoteId: undefined });
-  },
-  setSelectedNoteId: (noteId) => {
-    set({ selectedNoteId: noteId });
-  },
-  setSearchQuery: (value) => {
-    set({ searchQuery: value });
-  },
-  setIsSearchExpanded: (value) => {
-    set({ isSearchExpanded: value });
-  },
-  clearSelectedNote: () => {
-    set((state) => ({
+export const useUiStore = create<UiState>()(
+  persist(
+    (set) => ({
+      selectedFolderId: null,
       selectedNoteId: undefined,
-      manualClearCount: state.manualClearCount + 1,
-    }));
-  },
-  toggleSidebarCollapsed: () => {
-    set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed }));
-  },
-}));
+      searchQuery: "",
+      isSearchExpanded: false,
+      manualClearCount: 0,
+      isSidebarCollapsed: false,
+      setSelectedFolderId: (folderId) => {
+        set({ selectedFolderId: folderId, selectedNoteId: undefined });
+      },
+      setSelectedNoteId: (noteId) => {
+        set({ selectedNoteId: noteId });
+      },
+      setSearchQuery: (value) => {
+        set({ searchQuery: value });
+      },
+      setIsSearchExpanded: (value) => {
+        set({ isSearchExpanded: value });
+      },
+      clearSelectedNote: () => {
+        set((state) => ({
+          selectedNoteId: undefined,
+          manualClearCount: state.manualClearCount + 1,
+        }));
+      },
+      toggleSidebarCollapsed: () => {
+        set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed }));
+      },
+    }),
+    {
+      name: "notes-ui-state",
+      partialize: (state) => ({
+        selectedFolderId: state.selectedFolderId,
+        selectedNoteId: state.selectedNoteId,
+        isSidebarCollapsed: state.isSidebarCollapsed,
+      }),
+    }
+  )
+);
 

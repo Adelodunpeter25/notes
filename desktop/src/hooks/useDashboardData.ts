@@ -100,6 +100,11 @@ export function useDashboardData(selection: DashboardSelectionState) {
       return;
     }
 
+    // Only auto-select if we have notes and the query is successful
+    if (!notesQuery.isSuccess || notesQuery.isFetching) {
+      return;
+    }
+
     if (!selection.selectedNoteId && notes.length > 0) {
       selection.setSelectedNoteId(notes[0].id);
       return;
@@ -108,7 +113,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
     if (selection.selectedNoteId && !notes.some((note) => note.id === selection.selectedNoteId)) {
       selection.setSelectedNoteId(notes[0]?.id);
     }
-  }, [notes, selection]);
+  }, [notes, selection, notesQuery.isSuccess, notesQuery.isFetching]);
 
   async function createNote() {
     const created = await notesActions.createNote(selection.selectedFolderId);
