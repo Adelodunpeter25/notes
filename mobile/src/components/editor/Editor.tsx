@@ -1,8 +1,6 @@
-import React, { useRef, useEffect } from "react";
-import { View, Platform, KeyboardAvoidingView } from "react-native";
-import { WebView, type WebViewMessageEvent } from "react-native-webview";
-import { getTiptapHtml } from "./TiptapWebView";
-import { EditorToolbar } from "./EditorToolbar";
+import { useEffect, useRef } from "react";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { RichText, Toolbar, useEditorBridge } from "@10play/tentap-editor";
 
 type EditorProps = {
   value: string;
@@ -11,72 +9,57 @@ type EditorProps = {
 };
 
 export function Editor({ value, onChange, placeholder = "Start writing..." }: EditorProps) {
-  const webViewRef = useRef<WebView>(null);
-  const isReady = useRef(false);
-  const lastContent = useRef(value);
+  void placeholder;
+  const lastKnownContentRef = useRef(value);
+  const editorRef = useRef<ReturnType<typeof useEditorBridge> | null>(null);
 
-  // Initialize source once to prevent reloading the WebView when value changes
-  const source = React.useMemo(
-    () => ({ html: getTiptapHtml({ initialContent: "", placeholder }) }),
-    [placeholder],
-  );
+  const editor = useEditorBridge({
+    autofocus: true,
+    avoidIosKeyboard: true,
+    initialContent: value || "<p></p>",
+    onChange: () => {
+      void editorRef.current?.getHTML().then((html) => {
+        if (html === lastKnownContentRef.current) {
+          return;
+        }
+        lastKnownContentRef.current = html;
+        onChange(html);
+      });
+    },
+  });
 
-  // Sync value prop from parent to WebView
+  editorRef.current = editor;
+
   useEffect(() => {
-    if (isReady.current && value !== lastContent.current && webViewRef.current) {
-      lastContent.current = value;
-      const encodedContent = encodeURIComponent(value);
-      webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
+    if (!editorRef.current) {
+      return;
     }
+    if (value === lastKnownContentRef.current) {
+      return;
+    }
+
+    lastKnownContentRef.current = value;
+    editorRef.current.setContent(value || "<p></p>");
   }, [value]);
 
-  const onMessage = (event: WebViewMessageEvent) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === "READY") {
-        isReady.current = true;
-        if (webViewRef.current) {
-          const encodedContent = encodeURIComponent(value);
-          webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
-          webViewRef.current.postMessage(JSON.stringify({ type: "FOCUS_EDITOR" }));
-        }
-      } else if (data.type === "ERROR") {
-        console.error("Tiptap WebView error:", data.message || "unknown error");
-      } else if (data.type === "UPDATE") {
-        lastContent.current = data.content;
-        onChange(data.content);
-      }
-    } catch (e) {
-      console.error("WebView message error:", e);
+  useEffect(() => {
+    if (!editorRef.current) {
+      return;
     }
-  };
 
-  const handleAction = (type: string) => {
-    if (webViewRef.current) {
-      webViewRef.current.postMessage(JSON.stringify({ type }));
-    }
-  };
+    editorRef.current.focus("end");
+  }, [editor]);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
-      <View style={{ flex: 1, backgroundColor: "#1e1e1e", overflow: "hidden" }}>
-        <WebView
-          ref={webViewRef}
-          originWhitelist={["*"]}
-          source={source}
-          onMessage={onMessage}
-          scrollEnabled={true}
-          style={{ flex: 1, backgroundColor: "#1e1e1e" }}
-          keyboardDisplayRequiresUserAction={false}
-          textInteractionEnabled={true}
-          hideKeyboardAccessoryView={true}
-          domStorageEnabled={true}
-          javaScriptEnabled={true}
-        />
-        <EditorToolbar onAction={handleAction} />
+      <View style={{ flex: 1, backgroundColor: "#1e1e1e" }}>
+        <RichText editor={editor} />
+        <View style={{ borderTopWidth: 1, borderTopColor: "#3e3e3e", backgroundColor: "#252525" }}>
+          <Toolbar editor={editor} />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
