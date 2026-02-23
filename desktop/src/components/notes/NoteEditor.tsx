@@ -84,6 +84,20 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
         };
     }, [note, onClearSelection]);
 
+    useEffect(() => {
+        if (!note || searchResultsOverlay) {
+            return;
+        }
+
+        const frame = window.requestAnimationFrame(() => {
+            editorRef.current?.commands.focus("end");
+        });
+
+        return () => {
+            window.cancelAnimationFrame(frame);
+        };
+    }, [note?.id, searchResultsOverlay]);
+
     const hasDebouncedChanges = useMemo(() => {
         if (!note || !isDebounceSettled) return false;
         return (
