@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { Pressable, Text, View } from "react-native";
-import { ChevronLeft } from "lucide-react-native";
+import { Alert, Pressable, Text, View } from "react-native";
+import { ChevronLeft, Ellipsis } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
 import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout";
 import { Editor } from "@/components/editor";
-import { useDebounce, useNotesQuery, useUpdateNoteMutation, useDeleteNoteMutation } from "@/hooks";
+import { NoteContextMenu } from "@/components/notes";
+import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
+import {
+  useDebounce,
+  useNotesQuery,
+  useUpdateNoteMutation,
+  useDeleteNoteMutation,
+  useFoldersQuery,
+} from "@/hooks";
 import { deriveNoteTitleFromHtml, isEmptyDraftNote } from "@/utils/noteContent";
-import { formatNoteDateTime } from "@/utils/formatDate";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
@@ -22,6 +29,7 @@ export function NoteEditorScreen() {
   const notesQuery = useNotesQuery();
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
+  const foldersQuery = useFoldersQuery();
 
   const note = useMemo(
     () => (notesQuery.data ?? []).find((currentNote) => currentNote.id === noteId),
@@ -36,6 +44,10 @@ export function NoteEditorScreen() {
   const lastSavedContent = useRef("");
   const lastSavedTitle = useRef("");
   const isLeavingRef = useRef(false);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     // Only set content if we switched to a different note
@@ -142,10 +154,51 @@ export function NoteEditorScreen() {
     });
   }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
 
+  const handlePinToggle = async () => {
+    if (!note) return;
+    await updateNoteMutation.mutateAsync({
+      noteId: note.id,
+      payload: { isPinned: !note.isPinned },
+    });
+  };
+
+  const handleMoveOpen = () => {
+    if (!note) return;
+    const availableFolders = (foldersQuery.data ?? []).filter((folder) => folder.id !== note.folderId);
+    if (availableFolders.length === 0) {
+      Alert.alert("No folders", "Create a folder first.");
+      return;
+    }
+    setIsMoveOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!note) return;
+    await deleteNoteMutation.mutateAsync(note.id);
+    setIsDeleteConfirmOpen(false);
+    navigation.goBack();
+  };
+
+  const moveItems: (ContextMenuItem | "separator")[] = ((foldersQuery.data ?? []).filter(
+    (folder) => folder.id !== note?.folderId,
+  )).map((folder) => ({
+    label: folder.name,
+    onPress: () => {
+      if (!note) return;
+      void updateNoteMutation.mutateAsync({
+        noteId: note.id,
+        payload: { folderId: folder.id },
+      });
+      setIsMoveOpen(false);
+      setMenuAnchor(null);
+    },
+  }));
+
 
   return (
     <ScreenContainer className="bg-black">
       <View className="bg-black px-2 pt-4 pb-2">
+        <View className="flex-row items-center justify-between">
         <Pressable
           onPress={async () => {
             if (isLeavingRef.current) return;
@@ -167,6 +220,17 @@ export function NoteEditorScreen() {
           <ChevronLeft size={20} color="#eab308" />
           <Text className="ml-0.5 text-sm font-medium text-accent">Back</Text>
         </Pressable>
+          <Pressable
+            onPress={(event) => {
+              setMenuAnchor({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
+              setIsMenuOpen(true);
+            }}
+            className="rounded-md px-2 py-1"
+            hitSlop={12}
+          >
+            <Ellipsis size={20} color="#eab308" />
+          </Pressable>
+        </View>
       </View>
 
       <View className="flex-1">
@@ -177,6 +241,47 @@ export function NoteEditorScreen() {
           timestamp={note?.updatedAt || note?.createdAt}
         />
       </View>
+
+      <NoteContextMenu
+        visible={isMenuOpen}
+        note={note ?? null}
+        anchor={menuAnchor}
+        onClose={() => {
+          setIsMenuOpen(false);
+        }}
+        onPin={() => {
+          void handlePinToggle();
+        }}
+        onMove={() => {
+          handleMoveOpen();
+        }}
+        onDelete={() => {
+          setIsDeleteConfirmOpen(true);
+        }}
+      />
+
+      <ContextMenu
+        visible={isMoveOpen}
+        anchor={menuAnchor}
+        title="Move to Folder"
+        items={moveItems}
+        onClose={() => {
+          setIsMoveOpen(false);
+          setMenuAnchor(null);
+        }}
+      />
+
+      <ConfirmDialog
+        visible={isDeleteConfirmOpen}
+        title="Delete Note"
+        description="Are you sure you want to delete this note?"
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          void handleDeleteConfirm();
+        }}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+      />
     </ScreenContainer>
   );
 }

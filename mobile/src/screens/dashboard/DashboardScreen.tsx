@@ -6,7 +6,7 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { Search, Plus } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
-import { FolderList, NoteList, NoteContextMenu, FolderContextMenu } from "@/components/notes";
+import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, RenameFolderModal } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData } from "@/hooks";
@@ -24,6 +24,8 @@ export function DashboardScreen() {
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [folderToRename, setFolderToRename] = useState<Folder | null>(null);
   const [noteToMove, setNoteToMove] = useState<Note | null>(null);
 
   const handleCreateNote = async () => {
@@ -40,7 +42,7 @@ export function DashboardScreen() {
   };
 
   const handleDeleteNote = async (note: Note) => {
-    await dashboard.deleteNote(note.id);
+    setNoteToDelete(note);
   };
 
   const handleMoveNote = (_note: Note) => {
@@ -55,6 +57,18 @@ export function DashboardScreen() {
     if (!folderToDelete) return;
     await dashboard.deleteFolder(folderToDelete.id);
     setFolderToDelete(null);
+  };
+
+  const handleConfirmDeleteNote = async () => {
+    if (!noteToDelete) return;
+    await dashboard.deleteNote(noteToDelete.id);
+    setNoteToDelete(null);
+  };
+
+  const handleRenameFolder = async (name: string) => {
+    if (!folderToRename) return;
+    await dashboard.renameFolder(folderToRename.id, name);
+    setFolderToRename(null);
   };
 
   const moveTargets = dashboard.folders.filter((folder) => folder.id !== noteToMove?.folderId);
@@ -153,8 +167,10 @@ export function DashboardScreen() {
           setMenuFolder(null);
           setMenuAnchor(null);
         }}
-        onRename={() => {
-          Alert.alert("Not yet", "Rename folder will be added next.");
+        onRename={(folder) => {
+          setFolderToRename(folder);
+          setMenuFolder(null);
+          setMenuAnchor(null);
         }}
         onDelete={(folder) => {
           setFolderToDelete(folder);
@@ -182,6 +198,24 @@ export function DashboardScreen() {
         destructive
         onConfirm={handleDeleteFolder}
         onCancel={() => setFolderToDelete(null)}
+      />
+
+      <ConfirmDialog
+        visible={!!noteToDelete}
+        title="Delete Note"
+        description="Are you sure you want to delete this note?"
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleConfirmDeleteNote}
+        onCancel={() => setNoteToDelete(null)}
+      />
+
+      <RenameFolderModal
+        visible={!!folderToRename}
+        initialName={folderToRename?.name ?? ""}
+        loading={dashboard.isRenamingFolder}
+        onCancel={() => setFolderToRename(null)}
+        onSave={handleRenameFolder}
       />
     </ScreenContainer>
   );
