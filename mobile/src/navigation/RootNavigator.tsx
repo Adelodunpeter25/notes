@@ -51,6 +51,7 @@ function MainNavigator() {
 }
 
 export function RootNavigator() {
+  const token = useAuthStore((state) => state.token);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -59,41 +60,42 @@ export function RootNavigator() {
   useEffect(() => {
     let active = true;
 
-    // Safety fallback to hide loading screen if bootstrap hangs
-    const timeout = setTimeout(() => {
-      if (active) {
-        setIsBootstrappingAuth(false);
-      }
-    }, 5000);
-
     async function bootstrapAuth() {
       try {
-        // 1. Wait for AsyncStorage to load into Zustand
+        // 1. Force rehydrate from persistent storage
         await useAuthStore.persist.rehydrate();
 
-        const token = useAuthStore.getState().token;
-        if (!token) {
-          if (active) setIsBootstrappingAuth(false);
-          return;
+        const existingToken = useAuthStore.getState().token;
+        const existingUser = useAuthStore.getState().user;
+
+        // Optimistically hide loading screen if we have valid-looking data
+        if (active && existingToken && existingUser) {
+          setIsBootstrappingAuth(false);
         }
 
-        // 2. Validate token with server
-        const response = await apiClient.instance.get<AuthUser>("/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (existingToken) {
+          try {
+            // 2. Validate token and get fresh user data
+            const response = await apiClient.instance.get<AuthUser>("/auth/me", {
+              headers: { Authorization: `Bearer ${existingToken}` },
+              timeout: 5000,
+            });
 
-        if (active) {
-          setAuth({ token, user: response.data });
+            if (active) {
+              setAuth({ token: existingToken, user: response.data });
+            }
+          } catch (error: any) {
+            // ONLY clear if the server explicitly tells us the token is dead
+            if (error?.status === 401) {
+              clearAuth();
+            }
+          }
         }
-      } catch (error: any) {
-        // Only clear if server says token is invalid (401)
-        if (error?.status === 401) {
-          clearAuth();
-        }
+      } catch (err) {
+        console.error("Bootstrap error:", err);
       } finally {
         if (active) {
           setIsBootstrappingAuth(false);
-          clearTimeout(timeout);
         }
       }
     }
@@ -102,7 +104,6 @@ export function RootNavigator() {
 
     return () => {
       active = false;
-      clearTimeout(timeout);
     };
   }, [clearAuth, setAuth]);
 
@@ -114,9 +115,13 @@ export function RootNavigator() {
     );
   }
 
+  // Source of truth: Do we have a token? If yes, show the app.
+  // /auth/me will kick them out later if the token is invalid.
+  const isUserAuthenticated = isAuthenticated || !!token;
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+      {isUserAuthenticated ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }
