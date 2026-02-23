@@ -42,7 +42,7 @@ export function ResizableLayout({
   rightPanel,
 }: ResizableLayoutProps) {
   const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
-  const leftDefaultSize = leftPanel?.defaultSize ?? 24;
+  const leftDefaultSize = leftPanel?.defaultSize ?? 20;
 
   useEffect(() => {
     if (!leftPanelRef.current) {
@@ -107,9 +107,9 @@ export function ResizableLayout({
       {center && (
         <Panel
           id="panel-center"
-          defaultSize={centerPanel?.defaultSize ?? 28}
+          defaultSize={centerPanel?.defaultSize ?? 25}
           minSize={centerPanel?.minSize ?? 20}
-          maxSize={leftCollapsed ? (centerPanel?.defaultSize ?? 28) : (centerPanel?.maxSize ?? 40)}
+          maxSize={centerPanel?.maxSize}
           className={panelClassName(centerPanel?.className)}
         >
           {center}
@@ -124,7 +124,7 @@ export function ResizableLayout({
         <Panel
           id="panel-right"
           defaultSize={rightPanel?.defaultSize ?? 55}
-          minSize={rightPanel?.minSize ?? 35}
+          minSize={rightPanel?.minSize ?? 30}
           maxSize={rightPanel?.maxSize}
           className={panelClassName(rightPanel?.className)}
         >
