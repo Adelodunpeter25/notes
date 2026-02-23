@@ -1,26 +1,15 @@
-import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
 import type { AppStackParamList, AuthStackParamList } from "./types";
 import { LoginScreen, SignupScreen } from "@/screens/auth";
 import { DashboardScreen } from "@/screens/dashboard";
 import { useAuthStore } from "@/stores/authStore";
+import { colors } from "@/theme/colors";
+import { navigationTheme } from "@/theme/navigationTheme";
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 const AppStack = createStackNavigator<AppStackParamList>();
-
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: "#1e1e1e",
-    card: "#252525",
-    border: "#3e3e3e",
-    text: "#ffffff",
-    primary: "#eab308",
-    notification: "#eab308",
-  },
-};
 
 function AuthNavigator() {
   return (
@@ -28,7 +17,7 @@ function AuthNavigator() {
       initialRouteName="Login"
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: "#1e1e1e" },
+        cardStyle: { backgroundColor: colors.background },
       }}
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
@@ -42,7 +31,7 @@ function MainNavigator() {
     <AppStack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: "#1e1e1e" },
+        cardStyle: { backgroundColor: colors.background },
       }}
     >
       <AppStack.Screen name="Dashboard" component={DashboardScreen} />
@@ -54,7 +43,7 @@ export function RootNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer theme={navigationTheme}>
       {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
