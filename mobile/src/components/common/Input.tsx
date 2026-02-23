@@ -25,7 +25,7 @@ export function Input({
             <TextInput
                 placeholderTextColor="#636366"
                 className={cn(
-                    "bg-surface border border-border px-4 py-3 rounded-xl text-text text-[16px] transition-colors focus:border-accent",
+                    "bg-surface border border-border px-4 py-3 rounded-xl text-text text-[16px]",
                     error && "border-red-500",
                     className
                 )}
