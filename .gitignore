@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Node / Bun
+node_modules/
+dist/
+.bun/
+
+# Tauri / Rust
+target/
+**/target/
+
+# Go build caches
+server/.gocache/
+server/.gomodcache/
+
+# Editors
+.idea/
+.vscode/
+
