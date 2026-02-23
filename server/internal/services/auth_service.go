@@ -21,6 +21,7 @@ var (
 type AuthService interface {
 	Signup(payload schemas.SignupRequest) (schemas.AuthResponse, error)
 	Login(payload schemas.LoginRequest) (schemas.AuthResponse, error)
+	Me(userID string) (schemas.AuthUser, error)
 }
 
 type GormAuthService struct {
@@ -110,5 +111,18 @@ func (service *GormAuthService) buildAuthResponse(user models.User) (schemas.Aut
 			Name:  user.Name,
 			Email: user.Email,
 		},
+	}, nil
+}
+
+func (service *GormAuthService) Me(userID string) (schemas.AuthUser, error) {
+	var user models.User
+	if err := service.db.Select("id", "name", "email").Where("id = ?", userID).First(&user).Error; err != nil {
+		return schemas.AuthUser{}, err
+	}
+
+	return schemas.AuthUser{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
 	}, nil
 }

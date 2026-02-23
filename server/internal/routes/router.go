@@ -24,7 +24,7 @@ func NewRouter(cfg config.Config, poller *db.HealthPoller, conn *gorm.DB) http.H
 	folderService := services.NewGormFolderService(conn)
 
 	RegisterHealthRoutes(r, poller)
-	RegisterAuthRoutes(r, authService)
+	RegisterAuthRoutes(r, authService, cfg.JWTSecret)
 	RegisterNoteRoutes(r, noteService, cfg.JWTSecret)
 	RegisterFolderRoutes(r, folderService, cfg.JWTSecret)
 
