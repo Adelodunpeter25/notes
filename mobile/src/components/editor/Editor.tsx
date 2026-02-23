@@ -30,14 +30,14 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
   }, []);
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-black">
       <ScrollView
         className="flex-1"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ flexGrow: 1 }}
       >
         {timestamp && (
-          <View className="pt-4 pb-2 items-center">
+          <View className="pt-2 pb-2 items-center">
             <Text className="text-[13px] font-medium text-textMuted uppercase tracking-wider">
               {formatNoteDateTime(timestamp)}
             </Text>
@@ -53,7 +53,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           }}
           placeholder={placeholder}
           editorStyle={{
-            backgroundColor: "#1e1e1e",
+            backgroundColor: "#000000",
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px; color: white;",
