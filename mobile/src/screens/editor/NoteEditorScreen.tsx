@@ -133,7 +133,7 @@ export function NoteEditorScreen() {
 
   return (
     <ScreenContainer>
-      <View className="px-4 pt-0 pb-2">
+      <View className="px-4 pt-6 pb-4">
         <Pressable
           onPress={() => {
             isLeavingRef.current = true;
