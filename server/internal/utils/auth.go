@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,6 +40,10 @@ func GenerateAuthToken(secret, userID, email string) (string, error) {
 	claims := AuthClaims{
 		UserID: userID,
 		Email:  email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:       uuid.NewString(),
+			IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
