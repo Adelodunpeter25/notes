@@ -172,7 +172,8 @@ export const getTiptapHtml = (initialContent: string) => `
                 const message = JSON.parse(event.data);
                 if (message.type === 'SET_CONTENT') {
                     isInternalUpdate = true;
-                    editor.commands.setContent(message.content, false);
+                    const decodedContent = decodeURIComponent(message.content);
+                    editor.commands.setContent(decodedContent, false);
                     isInternalUpdate = false;
                 } else if (message.type === 'TOGGLE_BOLD') {
                     editor.chain().focus().toggleBold().run();
