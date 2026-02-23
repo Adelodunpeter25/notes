@@ -12,21 +12,30 @@ type EditorProps = {
 
 export function Editor({ value, onChange, placeholder = "Start writing..." }: EditorProps) {
   const webViewRef = useRef<WebView>(null);
+  const isReady = useRef(false);
   const lastContent = useRef(value);
 
-  // Sync value prop from parent to WebView (only if it significantly differs from our cache)
+  // Initialize source once to prevent reloading the WebView when value changes
+  const source = React.useMemo(() => ({ html: getTiptapHtml("") }), []);
+
+  // Sync value prop from parent to WebView
   useEffect(() => {
-    if (value !== lastContent.current && webViewRef.current) {
+    if (isReady.current && value !== lastContent.current && webViewRef.current) {
       lastContent.current = value;
-      const message = JSON.stringify({ type: "SET_CONTENT", content: value });
-      webViewRef.current.postMessage(message);
+      webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: value }));
     }
   }, [value]);
 
   const onMessage = (event: WebViewMessageEvent) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === "UPDATE") {
+      if (data.type === "READY") {
+        isReady.current = true;
+        // Send initial content once ready
+        if (value && webViewRef.current) {
+          webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: value }));
+        }
+      } else if (data.type === "UPDATE") {
         lastContent.current = data.content;
         onChange(data.content);
       }
@@ -37,21 +46,20 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
 
   const handleAction = (type: string) => {
     if (webViewRef.current) {
-      const message = JSON.stringify({ type });
-      webViewRef.current.postMessage(message);
+      webViewRef.current.postMessage(JSON.stringify({ type }));
     }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior="padding"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       className="flex-1"
     >
       <View className="flex-1 bg-background overflow-hidden">
         <WebView
           ref={webViewRef}
           originWhitelist={["*"]}
-          source={{ html: getTiptapHtml(value) }}
+          source={source}
           onMessage={onMessage}
           scrollEnabled={true}
           className="flex-1 bg-background"
@@ -59,6 +67,8 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
           keyboardDisplayRequiresUserAction={false}
           textInteractionEnabled={true}
           hideKeyboardAccessoryView={true}
+          domStorageEnabled={true}
+          javaScriptEnabled={true}
         />
         <EditorToolbar onAction={handleAction} />
       </View>

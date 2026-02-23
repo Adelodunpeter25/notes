@@ -5,7 +5,10 @@ export const getTiptapHtml = (initialContent: string) => `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tiptap Editor</title>
-    <script src="https://unpkg.com/@tiptap/standalone@2.2.4/dist/index.js"></script>
+    <script 
+        src="https://unpkg.com/@tiptap/standalone@2.2.4/dist/index.js"
+        onerror="window.ReactNativeWebView.postMessage(JSON.stringify({type:'ERROR', message:'Failed to load Tiptap script'}))"
+    ></script>
     <style>
         body {
             margin: 0;
@@ -126,6 +129,8 @@ export const getTiptapHtml = (initialContent: string) => `
     <script>
         const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Link } = Tiptap;
 
+        let isInternalUpdate = false;
+
         const editor = new Editor({
             element: document.querySelector('#editor'),
             extensions: [
@@ -146,8 +151,9 @@ export const getTiptapHtml = (initialContent: string) => `
                     placeholder: 'Start writing...',
                 }),
             ],
-            content: \`${initialContent}\`,
             onUpdate: ({ editor }) => {
+                if (isInternalUpdate) return;
+                
                 const html = editor.getHTML();
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'UPDATE',
@@ -165,7 +171,9 @@ export const getTiptapHtml = (initialContent: string) => `
             try {
                 const message = JSON.parse(event.data);
                 if (message.type === 'SET_CONTENT') {
+                    isInternalUpdate = true;
                     editor.commands.setContent(message.content, false);
+                    isInternalUpdate = false;
                 } else if (message.type === 'TOGGLE_BOLD') {
                     editor.chain().focus().toggleBold().run();
                 } else if (message.type === 'TOGGLE_ITALIC') {
