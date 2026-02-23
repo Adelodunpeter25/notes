@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { NoteEditor, NotesList, FoldersSidebar } from "@/components/notes";
 import { ResizableLayout } from "@/components/common";
 import { SearchResultsPage } from "./SearchResultsPage";
@@ -5,10 +7,22 @@ import {
   useDashboardData,
   useDashboardSelection,
 } from "@/hooks";
+import { useKeyboardShortcutsStore } from "@/stores";
 
 export function DashboardPage() {
   const selection = useDashboardSelection();
   const data = useDashboardData(selection);
+  const setNewNoteHandler = useKeyboardShortcutsStore((state) => state.setNewNoteHandler);
+
+  useEffect(() => {
+    setNewNoteHandler(() => {
+      void data.createNote();
+    });
+
+    return () => {
+      setNewNoteHandler(null);
+    };
+  }, [data.createNote, setNewNoteHandler]);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">
