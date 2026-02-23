@@ -8,3 +8,4 @@ export * from "./useDashboardData";
 export * from "./useDashboardNotes";
 export * from "./useKeyboardShortcuts";
 export * from "./useSearch";
+export * from "./useWindowSizePersist";
