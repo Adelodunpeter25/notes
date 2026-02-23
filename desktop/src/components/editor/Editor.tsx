@@ -90,8 +90,14 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                     const text = event.clipboardData?.getData("text/plain")?.trim();
                     if (!text) return false;
 
-                    // If the entire pasted text is exactly a valid URL
-                    const isUrl = /^(https?:\/\/[\w\-\.]+\.[a-zA-Z]{2,}|www\.[\w\-\.]+\.[a-zA-Z]{2,})(?:\/[\w\-\.\/\?=&%#+]*)?$/i.test(text);
+                    let isUrl = false;
+                    try {
+                        const parsed = new URL(/^www\./i.test(text) ? `https://${text}` : text);
+                        isUrl = ['http:', 'https:'].includes(parsed.protocol) && parsed.hostname.includes('.');
+                    } catch {
+                        isUrl = false;
+                    }
+
                     if (isUrl) {
                         event.preventDefault();
                         const href = /^www\./i.test(text) ? `https://${text}` : text;
