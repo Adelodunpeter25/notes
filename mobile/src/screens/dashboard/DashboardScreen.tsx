@@ -50,13 +50,16 @@ export function DashboardScreen() {
             <View className="px-4 py-3">
               <Text className="text-base font-semibold text-text">All Notes</Text>
             </View>
-            <NoteList
-              notes={notesQuery.data ?? []}
-              isLoading={notesQuery.isLoading}
-              emptyText="No notes yet."
-            />
-          </View>
-        )}
+          <NoteList
+            notes={notesQuery.data ?? []}
+            isLoading={notesQuery.isLoading}
+            emptyText="No notes yet."
+            onSelectNote={(note) => {
+              navigation.navigate("Editor", { noteId: note.id });
+            }}
+          />
+        </View>
+      )}
       </View>
       <BottomBar activeTab={activeTab} onChangeTab={setActiveTab} />
     </ScreenContainer>

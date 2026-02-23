@@ -38,6 +38,9 @@ export function FolderDetailsScreen() {
           notes={notesQuery.data ?? []}
           isLoading={notesQuery.isLoading}
           emptyText="No notes in this folder."
+          onSelectNote={(note) => {
+            navigation.navigate("Editor", { noteId: note.id });
+          }}
         />
       </View>
     </ScreenContainer>

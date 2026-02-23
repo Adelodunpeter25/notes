@@ -5,7 +5,7 @@ import { cn } from "@/utils/cn";
 
 interface ListItemProps {
     title: string;
-    subtitle?: string;
+    subtitle?: React.ReactNode;
     icon?: React.ReactNode;
     count?: number;
     onPress: () => void;
@@ -39,9 +39,13 @@ export function ListItem({
                 <View className="flex-1">
                     <Text className="text-[17px] font-medium text-text">{title}</Text>
                     {subtitle && (
-                        <Text className="text-[14px] text-textMuted mt-0.5" numberOfLines={1}>
-                            {subtitle}
-                        </Text>
+                        typeof subtitle === "string" ? (
+                            <Text className="text-[14px] text-textMuted mt-0.5" numberOfLines={1}>
+                                {subtitle}
+                            </Text>
+                        ) : (
+                            <View className="mt-0.5">{subtitle}</View>
+                        )
                     )}
                 </View>
             </View>

@@ -3,6 +3,7 @@ import { Pin } from "lucide-react-native";
 
 import type { Note } from "@shared/notes";
 import { ListItem, Skeleton } from "@/components/common";
+import { EditorPreview } from "@/components/editor";
 
 type NoteListProps = {
   notes: Note[];
@@ -10,13 +11,6 @@ type NoteListProps = {
   emptyText?: string;
   onSelectNote?: (note: Note) => void;
 };
-
-function previewFromHtml(content: string): string {
-  return content
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 export function NoteList({
   notes,
@@ -48,12 +42,11 @@ export function NoteList({
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => {
         const title = item.title?.trim() || "Untitled";
-        const preview = previewFromHtml(item.content || "");
 
         return (
           <ListItem
             title={title}
-            subtitle={preview}
+            subtitle={<EditorPreview content={item.content || ""} />}
             icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
             onPress={() => onSelectNote?.(item)}
             showChevron={false}
