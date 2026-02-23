@@ -145,7 +145,7 @@ export function NoteEditorScreen() {
 
   return (
     <ScreenContainer className="bg-black">
-      <View className="bg-black px-2 pt-2 pb-1">
+      <View className="bg-black px-2 pt-4 pb-2">
         <Pressable
           onPress={async () => {
             if (isLeavingRef.current) return;
