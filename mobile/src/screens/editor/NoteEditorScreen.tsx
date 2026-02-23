@@ -149,7 +149,7 @@ export function NoteEditorScreen() {
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-text">{headerTitle}</Text>
+        <Text className="text-lg font-semibold text-text" numberOfLines={1}>{headerTitle}</Text>
       </View>
 
       <View className="flex-1">

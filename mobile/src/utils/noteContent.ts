@@ -32,7 +32,8 @@ function getMeaningfulLines(text: string): string[] {
 
 export function deriveNoteTitleFromHtml(html: string): string {
   const lines = getMeaningfulLines(htmlToPlainText(html));
-  return lines[0] || "Untitled";
+  const title = lines[0] || "Untitled";
+  return title.length > 100 ? title.substring(0, 100) + "..." : title;
 }
 
 export function deriveNotePreviewFromHtml(html: string): string {
