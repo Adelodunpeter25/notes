@@ -111,10 +111,6 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                 },
                 click: (_view, event) => {
                     const mouseEvent = event as MouseEvent;
-                    const isModifierPressed = mouseEvent.metaKey || mouseEvent.ctrlKey;
-                    if (!isModifierPressed) {
-                        return false;
-                    }
 
                     const target = mouseEvent.target as Node | null;
                     const element =
@@ -123,7 +119,15 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                             : (target?.parentElement ?? null);
                     const anchor = element?.closest("a[href]") as HTMLAnchorElement | null;
                     const href = (anchor?.getAttribute("href") || "").trim();
+
                     if (!anchor || !href) {
+                        return false;
+                    }
+
+                    const isModifierPressed = mouseEvent.metaKey || mouseEvent.ctrlKey;
+                    if (!isModifierPressed) {
+                        // Prevent the browser from natively opening the href on regular clicks
+                        mouseEvent.preventDefault();
                         return false;
                     }
 
