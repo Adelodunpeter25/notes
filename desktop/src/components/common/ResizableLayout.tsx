@@ -43,18 +43,30 @@ export function ResizableLayout({
 }: ResizableLayoutProps) {
   const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
   const leftDefaultSize = leftPanel?.defaultSize ?? 20;
+  const hasCenterPanel = Boolean(center);
+  const hasRightPanel = Boolean(right);
 
   useEffect(() => {
     if (!leftPanelRef.current) {
       return;
     }
 
-    if (leftCollapsed) {
-      leftPanelRef.current.collapse();
-    } else {
-      leftPanelRef.current.expand();
-    }
-  }, [leftCollapsed]);
+    const frame = window.requestAnimationFrame(() => {
+      if (!leftPanelRef.current) {
+        return;
+      }
+
+      if (leftCollapsed) {
+        leftPanelRef.current.collapse();
+      } else {
+        leftPanelRef.current.expand();
+      }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [leftCollapsed, hasCenterPanel, hasRightPanel]);
 
   return (
     <Group
