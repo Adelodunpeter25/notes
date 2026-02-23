@@ -1,7 +1,7 @@
 import "@/theme/global.css";
 import "react-native-gesture-handler";
 import React, { useEffect } from "react";
-import { View, Text, Platform } from "react-native";
+import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -10,6 +10,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import { cssInterop } from "nativewind";
 
 import { queryClient } from "@/api/queryClient";
+import { RootNavigator } from "@/navigation";
 
 // Fix for className on SafeAreaView
 cssInterop(SafeAreaView, { className: "style" });
@@ -27,14 +28,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <SafeAreaView className="flex-1 bg-surface">
-            <View className="flex-1 items-center justify-center bg-background">
-              <Text className="text-3xl font-bold text-accent">
-                Notes App
-              </Text>
-              <Text className="mt-2 text-textMuted">
-                Mobile development started!
-              </Text>
-            </View>
+            <RootNavigator />
             <StatusBar style="light" backgroundColor="#252525" />
           </SafeAreaView>
         </SafeAreaProvider>
