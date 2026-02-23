@@ -6,13 +6,19 @@ export function deriveNoteTitleFromHtml(content: string): string {
   }
 
   const doc = new DOMParser().parseFromString(content, "text/html");
-  const text = (doc.body.textContent || "").trim();
-  const firstLine = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
+  const blockElements = doc.querySelectorAll(
+    "h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, code, div",
+  );
 
-  return firstLine || "Untitled";
+  for (const element of Array.from(blockElements)) {
+    const text = (element.textContent || "").replace(/\u00a0/g, " ").trim();
+    if (text) {
+      return text;
+    }
+  }
+
+  const fallbackText = (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
+  return fallbackText || "Untitled";
 }
 
 export function hasMeaningfulHtmlContent(content: string): boolean {
@@ -34,4 +40,3 @@ export function isEmptyDraftNote(note: Pick<Note, "title" | "content" | "isPinne
 
   return !note.isPinned && !hasContent && (normalizedTitle === "" || normalizedTitle === "Untitled");
 }
-
