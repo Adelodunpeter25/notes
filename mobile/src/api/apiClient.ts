@@ -4,15 +4,13 @@ import axios, {
     type AxiosRequestConfig,
     type AxiosResponse,
 } from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuthStore } from "@/stores/authStore";
 
 import type { ApiError, ApiErrorPayload } from "@shared/api";
 
 // For Android emulator, use 10.0.2.2 instead of localhost
 // For real devices, replace with your computer's local IP (e.g., 192.168.1.5)
 const API_BASE_URL = "http://10.0.2.2:8000/api";
-
-const AUTH_TOKEN_STORAGE_KEY = "notes_access_token";
 
 const instance: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,
@@ -22,8 +20,8 @@ const instance: AxiosInstance = axios.create({
     timeout: 15000,
 });
 
-instance.interceptors.request.use(async (config) => {
-    const token = await AsyncStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+instance.interceptors.request.use((config) => {
+    const token = useAuthStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,7 +32,7 @@ instance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError<ApiErrorPayload>) => {
         if (error.response?.status === 401) {
-            await AsyncStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+            useAuthStore.getState().clearAuth();
         }
 
         const normalizedError: ApiError = {
@@ -50,13 +48,6 @@ instance.interceptors.response.use(
         return Promise.reject(normalizedError);
     },
 );
-
-export const authStorage = {
-    tokenKey: AUTH_TOKEN_STORAGE_KEY,
-    getToken: async (): Promise<string | null> => await AsyncStorage.getItem(AUTH_TOKEN_STORAGE_KEY),
-    setToken: async (token: string): Promise<void> => await AsyncStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token),
-    clearToken: async (): Promise<void> => await AsyncStorage.removeItem(AUTH_TOKEN_STORAGE_KEY),
-};
 
 const unwrapResponse = <T>(response: AxiosResponse<T>): T => response.data;
 
