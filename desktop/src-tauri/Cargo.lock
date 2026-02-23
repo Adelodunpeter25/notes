@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "Notes"
+version = "0.1.0"
+dependencies = [
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-shell",
+ "tauri-plugin-window-state",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1830,16 +1840,6 @@ name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
-
-[[package]]
-name = "notes"
-version = "0.1.0"
-dependencies = [
- "tauri",
- "tauri-build",
- "tauri-plugin-shell",
- "tauri-plugin-window-state",
-]
 
 [[package]]
 name = "num-conv"
