@@ -4,12 +4,25 @@ import { useKeyboardShortcutsStore } from "@/stores";
 
 export function useKeyboardShortcuts() {
   const triggerNewNote = useKeyboardShortcutsStore((state) => state.triggerNewNote);
+  const triggerNewFolder = useKeyboardShortcutsStore((state) => state.triggerNewFolder);
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
+      const hasMetaOrCtrl = event.metaKey || event.ctrlKey;
       const isNewNoteShortcut =
-        (event.metaKey || event.ctrlKey) &&
+        hasMetaOrCtrl &&
+        !event.shiftKey &&
         event.key.toLowerCase() === "n";
+      const isNewFolderShortcut =
+        hasMetaOrCtrl &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "n";
+
+      if (isNewFolderShortcut) {
+        event.preventDefault();
+        triggerNewFolder();
+        return;
+      }
 
       if (!isNewNoteShortcut) {
         return;
@@ -23,6 +36,5 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener("keydown", handleKeydown);
     };
-  }, [triggerNewNote]);
+  }, [triggerNewFolder, triggerNewNote]);
 }
-

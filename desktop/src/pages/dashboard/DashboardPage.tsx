@@ -13,6 +13,7 @@ export function DashboardPage() {
   const selection = useDashboardSelection();
   const data = useDashboardData(selection);
   const setNewNoteHandler = useKeyboardShortcutsStore((state) => state.setNewNoteHandler);
+  const setNewFolderHandler = useKeyboardShortcutsStore((state) => state.setNewFolderHandler);
 
   useEffect(() => {
     setNewNoteHandler(() => {
@@ -23,6 +24,16 @@ export function DashboardPage() {
       setNewNoteHandler(null);
     };
   }, [data.createNote, setNewNoteHandler]);
+
+  useEffect(() => {
+    setNewFolderHandler(() => {
+      void data.createFolder();
+    });
+
+    return () => {
+      setNewFolderHandler(null);
+    };
+  }, [data.createFolder, setNewFolderHandler]);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">
