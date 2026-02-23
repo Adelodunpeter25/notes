@@ -53,7 +53,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           }}
           placeholder={placeholder}
           editorStyle={{
-            backgroundColor: "#1c1c1e",
+            backgroundColor: "#1e1e1e",
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px; color: white;",
