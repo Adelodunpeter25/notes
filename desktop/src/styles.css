@@ -116,12 +116,18 @@
   @apply my-6 border-border;
 }
 
-.ProseMirror a {
+.ProseMirror a,
+.ProseMirror * a {
   @apply transition-colors cursor-text text-accent !important;
   text-decoration-color: #eab308 !important;
   /* Force yellow decoration */
   color: #eab308 !important;
   /* Force yellow text */
+}
+
+.ProseMirror strong a,
+.ProseMirror a strong {
+  color: #eab308 !important;
 }
 
 .editor-modifier-active .ProseMirror a {
