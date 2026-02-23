@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, View } from "react-native";
+import { TouchableOpacity, Text, View, type GestureResponderEvent } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import { cn } from "@/utils/cn";
 
@@ -9,7 +9,7 @@ interface ListItemProps {
     icon?: React.ReactNode;
     count?: number;
     onPress: () => void;
-    onLongPress?: () => void;
+    onLongPress?: (event: GestureResponderEvent) => void;
     className?: string;
     showChevron?: boolean;
     isActive?: boolean;
@@ -30,6 +30,7 @@ export function ListItem({
         <TouchableOpacity
             onPress={onPress}
             onLongPress={onLongPress}
+            delayLongPress={220}
             activeOpacity={0.6}
             className={cn(
                 "flex-row items-center justify-between py-3.5 px-4 border-b border-border/50",

@@ -7,7 +7,7 @@ import { Search, Plus } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu } from "@/components/notes";
-import { ConfirmDialog } from "@/components/common";
+import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
@@ -22,7 +22,9 @@ export function DashboardScreen() {
   const dashboard = useDashboardData();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [noteToMove, setNoteToMove] = useState<Note | null>(null);
 
   const handleCreateNote = async () => {
     try {
@@ -42,7 +44,11 @@ export function DashboardScreen() {
   };
 
   const handleMoveNote = (_note: Note) => {
-    Alert.alert("Not yet", "Move to folder will be added next.");
+    if (dashboard.folders.filter((folder) => folder.id !== _note.folderId).length === 0) {
+      Alert.alert("No folders", "Create a folder first.");
+      return;
+    }
+    setNoteToMove(_note);
   };
 
   const handleDeleteFolder = async () => {
@@ -50,6 +56,17 @@ export function DashboardScreen() {
     await dashboard.deleteFolder(folderToDelete.id);
     setFolderToDelete(null);
   };
+
+  const moveTargets = dashboard.folders.filter((folder) => folder.id !== noteToMove?.folderId);
+  const moveItems: (ContextMenuItem | "separator")[] = moveTargets.map((folder) => ({
+    label: folder.name,
+    onPress: () => {
+      if (!noteToMove) return;
+      void dashboard.saveNote(noteToMove.id, { folderId: folder.id });
+      setNoteToMove(null);
+      setMenuAnchor(null);
+    },
+  }));
 
   return (
     <ScreenContainer>
@@ -72,7 +89,10 @@ export function DashboardScreen() {
               onRefresh={() => {
                 void dashboard.refetchFolders();
               }}
-              onLongPressFolder={(folder) => setMenuFolder(folder)}
+              onLongPressFolder={(folder, event) => {
+                setMenuAnchor({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
+                setMenuFolder(folder);
+              }}
               onSelectFolder={(folder) => {
                 navigation.navigate("FolderDetails", {
                   folderId: folder.id,
@@ -94,7 +114,10 @@ export function DashboardScreen() {
               onSelectNote={(note) => {
                 navigation.navigate("Editor", { noteId: note.id });
               }}
-              onLongPressNote={(note) => setMenuNote(note)}
+              onLongPressNote={(note, event) => {
+                setMenuAnchor({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
+                setMenuNote(note);
+              }}
             />
           </View>
         )}
@@ -113,7 +136,10 @@ export function DashboardScreen() {
       <NoteContextMenu
         visible={!!menuNote}
         note={menuNote}
-        onClose={() => setMenuNote(null)}
+        anchor={menuAnchor}
+        onClose={() => {
+          setMenuNote(null);
+        }}
         onPin={handlePinNote}
         onMove={handleMoveNote}
         onDelete={handleDeleteNote}
@@ -122,13 +148,29 @@ export function DashboardScreen() {
       <FolderContextMenu
         visible={!!menuFolder}
         folder={menuFolder}
-        onClose={() => setMenuFolder(null)}
+        anchor={menuAnchor}
+        onClose={() => {
+          setMenuFolder(null);
+          setMenuAnchor(null);
+        }}
         onRename={() => {
           Alert.alert("Not yet", "Rename folder will be added next.");
         }}
         onDelete={(folder) => {
           setFolderToDelete(folder);
           setMenuFolder(null);
+          setMenuAnchor(null);
+        }}
+      />
+
+      <ContextMenu
+        visible={!!noteToMove}
+        anchor={menuAnchor}
+        title="Move to Folder"
+        items={moveItems}
+        onClose={() => {
+          setNoteToMove(null);
+          setMenuAnchor(null);
         }}
       />
 

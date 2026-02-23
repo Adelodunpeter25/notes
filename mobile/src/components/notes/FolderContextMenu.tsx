@@ -6,6 +6,7 @@ import { Folder } from "@shared/folders";
 interface FolderContextMenuProps {
     visible: boolean;
     folder: Folder | null;
+    anchor?: { x: number; y: number } | null;
     onClose: () => void;
     onRename: (folder: Folder) => void;
     onDelete: (folder: Folder) => void;
@@ -14,6 +15,7 @@ interface FolderContextMenuProps {
 export function FolderContextMenu({
     visible,
     folder,
+    anchor,
     onClose,
     onRename,
     onDelete,
@@ -41,6 +43,7 @@ export function FolderContextMenu({
             onClose={onClose}
             items={items}
             title={folder.name}
+            anchor={anchor}
         />
     );
 }

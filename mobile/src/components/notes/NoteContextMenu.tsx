@@ -6,6 +6,7 @@ import { Note } from "@shared/notes";
 interface NoteContextMenuProps {
     visible: boolean;
     note: Note | null;
+    anchor?: { x: number; y: number } | null;
     onClose: () => void;
     onPin: (note: Note) => void;
     onMove: (note: Note) => void;
@@ -15,6 +16,7 @@ interface NoteContextMenuProps {
 export function NoteContextMenu({
     visible,
     note,
+    anchor,
     onClose,
     onPin,
     onMove,
@@ -48,6 +50,7 @@ export function NoteContextMenu({
             onClose={onClose}
             items={items}
             title={note.title || "Untitled Note"}
+            anchor={anchor}
         />
     );
 }

@@ -3,6 +3,7 @@ import { Folder as FolderIcon } from "lucide-react-native";
 
 import type { Folder } from "@shared/folders";
 import { ListItem, Skeleton } from "@/components/common";
+import type { GestureResponderEvent } from "react-native";
 
 type FolderListProps = {
   folders: Folder[];
@@ -10,7 +11,7 @@ type FolderListProps = {
   refreshing?: boolean;
   onRefresh?: () => void;
   onSelectFolder: (folder: Folder) => void;
-  onLongPressFolder?: (folder: Folder) => void;
+  onLongPressFolder?: (folder: Folder, event: GestureResponderEvent) => void;
 };
 
 export function FolderList({
@@ -51,7 +52,7 @@ export function FolderList({
           count={item.notesCount}
           icon={<FolderIcon size={18} color="#eab308" />}
           onPress={() => onSelectFolder(item)}
-          onLongPress={() => onLongPressFolder?.(item)}
+          onLongPress={(event) => onLongPressFolder?.(item, event)}
         />
       )}
     />

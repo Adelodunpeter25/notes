@@ -8,6 +8,7 @@ import { ListItem, Skeleton, ConfirmDialog } from "@/components/common";
 import { deriveNotePreviewFromHtml, deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { formatNoteDate } from "@/utils/formatDate";
 import { useDeleteNoteMutation } from "@/hooks";
+import type { GestureResponderEvent } from "react-native";
 
 type NoteListProps = {
   notes: Note[];
@@ -16,7 +17,7 @@ type NoteListProps = {
   onRefresh?: () => void;
   emptyText?: string;
   onSelectNote?: (note: Note) => void;
-  onLongPressNote?: (note: Note) => void;
+  onLongPressNote?: (note: Note, event: GestureResponderEvent) => void;
 };
 
 export function NoteList({
@@ -95,7 +96,7 @@ export function NoteList({
                 subtitle={`${dateStr} ${preview}`.trim()}
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
                 onPress={() => onSelectNote?.(item)}
-                onLongPress={() => onLongPressNote?.(item)}
+                onLongPress={(event) => onLongPressNote?.(item, event)}
                 showChevron={false}
               />
             </Swipeable>
