@@ -3,12 +3,12 @@ import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search } from "lucide-react-native";
+import { Search, Plus } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList } from "@/components/notes";
 import { BottomBar } from "@/components/layout";
-import { useFoldersQuery, useNotesQuery } from "@/hooks";
+import { useFoldersQuery, useNotesQuery, useCreateNoteMutation } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
@@ -18,6 +18,19 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<"notes" | "folders">("notes");
   const foldersQuery = useFoldersQuery();
   const notesQuery = useNotesQuery();
+  const createNoteMutation = useCreateNoteMutation();
+
+  const handleCreateNote = async () => {
+    try {
+      const note = await createNoteMutation.mutateAsync({
+        title: "",
+        content: "",
+      });
+      navigation.navigate("Editor", { noteId: note.id });
+    } catch (error) {
+      console.error("Failed to create note:", error);
+    }
+  };
 
   return (
     <ScreenContainer>
@@ -64,11 +77,20 @@ export function DashboardScreen() {
               emptyText="No notes yet."
               onSelectNote={(note) => {
                 navigation.navigate("Editor", { noteId: note.id });
-            }}
-          />
-        </View>
-      )}
+              }}
+            />
+          </View>
+        )}
       </View>
+
+      <Pressable
+        onPress={handleCreateNote}
+        disabled={createNoteMutation.isPending}
+        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+      >
+        <Plus size={30} color="#000000" />
+      </Pressable>
+
       <BottomBar activeTab={activeTab} onChangeTab={setActiveTab} />
     </ScreenContainer>
   );

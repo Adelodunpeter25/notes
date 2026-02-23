@@ -23,7 +23,7 @@ function AuthNavigator() {
       initialRouteName="Login"
       screenOptions={{
         headerShown: false,
-        animationEnabled: false,
+        animation: "none",
         cardStyle: { backgroundColor: colors.background },
       }}
     >
@@ -38,7 +38,7 @@ function MainNavigator() {
     <AppStack.Navigator
       screenOptions={{
         headerShown: false,
-        animationEnabled: false,
+        animation: "none",
         cardStyle: { backgroundColor: colors.background },
       }}
     >
@@ -52,6 +52,7 @@ function MainNavigator() {
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isBootstrappingAuth, setIsBootstrappingAuth] = useState(true);
@@ -59,30 +60,34 @@ export function RootNavigator() {
   useEffect(() => {
     let active = true;
 
-    const fallbackTimer = setTimeout(() => {
-      if (active) {
-        setIsBootstrappingAuth(false);
-      }
-    }, 4000);
-
     async function bootstrapAuth() {
+      if (!hasHydrated) {
+        return;
+      }
+
       try {
-        await useAuthStore.persist.rehydrate();
         const token = useAuthStore.getState().token;
         if (!token) {
+          setIsBootstrappingAuth(false);
           return;
         }
 
+        // Validate token by fetching user data
         const response = await apiClient.instance.get<AuthUser>("/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        setAuth({ token, user: response.data });
-      } catch {
-        clearAuth();
+        if (active) {
+          setAuth({ token, user: response.data });
+        }
+      } catch (error: any) {
+        // If it's a 401, clear auth. Otherwise, maybe it's just a network issue.
+        // We can stay "authenticated" if it's a network error to allow offline cache usage.
+        if (error?.status === 401) {
+          clearAuth();
+        }
       } finally {
         if (active) {
-          clearTimeout(fallbackTimer);
           setIsBootstrappingAuth(false);
         }
       }
@@ -92,9 +97,8 @@ export function RootNavigator() {
 
     return () => {
       active = false;
-      clearTimeout(fallbackTimer);
     };
-  }, [clearAuth, setAuth]);
+  }, [hasHydrated, clearAuth, setAuth]);
 
   if (isBootstrappingAuth) {
     return (
