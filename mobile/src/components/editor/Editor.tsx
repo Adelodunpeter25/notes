@@ -16,7 +16,10 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
   const lastContent = useRef(value);
 
   // Initialize source once to prevent reloading the WebView when value changes
-  const source = React.useMemo(() => ({ html: getTiptapHtml("") }), []);
+  const source = React.useMemo(
+    () => ({ html: getTiptapHtml({ initialContent: "", placeholder }) }),
+    [placeholder],
+  );
 
   // Sync value prop from parent to WebView
   useEffect(() => {
@@ -32,9 +35,10 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === "READY") {
         isReady.current = true;
-        if (value && webViewRef.current) {
+        if (webViewRef.current) {
           const encodedContent = encodeURIComponent(value);
           webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
+          webViewRef.current.postMessage(JSON.stringify({ type: "FOCUS_EDITOR" }));
         }
       } else if (data.type === "UPDATE") {
         lastContent.current = data.content;

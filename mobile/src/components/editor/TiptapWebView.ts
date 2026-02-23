@@ -1,4 +1,12 @@
-export const getTiptapHtml = (initialContent: string) => `
+type TiptapHtmlOptions = {
+    initialContent?: string;
+    placeholder?: string;
+};
+
+export const getTiptapHtml = ({
+    initialContent = "",
+    placeholder = "Start writing...",
+}: TiptapHtmlOptions) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,9 +156,10 @@ export const getTiptapHtml = (initialContent: string) => `
                     },
                 }),
                 Placeholder.configure({
-                    placeholder: 'Start writing...',
+                    placeholder: ${JSON.stringify(placeholder)},
                 }),
             ],
+            content: ${JSON.stringify(initialContent)},
             onUpdate: ({ editor }) => {
                 if (isInternalUpdate) return;
                 
@@ -167,14 +176,17 @@ export const getTiptapHtml = (initialContent: string) => `
             }
         });
 
-        window.addEventListener('message', (event) => {
+        function handleIncomingMessage(event) {
             try {
-                const message = JSON.parse(event.data);
+                const rawData = typeof event.data === 'string' ? event.data : event?.data?.data;
+                const message = JSON.parse(rawData);
                 if (message.type === 'SET_CONTENT') {
                     isInternalUpdate = true;
                     const decodedContent = decodeURIComponent(message.content);
                     editor.commands.setContent(decodedContent, false);
                     isInternalUpdate = false;
+                } else if (message.type === 'FOCUS_EDITOR') {
+                    editor.commands.focus('end');
                 } else if (message.type === 'TOGGLE_BOLD') {
                     editor.chain().focus().toggleBold().run();
                 } else if (message.type === 'TOGGLE_ITALIC') {
@@ -191,12 +203,18 @@ export const getTiptapHtml = (initialContent: string) => `
             } catch (e) {
                 // Ignore parsing errors from other sources
             }
-        });
+        }
+
+        window.addEventListener('message', handleIncomingMessage);
+        document.addEventListener('message', handleIncomingMessage);
 
         // Notify that the editor is ready
         window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'READY'
         }));
+        setTimeout(() => {
+            editor.commands.focus('end');
+        }, 0);
     </script>
 </body>
 </html>

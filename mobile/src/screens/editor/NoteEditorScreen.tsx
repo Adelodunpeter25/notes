@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
@@ -28,17 +28,32 @@ export function NoteEditorScreen() {
   const [content, setContent] = useState("");
   const debouncedContent = useDebounce(content, 500);
   const prevNoteId = useRef<string | null>(null);
+  const hasInitializedContent = useRef(false);
+  const hasUserEdited = useRef(false);
 
   useEffect(() => {
     // Only set content if we switched to a different note
     if (note && note.id !== prevNoteId.current) {
       setContent(note.content || "");
       prevNoteId.current = note.id;
+      hasInitializedContent.current = true;
+      hasUserEdited.current = false;
     }
   }, [note]);
 
+  const handleEditorChange = useCallback((nextContent: string) => {
+    hasUserEdited.current = true;
+    setContent(nextContent);
+  }, []);
+
   useEffect(() => {
     if (!note) {
+      return;
+    }
+    if (!hasInitializedContent.current) {
+      return;
+    }
+    if (!hasUserEdited.current) {
       return;
     }
     if (debouncedContent === note.content) {
@@ -67,7 +82,7 @@ export function NoteEditorScreen() {
       </View>
 
       <View className="flex-1">
-        <Editor value={content} onChange={setContent} />
+        <Editor value={content} onChange={handleEditorChange} />
       </View>
     </ScreenContainer>
   );
