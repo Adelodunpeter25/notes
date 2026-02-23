@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { ScrollView, Platform, KeyboardAvoidingView, View } from "react-native";
+import { ScrollView, Platform, KeyboardAvoidingView, View, Text } from "react-native";
+import { formatNoteDateTime } from "@/utils/formatDate";
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -7,9 +8,10 @@ type EditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  timestamp?: string;
 };
 
-export function Editor({ value, onChange, placeholder = "Start writing..." }: EditorProps) {
+export function Editor({ value, onChange, placeholder = "Start writing...", timestamp }: EditorProps) {
   const richText = useRef<RichEditor>(null);
   const insets = useSafeAreaInsets();
   const latestValueRef = useRef(value);
@@ -34,6 +36,13 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ flexGrow: 1 }}
       >
+        {timestamp && (
+          <View className="pt-6 pb-2 items-center">
+            <Text className="text-[13px] font-medium text-textMuted uppercase tracking-wider">
+              {formatNoteDateTime(timestamp)}
+            </Text>
+          </View>
+        )}
         <RichEditor
           ref={richText}
           initialContentHTML={value}

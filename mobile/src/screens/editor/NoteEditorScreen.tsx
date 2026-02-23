@@ -144,13 +144,15 @@ export function NoteEditorScreen() {
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="text-xs font-medium text-textMuted uppercase tracking-wider">
-          {formatNoteDateTime(note?.updatedAt || note?.createdAt)}
-        </Text>
       </View>
 
       <View className="flex-1">
-        <Editor key={noteId} value={content} onChange={handleEditorChange} />
+        <Editor
+          key={noteId}
+          value={content}
+          onChange={handleEditorChange}
+          timestamp={note?.updatedAt || note?.createdAt}
+        />
       </View>
     </ScreenContainer>
   );
