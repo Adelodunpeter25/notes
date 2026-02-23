@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { ScrollView, Platform, KeyboardAvoidingView, View } from "react-native";
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,20 @@ type EditorProps = {
 export function Editor({ value, onChange, placeholder = "Start writing..." }: EditorProps) {
   const richText = useRef<RichEditor>(null);
   const insets = useSafeAreaInsets();
+  const latestValueRef = useRef(value);
+
+  useEffect(() => {
+    latestValueRef.current = value;
+    richText.current?.setContentHTML(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      richText.current?.focusContentEditor();
+    }, 120);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <View className="flex-1 bg-background">
@@ -24,6 +38,10 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
           ref={richText}
           initialContentHTML={value}
           onChange={onChange}
+          editorInitializedCallback={() => {
+            richText.current?.setContentHTML(latestValueRef.current || "");
+            richText.current?.focusContentEditor();
+          }}
           placeholder={placeholder}
           editorStyle={{
             backgroundColor: "#1c1c1e",

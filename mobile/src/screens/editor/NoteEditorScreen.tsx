@@ -31,6 +31,7 @@ export function NoteEditorScreen() {
   const hasInitializedContent = useRef(false);
   const hasUserEdited = useRef(false);
   const lastSavedContent = useRef("");
+  const isLeavingRef = useRef(false);
 
   useEffect(() => {
     // Only set content if we switched to a different note
@@ -48,6 +49,43 @@ export function NoteEditorScreen() {
     hasUserEdited.current = true;
     setContent(nextContent);
   }, []);
+
+  const saveNow = useCallback(async () => {
+    if (!note) {
+      return;
+    }
+
+    if (!hasInitializedContent.current || !hasUserEdited.current) {
+      return;
+    }
+
+    if (content === lastSavedContent.current || updateNoteMutation.isPending) {
+      return;
+    }
+
+    const updatedNote = await updateNoteMutation.mutateAsync({
+      noteId: note.id,
+      payload: { content },
+    });
+    lastSavedContent.current = updatedNote.content;
+  }, [content, note, updateNoteMutation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (isLeavingRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      isLeavingRef.current = true;
+
+      void saveNow().finally(() => {
+        navigation.dispatch(event.data.action);
+      });
+    });
+
+    return unsubscribe;
+  }, [navigation, saveNow]);
 
   useEffect(() => {
     if (!note) {
@@ -82,7 +120,10 @@ export function NoteEditorScreen() {
     <ScreenContainer>
       <View className="border-b border-border px-4 py-3">
         <Pressable
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            isLeavingRef.current = true;
+            void saveNow().finally(() => navigation.goBack());
+          }}
           className="mb-2 flex-row items-center self-start rounded-md px-1 py-1"
         >
           <ChevronLeft size={18} color="#eab308" />
