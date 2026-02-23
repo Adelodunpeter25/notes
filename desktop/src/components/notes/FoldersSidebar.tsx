@@ -132,7 +132,7 @@ export function FoldersSidebar({
         <div className="mt-auto pt-4 pb-4 px-2 flex items-center justify-start">
           <button
             onClick={onCreateFolder}
-            className="flex items-center gap-2 text-[#9a9a9a] hover:text-[#e3e3e3] py-1 transition-colors group outline-none"
+            className="group flex items-center gap-2 py-1 text-[#9a9a9a] outline-none transition-[color,transform] duration-140 ease-out hover:text-[#e3e3e3] active:scale-[0.98]"
           >
             <PlusCircle size={22} strokeWidth={1.5} />
             <span className="text-[14px] font-medium tracking-wide">New Folder</span>

@@ -37,7 +37,7 @@ export function SidebarItem({
       onDoubleClick={onDoubleClick}
       className={[
         "flex min-h-[30px] w-full items-center gap-2.5 rounded-md px-2 py-1 text-left text-[14px]",
-        "transition-colors duration-150 ease-in-out group",
+        "group transition-[background-color,color,transform] duration-140 ease-out active:scale-[0.99]",
         active
           ? isFolder
             ? "bg-[#c19b1f] text-white"

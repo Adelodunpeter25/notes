@@ -111,7 +111,7 @@ export function NotesList({
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="text-muted hover:text-text transition-transform duration-150 ease-apple"
+              className="text-muted hover:text-text transition-[color,transform] duration-140 ease-out active:scale-95"
               title={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
             >
               <PanelLeft
@@ -119,7 +119,11 @@ export function NotesList({
                 className={isSidebarCollapsed ? "opacity-80" : "opacity-100"}
               />
             </button>
-            <button onClick={onCreateNote} className="text-muted hover:text-text" title="New note">
+            <button
+              onClick={onCreateNote}
+              className="text-muted hover:text-text transition-[color,transform] duration-140 ease-out active:scale-95"
+              title="New note"
+            >
               <SquarePen size={18} />
             </button>
           </div>
@@ -160,7 +164,7 @@ export function NotesList({
                     }}
                     onContextMenu={(e) => handleContextMenu(e, note.id)}
                     className={[
-                      "relative flex flex-col items-start gap-1 p-3 pr-8 text-left w-full rounded-lg transition-colors select-none",
+                      "relative flex w-full select-none flex-col items-start gap-1 rounded-lg p-3 pr-8 text-left transition-[background-color,transform] duration-140 ease-out active:scale-[0.995]",
                       active ? "bg-[#333333]" : "hover:bg-white/5",
                     ].join(" ")}
                   >

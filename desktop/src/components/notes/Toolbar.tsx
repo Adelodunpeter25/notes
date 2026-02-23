@@ -14,7 +14,7 @@ const TopFormatButton = ({ icon: Icon, isActive, onClick, label }: any) => (
     <button
         title={label}
         onClick={onClick}
-        className={`flex size-8 items-center justify-center rounded transition-colors ${isActive ? "bg-accent/90 text-white" : "text-text hover:bg-white/10"
+        className={`flex size-8 items-center justify-center rounded transition-[background-color,color,transform] duration-140 ease-out active:scale-95 ${isActive ? "bg-accent/90 text-white" : "text-text hover:bg-white/10"
             }`}
     >
         <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
@@ -24,7 +24,7 @@ const TopFormatButton = ({ icon: Icon, isActive, onClick, label }: any) => (
 const MenuRow = ({ label, isActive, onClick, styleClass, prefix }: any) => (
     <button
         onClick={onClick}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-white/10 outline-none"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left outline-none transition-[background-color,color] duration-120 ease-out hover:bg-white/10"
     >
         <div className="w-4 shrink-0 flex justify-center text-text">
             {isActive && <Check size={14} strokeWidth={3} />}
@@ -59,7 +59,7 @@ export function Toolbar({
                     <>
                         <Popover.Root>
                             <Popover.Trigger asChild>
-                                <button className="flex items-center justify-center rounded-md px-2 py-0.5 text-[15px] font-medium tracking-tight text-muted transition-colors hover:bg-white/10 hover:text-text data-[state=open]:bg-white/10 data-[state=open]:text-text outline-none focus:outline-none">
+                                <button className="flex items-center justify-center rounded-md px-2 py-0.5 text-[15px] font-medium tracking-tight text-muted outline-none transition-[background-color,color,transform] duration-140 ease-out hover:bg-white/10 hover:text-text focus:outline-none active:scale-95 data-[state=open]:bg-white/10 data-[state=open]:text-text">
                                     Aa
                                 </button>
                             </Popover.Trigger>
@@ -160,14 +160,14 @@ export function Toolbar({
                         </Popover.Root>
 
                         <button
-                            className={`transition-colors hover:text-text ${editor.isActive('taskList') ? "text-accent" : ""}`}
+                            className={`transition-[color,transform] duration-140 ease-out hover:text-text active:scale-95 ${editor.isActive('taskList') ? "text-accent" : ""}`}
                             onClick={() => editor.chain().focus().toggleTaskList().run()}
                             title="Checklist"
                         >
                             <ListChecks size={18} />
                         </button>
                         <button
-                            className={`transition-colors hover:text-text ${editor.isActive('table') ? "text-accent" : ""}`}
+                            className={`transition-[color,transform] duration-140 ease-out hover:text-text active:scale-95 ${editor.isActive('table') ? "text-accent" : ""}`}
                             onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
                             title="Insert Table"
                         >
@@ -197,14 +197,14 @@ export function Toolbar({
                             />
                             <button
                                 onClick={closeSearch}
-                                className="text-muted hover:text-text shrink-0 ml-1 rounded-full p-0.5 hover:bg-white/10 transition-colors"
+                                className="ml-1 shrink-0 rounded-full p-0.5 text-muted transition-[background-color,color,transform] duration-120 ease-out hover:bg-white/10 hover:text-text active:scale-95"
                             >
                                 <X size={14} />
                             </button>
                         </div>
                     ) : (
                         <button
-                            className="transition-colors hover:text-text"
+                            className="transition-[color,transform] duration-140 ease-out hover:text-text active:scale-95"
                             title="Search Notes"
                             onClick={toggleSearch}
                         >
@@ -218,7 +218,7 @@ export function Toolbar({
                         <div className="h-4 w-px bg-border" /> {/* Separator */}
 
                         <button
-                            className={`transition-colors hover:text-text ${isPinned ? "text-accent" : ""}`}
+                            className={`transition-[color,transform] duration-140 ease-out hover:text-text active:scale-95 ${isPinned ? "text-accent" : ""}`}
                             onClick={onTogglePin}
                             title={isPinned ? "Unpin Note" : "Pin Note"}
                         >
