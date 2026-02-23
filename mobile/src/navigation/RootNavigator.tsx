@@ -1,6 +1,5 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActivityIndicator, View } from "react-native";
 import { useEffect, useState } from "react";
 
@@ -17,7 +16,6 @@ import type { AuthUser } from "@shared/auth";
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 const AppStack = createStackNavigator<AppStackParamList>();
-const AUTH_STORAGE_KEY = "auth-storage";
 
 function AuthNavigator() {
   return (
@@ -69,14 +67,8 @@ export function RootNavigator() {
 
     async function bootstrapAuth() {
       try {
-        const raw = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-        if (!raw) {
-          return;
-        }
-
-        const parsed = JSON.parse(raw) as { state?: { token?: string | null } };
-        const token = parsed?.state?.token;
-
+        await useAuthStore.persist.rehydrate();
+        const token = useAuthStore.getState().token;
         if (!token) {
           return;
         }
