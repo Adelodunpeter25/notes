@@ -5,6 +5,7 @@ import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { Note } from "@shared/notes";
 import { useDebounce } from "@/hooks";
 import { formatNoteDateTime } from "@/utils/formatDate";
+import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { Toolbar } from "./Toolbar";
 import { Editor } from "@/components/editor";
 
@@ -40,16 +41,7 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
 
-    const derivedTitle = useMemo(() => {
-        if (!debouncedContent) return "";
-        const doc = new DOMParser().parseFromString(debouncedContent, "text/html");
-        const blockElements = doc.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, blockquote, code");
-        for (const el of Array.from(blockElements)) {
-            const text = el.textContent?.trim();
-            if (text) return text;
-        }
-        return "";
-    }, [debouncedContent]);
+    const derivedTitle = useMemo(() => deriveNoteTitleFromHtml(debouncedContent), [debouncedContent]);
 
     const isDebounceSettled = debouncedContent === content && debouncedIsPinned === isPinned;
 
