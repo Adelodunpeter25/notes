@@ -84,9 +84,14 @@ export function NoteEditorScreen() {
       return;
     }
 
+    const payload: { content: string; title?: string } = { content };
+    if (derivedTitle !== lastSavedTitle.current) {
+      payload.title = derivedTitle;
+    }
+
     const updatedNote = await updateNoteMutation.mutateAsync({
       noteId: note.id,
-      payload: { content, title: derivedTitle },
+      payload,
     });
     lastSavedContent.current = updatedNote.content;
     lastSavedTitle.current = updatedNote.title;
@@ -144,7 +149,7 @@ export function NoteEditorScreen() {
       noteId: note.id,
       payload: {
         content: debouncedContent,
-        title: derivedTitle,
+        ...(derivedTitle !== lastSavedTitle.current ? { title: derivedTitle } : {}),
       },
     }, {
       onSuccess: (updatedNote) => {
