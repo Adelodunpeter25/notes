@@ -1,7 +1,5 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ActivityIndicator, View } from "react-native";
-import { useEffect, useState } from "react";
 
 import type { AppStackParamList, AuthStackParamList } from "./types";
 import { LoginScreen, SignupScreen } from "@/screens/auth";
@@ -50,24 +48,6 @@ function MainNavigator() {
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [hasHydrated, setHasHydrated] = useState(useAuthStore.persist.hasHydrated());
-
-  useEffect(() => {
-    setHasHydrated(useAuthStore.persist.hasHydrated());
-    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  if (!hasHydrated) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#eab308" />
-      </View>
-    );
-  }
 
   return (
     <NavigationContainer theme={navigationTheme}>
