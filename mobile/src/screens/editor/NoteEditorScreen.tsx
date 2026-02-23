@@ -8,6 +8,7 @@ import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout";
 import { Editor } from "@/components/editor";
 import { useDebounce, useNotesQuery, useUpdateNoteMutation } from "@/hooks";
+import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
@@ -31,6 +32,7 @@ export function NoteEditorScreen() {
   const hasInitializedContent = useRef(false);
   const hasUserEdited = useRef(false);
   const lastSavedContent = useRef("");
+  const lastSavedTitle = useRef("");
   const isLeavingRef = useRef(false);
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export function NoteEditorScreen() {
       hasInitializedContent.current = true;
       hasUserEdited.current = false;
       lastSavedContent.current = initialContent;
+      lastSavedTitle.current = note.title || "Untitled";
     }
   }, [note]);
 
@@ -59,15 +62,20 @@ export function NoteEditorScreen() {
       return;
     }
 
-    if (content === lastSavedContent.current || updateNoteMutation.isPending) {
+    const derivedTitle = deriveNoteTitleFromHtml(content);
+    const isUnchanged =
+      content === lastSavedContent.current && derivedTitle === lastSavedTitle.current;
+
+    if (isUnchanged || updateNoteMutation.isPending) {
       return;
     }
 
     const updatedNote = await updateNoteMutation.mutateAsync({
       noteId: note.id,
-      payload: { content },
+      payload: { content, title: derivedTitle },
     });
     lastSavedContent.current = updatedNote.content;
+    lastSavedTitle.current = updatedNote.title;
   }, [content, note, updateNoteMutation]);
 
   useEffect(() => {
@@ -97,7 +105,10 @@ export function NoteEditorScreen() {
     if (!hasUserEdited.current) {
       return;
     }
-    if (debouncedContent === lastSavedContent.current) {
+    const derivedTitle = deriveNoteTitleFromHtml(debouncedContent);
+    const isUnchanged =
+      debouncedContent === lastSavedContent.current && derivedTitle === lastSavedTitle.current;
+    if (isUnchanged) {
       return;
     }
     if (updateNoteMutation.isPending) {
@@ -108,13 +119,22 @@ export function NoteEditorScreen() {
       noteId: note.id,
       payload: {
         content: debouncedContent,
+        title: derivedTitle,
       },
     }, {
-      onSuccess: () => {
-        lastSavedContent.current = debouncedContent;
+      onSuccess: (updatedNote) => {
+        lastSavedContent.current = updatedNote.content;
+        lastSavedTitle.current = updatedNote.title;
       },
     });
   }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
+
+  const headerTitle = useMemo(() => {
+    if (content.trim()) {
+      return deriveNoteTitleFromHtml(content);
+    }
+    return note?.title || "Untitled";
+  }, [content, note?.title]);
 
   return (
     <ScreenContainer>
@@ -129,7 +149,7 @@ export function NoteEditorScreen() {
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-text">{note?.title || "Untitled"}</Text>
+        <Text className="text-lg font-semibold text-text">{headerTitle}</Text>
       </View>
 
       <View className="flex-1">

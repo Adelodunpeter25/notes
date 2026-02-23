@@ -3,10 +3,7 @@ import { Pin } from "lucide-react-native";
 
 import type { Note } from "@shared/notes";
 import { ListItem, Skeleton } from "@/components/common";
-
-const stripHtml = (html: string) => {
-  return html.replace(/<[^>]*>?/gm, "").trim();
-};
+import { deriveNotePreviewFromHtml, deriveNoteTitleFromHtml } from "@/utils/noteContent";
 
 type NoteListProps = {
   notes: Note[];
@@ -50,12 +47,13 @@ export function NoteList({
       refreshing={refreshing}
       onRefresh={onRefresh}
       renderItem={({ item }) => {
-        const title = item.title?.trim() || "Untitled";
+        const title = deriveNoteTitleFromHtml(item.content || "") || item.title?.trim() || "Untitled";
+        const preview = deriveNotePreviewFromHtml(item.content || "");
 
         return (
           <ListItem
             title={title}
-            subtitle={stripHtml(item.content || "")}
+            subtitle={preview}
             icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
             onPress={() => onSelectNote?.(item)}
             showChevron={false}
