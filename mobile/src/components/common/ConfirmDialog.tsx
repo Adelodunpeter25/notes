@@ -35,8 +35,6 @@ export function ConfirmDialog({
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback>
                         <View className="w-[85%] max-w-[340px] bg-surface rounded-3xl p-6 items-center shadow-2xl border border-border/50">
-                            <AppleNotesIcon className="mb-4" />
-
                             <Text className="text-xl font-bold text-text text-center mb-2">
                                 {title}
                             </Text>
@@ -47,18 +45,18 @@ export function ConfirmDialog({
                                 </Text>
                             )}
 
-                            <View className="flex-col w-full gap-2">
-                                <Button
-                                    title={confirmLabel}
-                                    variant={destructive ? "danger" : "primary"}
-                                    onPress={onConfirm}
-                                    className="w-full"
-                                />
+                            <View className="flex-row w-full gap-3">
                                 <Button
                                     title={cancelLabel}
                                     variant="ghost"
                                     onPress={onCancel}
-                                    className="w-full"
+                                    className="flex-1"
+                                />
+                                <Button
+                                    title={confirmLabel}
+                                    variant={destructive ? "danger" : "primary"}
+                                    onPress={onConfirm}
+                                    className="flex-1"
                                 />
                             </View>
                         </View>

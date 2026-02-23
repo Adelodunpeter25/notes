@@ -57,7 +57,7 @@ export function NoteList({
 
   const renderLeftActions = () => {
     return (
-      <View className="bg-danger w-24 items-center justify-center">
+      <View className="bg-danger h-full absolute left-0 right-0 items-start justify-center pl-8">
         <Trash2 size={24} color="#ffffff" />
       </View>
     );
@@ -81,10 +81,11 @@ export function NoteList({
               renderLeftActions={renderLeftActions}
               onSwipeableLeftOpen={() => {
                 setNoteToDelete(item);
-                // Briefly keep it open so the user sees the color, but the modal will grab focus
+                // Snap closed immediately to let the dialog handle it
+                swipeableRefs.current[item.id]?.close();
               }}
-              friction={2}
-              leftThreshold={80}
+              friction={1}
+              overshootLeft={false}
             >
               <ListItem
                 title={title}
