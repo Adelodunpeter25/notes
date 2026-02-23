@@ -139,7 +139,7 @@ export function NoteEditorScreen() {
             isLeavingRef.current = true;
             void saveNow().finally(() => navigation.goBack());
           }}
-          className="mb-2 flex-row items-center self-start rounded-md px-1 py-1"
+          className="flex-row items-center self-center rounded-md px-1 py-1"
         >
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>

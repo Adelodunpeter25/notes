@@ -37,7 +37,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
         contentContainerStyle={{ flexGrow: 1 }}
       >
         {timestamp && (
-          <View className="pt-6 pb-2 items-center">
+          <View className="pt-4 pb-2 items-center">
             <Text className="text-[13px] font-medium text-textMuted uppercase tracking-wider">
               {formatNoteDateTime(timestamp)}
             </Text>
