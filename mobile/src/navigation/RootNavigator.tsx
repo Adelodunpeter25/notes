@@ -13,6 +13,7 @@ import { colors } from "@/theme/colors";
 import { navigationTheme } from "@/theme/navigationTheme";
 import { apiClient } from "@/api/apiClient";
 import type { AuthUser } from "@shared/auth";
+import { authStorage } from "@/utils/authStorage";
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 const AppStack = createStackNavigator<AppStackParamList>();
@@ -62,20 +63,14 @@ export function RootNavigator() {
 
     async function bootstrapAuth() {
       try {
-        // 1. Force rehydrate from persistent storage
-        await useAuthStore.persist.rehydrate();
-
-        const existingToken = useAuthStore.getState().token;
-        const existingUser = useAuthStore.getState().user;
-
-        // Optimistically hide loading screen if we have valid-looking data
-        if (active && existingToken && existingUser) {
-          setIsBootstrappingAuth(false);
-        }
+        const existingToken = await authStorage.getToken();
 
         if (existingToken) {
+          if (active) {
+            useAuthStore.setState({ token: existingToken, isAuthenticated: true });
+          }
+
           try {
-            // 2. Validate token and get fresh user data
             const response = await apiClient.instance.get<AuthUser>("/auth/me", {
               headers: { Authorization: `Bearer ${existingToken}` },
               timeout: 5000,
@@ -85,7 +80,6 @@ export function RootNavigator() {
               setAuth({ token: existingToken, user: response.data });
             }
           } catch (error: any) {
-            // ONLY clear if the server explicitly tells us the token is dead
             if (error?.status === 401) {
               clearAuth();
             }
