@@ -52,7 +52,7 @@ export function LoginScreen() {
   return (
     <ScreenContainer className="px-5">
       <View className="flex-1 items-center justify-center">
-        <View className="w-full max-w-[420px] rounded-2xl border border-border bg-surface p-5">
+        <View className="w-full max-w-[360px] rounded-2xl border border-border bg-surface p-5">
           <View className="mb-5 items-center">
             <Text className="text-xl font-semibold text-text">Login</Text>
             <Text className="mt-1 text-sm text-textMuted">Welcome back. Continue to your notes.</Text>
