@@ -69,7 +69,6 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                 autolink: true,
                 linkOnPaste: true,
                 openOnClick: false,
-                defaultProtocol: "https",
                 HTMLAttributes: {
                     class: "editor-link text-accent hover:text-accent/80 underline underline-offset-2 cursor-pointer transition-colors",
                     rel: "noopener noreferrer",
@@ -87,6 +86,23 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
         },
         editorProps: {
             handleDOMEvents: {
+                paste: (view, event) => {
+                    const text = event.clipboardData?.getData("text/plain")?.trim();
+                    if (!text) return false;
+
+                    // If the entire pasted text is exactly a valid URL
+                    const isUrl = /^(https?:\/\/[\w\-\.]+\.[a-zA-Z]{2,}|www\.[\w\-\.]+\.[a-zA-Z]{2,})(?:\/[\w\-\.\/\?=&%#+]*)?$/i.test(text);
+                    if (isUrl) {
+                        event.preventDefault();
+                        const href = /^www\./i.test(text) ? `https://${text}` : text;
+                        const { state, dispatch } = view;
+                        const mark = state.schema.marks.link.create({ href });
+                        const tr = state.tr.replaceSelectionWith(state.schema.text(text, [mark]), false);
+                        dispatch(tr);
+                        return true;
+                    }
+                    return false;
+                },
                 click: (_view, event) => {
                     const mouseEvent = event as MouseEvent;
                     const isModifierPressed = mouseEvent.metaKey || mouseEvent.ctrlKey;

@@ -43,12 +43,9 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     const derivedTitle = useMemo(() => {
         if (!debouncedContent) return "";
         const doc = new DOMParser().parseFromString(debouncedContent, "text/html");
-        const text = (doc.body.textContent || "").trim();
-        const firstLine = text
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .find(Boolean);
-        return firstLine || "";
+        const blocks = Array.from(doc.body.children);
+        const firstBlock = blocks.find(b => b.textContent?.trim());
+        return firstBlock?.textContent?.trim() || "";
     }, [debouncedContent]);
 
     const isDebounceSettled = debouncedContent === content && debouncedIsPinned === isPinned;
