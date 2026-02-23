@@ -22,7 +22,8 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
   useEffect(() => {
     if (isReady.current && value !== lastContent.current && webViewRef.current) {
       lastContent.current = value;
-      webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: value }));
+      const encodedContent = encodeURIComponent(value);
+      webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
     }
   }, [value]);
 
@@ -31,9 +32,9 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === "READY") {
         isReady.current = true;
-        // Send initial content once ready
         if (value && webViewRef.current) {
-          webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: value }));
+          const encodedContent = encodeURIComponent(value);
+          webViewRef.current.postMessage(JSON.stringify({ type: "SET_CONTENT", content: encodedContent }));
         }
       } else if (data.type === "UPDATE") {
         lastContent.current = data.content;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
@@ -26,11 +26,16 @@ export function NoteEditorScreen() {
   );
 
   const [content, setContent] = useState("");
-  const debouncedContent = useDebounce(content, 350);
+  const debouncedContent = useDebounce(content, 500);
+  const prevNoteId = useRef<string | null>(null);
 
   useEffect(() => {
-    setContent(note?.content ?? "");
-  }, [note?.id, note?.content]);
+    // Only set content if we switched to a different note
+    if (note && note.id !== prevNoteId.current) {
+      setContent(note.content || "");
+      prevNoteId.current = note.id;
+    }
+  }, [note]);
 
   useEffect(() => {
     if (!note) {
