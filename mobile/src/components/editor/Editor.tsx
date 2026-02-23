@@ -47,7 +47,8 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
             backgroundColor: "#1c1c1e",
             color: "#ffffff",
             placeholderColor: "#636366",
-            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px;",
+            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px; color: white;",
+            cssText: "a { color: #eab308 !important; text-decoration: underline; }"
           }}
           useContainer={false}
           initialHeight={500}
@@ -55,8 +56,8 @@ export function Editor({ value, onChange, placeholder = "Start writing..." }: Ed
       </ScrollView>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <View
           style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}

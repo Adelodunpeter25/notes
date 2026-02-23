@@ -52,6 +52,10 @@ export function SearchScreen() {
           onRefresh={() => {
             void resultsQuery.refetch();
           }}
+          onSelectNote={(note) => {
+            // @ts-ignore
+            navigation.navigate("Editor", { noteId: note.id });
+          }}
         />
       </View>
     </ScreenContainer>

@@ -9,6 +9,7 @@ type SearchResultsProps = {
   isLoading?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  onSelectNote?: (note: Note) => void;
 };
 
 export function SearchResults({
@@ -17,6 +18,7 @@ export function SearchResults({
   isLoading = false,
   refreshing = false,
   onRefresh,
+  onSelectNote,
 }: SearchResultsProps) {
   if (!query.trim()) {
     return (
@@ -32,6 +34,7 @@ export function SearchResults({
       isLoading={isLoading}
       refreshing={refreshing}
       onRefresh={onRefresh}
+      onSelectNote={onSelectNote}
       emptyText={`No results for "${query}"`}
     />
   );
