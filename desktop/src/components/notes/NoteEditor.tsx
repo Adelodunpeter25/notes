@@ -138,8 +138,8 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
                     </div>
                 </div>
             ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto px-10 py-6 max-w-4xl mx-auto w-full pb-24">
-                    <p className="text-center text-xs text-muted mb-6 font-medium">{noteDateLabel}</p>
+                <div className="min-h-0 flex-1 overflow-y-auto px-10 py-5 max-w-4xl mx-auto w-full pb-24">
+                    <p className="mb-3 text-center text-[11px] font-normal leading-none text-muted/70">{noteDateLabel}</p>
 
                     <Editor
                         content={content}
