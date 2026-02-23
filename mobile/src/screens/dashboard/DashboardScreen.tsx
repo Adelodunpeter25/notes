@@ -1,7 +1,9 @@
 import { Text, View } from "react-native";
+import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
+import { Search } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList } from "@/components/notes";
@@ -19,8 +21,11 @@ export function DashboardScreen() {
 
   return (
     <ScreenContainer>
-      <View className="border-b border-border px-4 py-3">
+      <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
         <Text className="text-xl font-semibold text-text">Notes</Text>
+        <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
+          <Search size={18} color="#eab308" />
+        </Pressable>
       </View>
 
       <View className="flex-1">

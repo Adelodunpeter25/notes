@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import type { AppStackParamList, AuthStackParamList } from "./types";
 import { LoginScreen, SignupScreen } from "@/screens/auth";
 import { DashboardScreen, FolderDetailsScreen } from "@/screens/dashboard";
+import { SearchScreen } from "@/screens/search";
 import { useAuthStore } from "@/stores/authStore";
 import { colors } from "@/theme/colors";
 import { navigationTheme } from "@/theme/navigationTheme";
@@ -38,6 +39,7 @@ function MainNavigator() {
     >
       <AppStack.Screen name="Dashboard" component={DashboardScreen} />
       <AppStack.Screen name="FolderDetails" component={FolderDetailsScreen} />
+      <AppStack.Screen name="Search" component={SearchScreen} />
     </AppStack.Navigator>
   );
 }

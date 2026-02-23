@@ -1,0 +1,55 @@
+import { Pressable, Text, TextInput, View } from "react-native";
+import { Search } from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
+
+import { ScreenContainer } from "@/components/layout";
+import { SearchResults } from "@/components/search";
+import { useDebounce, useNotesQuery, useSearch } from "@/hooks";
+
+export function SearchScreen() {
+  const navigation = useNavigation();
+  const { searchQuery, handleSearchChange, closeSearch } = useSearch();
+  const debouncedQuery = useDebounce(searchQuery, 250);
+
+  const resultsQuery = useNotesQuery({
+    q: debouncedQuery.trim() || undefined,
+  });
+
+  return (
+    <ScreenContainer>
+      <View className="border-b border-border px-4 py-3">
+        <View className="flex-row items-center">
+          <View className="mr-3 flex-1 flex-row items-center rounded-xl border border-border bg-surfaceSecondary px-3">
+            <Search size={16} color="#a0a0a0" />
+            <TextInput
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              placeholder="Search notes"
+              placeholderTextColor="#6f6f6f"
+              autoFocus
+              className="ml-2 flex-1 py-2.5 text-[15px] text-text"
+            />
+          </View>
+
+          <Pressable
+            onPress={() => {
+              closeSearch();
+              navigation.goBack();
+            }}
+            className="px-1 py-1"
+          >
+            <Text className="text-sm font-medium text-accent">Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View className="flex-1">
+        <SearchResults
+          query={searchQuery}
+          notes={resultsQuery.data ?? []}
+          isLoading={resultsQuery.isLoading}
+        />
+      </View>
+    </ScreenContainer>
+  );
+}
