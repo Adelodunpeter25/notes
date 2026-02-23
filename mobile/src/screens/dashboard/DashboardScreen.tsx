@@ -6,7 +6,7 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { Search, Plus } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
-import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, RenameFolderModal } from "@/components/notes";
+import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData } from "@/hooks";
@@ -27,6 +27,7 @@ export function DashboardScreen() {
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [folderToRename, setFolderToRename] = useState<Folder | null>(null);
   const [noteToMove, setNoteToMove] = useState<Note | null>(null);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
   const handleCreateNote = async () => {
     try {
@@ -35,6 +36,11 @@ export function DashboardScreen() {
     } catch (error) {
       console.error("Failed to create note:", error);
     }
+  };
+
+  const handleCreateFolder = async (name: string) => {
+    await dashboard.createFolder(name);
+    setIsCreateFolderOpen(false);
   };
 
   const handlePinNote = async (note: Note) => {
@@ -138,8 +144,14 @@ export function DashboardScreen() {
       </View>
 
       <Pressable
-        onPress={handleCreateNote}
-        disabled={dashboard.isCreatingNote}
+        onPress={() => {
+          if (activeTab === "folders") {
+            setIsCreateFolderOpen(true);
+            return;
+          }
+          void handleCreateNote();
+        }}
+        disabled={activeTab === "folders" ? dashboard.isCreatingFolder : dashboard.isCreatingNote}
         className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         <Plus size={32} color="#000000" />
@@ -210,12 +222,21 @@ export function DashboardScreen() {
         onCancel={() => setNoteToDelete(null)}
       />
 
-      <RenameFolderModal
+      <FolderModal
+        mode="edit"
         visible={!!folderToRename}
-        initialName={folderToRename?.name ?? ""}
+        initialName={folderToRename?.name}
         loading={dashboard.isRenamingFolder}
         onCancel={() => setFolderToRename(null)}
         onSave={handleRenameFolder}
+      />
+
+      <FolderModal
+        mode="create"
+        visible={isCreateFolderOpen}
+        loading={dashboard.isCreatingFolder}
+        onCancel={() => setIsCreateFolderOpen(false)}
+        onSave={handleCreateFolder}
       />
     </ScreenContainer>
   );

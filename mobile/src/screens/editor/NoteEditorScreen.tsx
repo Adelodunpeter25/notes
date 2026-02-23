@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import { ChevronLeft, Ellipsis } from "lucide-react-native";
+import { ChevronLeft, EllipsisVertical } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
@@ -228,7 +228,7 @@ export function NoteEditorScreen() {
             className="rounded-md px-2 py-1"
             hitSlop={12}
           >
-            <Ellipsis size={20} color="#eab308" />
+            <EllipsisVertical size={20} color="#eab308" />
           </Pressable>
         </View>
       </View>

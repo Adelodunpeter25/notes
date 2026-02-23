@@ -1,23 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, Text, TouchableWithoutFeedback, View } from "react-native";
 
 import { Button, Input } from "@/components/common";
 
-type RenameFolderModalProps = {
+type FolderModalMode = "create" | "edit";
+
+type FolderModalProps = {
   visible: boolean;
-  initialName: string;
+  mode: FolderModalMode;
+  initialName?: string;
   loading?: boolean;
   onCancel: () => void;
   onSave: (name: string) => void;
 };
 
-export function RenameFolderModal({
+export function FolderModal({
   visible,
-  initialName,
+  mode,
+  initialName = "",
   loading = false,
   onCancel,
   onSave,
-}: RenameFolderModalProps) {
+}: FolderModalProps) {
   const [name, setName] = useState(initialName);
 
   useEffect(() => {
@@ -25,7 +29,18 @@ export function RenameFolderModal({
   }, [initialName, visible]);
 
   const trimmed = name.trim();
-  const isDisabled = !trimmed || trimmed === initialName.trim() || loading;
+  const isDisabled = useMemo(() => {
+    if (!trimmed || loading) {
+      return true;
+    }
+    if (mode === "edit") {
+      return trimmed === initialName.trim();
+    }
+    return false;
+  }, [trimmed, loading, mode, initialName]);
+
+  const title = mode === "edit" ? "Rename Folder" : "New Folder";
+  const submitLabel = mode === "edit" ? "Save" : "Create";
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -33,7 +48,7 @@ export function RenameFolderModal({
         <View className="flex-1 items-center justify-center bg-black/60 px-6">
           <TouchableWithoutFeedback>
             <View className="w-full max-w-[340px] rounded-2xl border border-border/50 bg-surface p-5">
-              <Text className="mb-3 text-lg font-semibold text-text">Rename Folder</Text>
+              <Text className="mb-3 text-lg font-semibold text-text">{title}</Text>
               <Input
                 value={name}
                 onChangeText={setName}
@@ -49,7 +64,7 @@ export function RenameFolderModal({
                   <Text className="text-textMuted">Cancel</Text>
                 </Pressable>
                 <Button
-                  title="Save"
+                  title={submitLabel}
                   onPress={() => onSave(trimmed)}
                   disabled={isDisabled}
                   loading={loading}
