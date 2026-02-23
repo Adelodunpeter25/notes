@@ -32,16 +32,6 @@
   .no-drag {
     -webkit-app-region: no-drag;
   }
-
-  .editor-link {
-    color: #ffd60a !important;
-    text-decoration-color: #ffd60a !important;
-    cursor: text;
-  }
-
-  .editor-modifier-active .editor-link {
-    cursor: pointer;
-  }
 }
 
 /* Custom Scrollbar */
@@ -124,6 +114,18 @@
 
 .ProseMirror hr {
   @apply my-6 border-border;
+}
+
+.ProseMirror a {
+  @apply transition-colors cursor-text text-accent !important;
+  text-decoration-color: #eab308 !important;
+  /* Force yellow decoration */
+  color: #eab308 !important;
+  /* Force yellow text */
+}
+
+.editor-modifier-active .ProseMirror a {
+  @apply cursor-pointer hover:underline underline-offset-2 !important;
 }
 
 /* Task Lists */

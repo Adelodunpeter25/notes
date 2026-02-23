@@ -43,9 +43,15 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     const derivedTitle = useMemo(() => {
         if (!debouncedContent) return "";
         const doc = new DOMParser().parseFromString(debouncedContent, "text/html");
-        const firstElement = doc.body.firstElementChild;
-        return firstElement?.textContent?.trim() || "";
+        const text = (doc.body.textContent || "").trim();
+        const firstLine = text
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .find(Boolean);
+        return firstLine || "";
     }, [debouncedContent]);
+
+    const isDebounceSettled = debouncedContent === content && debouncedIsPinned === isPinned;
 
     useEffect(() => {
         const nextNoteId = note?.id ?? null;
@@ -79,13 +85,13 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     }, [note, onClearSelection]);
 
     const hasDebouncedChanges = useMemo(() => {
-        if (!note) return false;
+        if (!note || !isDebounceSettled) return false;
         return (
             (derivedTitle || "Untitled") !== (initialValues.current.title || "Untitled") ||
             debouncedContent !== initialValues.current.content ||
             debouncedIsPinned !== initialValues.current.isPinned
         );
-    }, [debouncedContent, debouncedIsPinned, derivedTitle, note]);
+    }, [debouncedContent, debouncedIsPinned, derivedTitle, isDebounceSettled, note]);
 
     useEffect(() => {
         if (!hasDebouncedChanges || !note) return;

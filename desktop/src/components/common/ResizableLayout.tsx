@@ -99,7 +99,7 @@ export function ResizableLayout({
           id="resize-handle-1"
           className={[
             "w-px cursor-col-resize bg-border transition-colors duration-200 ease-apple hover:bg-accent/60 active:bg-accent/80 sidebar-separator-transition",
-            leftCollapsed ? "hidden sidebar-separator-hidden" : "sidebar-separator-visible",
+            leftCollapsed ? "opacity-0 pointer-events-none w-0 sidebar-separator-hidden" : "sidebar-separator-visible",
           ].join(" ")}
         />
       )}
@@ -107,9 +107,9 @@ export function ResizableLayout({
       {center && (
         <Panel
           id="panel-center"
-          defaultSize={centerPanel?.defaultSize ?? 38}
-          minSize={centerPanel?.minSize ?? 25}
-          maxSize={centerPanel?.maxSize}
+          defaultSize={centerPanel?.defaultSize ?? 28}
+          minSize={centerPanel?.minSize ?? 20}
+          maxSize={leftCollapsed ? (centerPanel?.defaultSize ?? 28) : (centerPanel?.maxSize ?? 40)}
           className={panelClassName(centerPanel?.className)}
         >
           {center}
@@ -123,8 +123,8 @@ export function ResizableLayout({
       {right && (
         <Panel
           id="panel-right"
-          defaultSize={rightPanel?.defaultSize ?? 43}
-          minSize={rightPanel?.minSize ?? 25}
+          defaultSize={rightPanel?.defaultSize ?? 55}
+          minSize={rightPanel?.minSize ?? 35}
           maxSize={rightPanel?.maxSize}
           className={panelClassName(rightPanel?.className)}
         >

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { open } from "@tauri-apps/plugin-shell";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -107,7 +108,7 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
                     mouseEvent.preventDefault();
                     mouseEvent.stopPropagation();
                     const normalizedHref = /^www\./i.test(href) ? `https://${href}` : href;
-                    window.open(normalizedHref, "_blank", "noopener,noreferrer");
+                    open(normalizedHref).catch(console.error);
                     return true;
                 },
             },
