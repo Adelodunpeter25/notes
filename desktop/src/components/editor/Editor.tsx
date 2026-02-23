@@ -201,5 +201,5 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
         return null;
     }
 
-    return <EditorContent editor={editor} className="h-full w-full text-[14px] text-text/90 leading-relaxed" />;
+    return <EditorContent editor={editor} className="h-full w-full text-[13px] text-text/90 leading-relaxed" />;
 }
