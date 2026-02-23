@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
-import { View, Animated } from "react-native";
+import { View, Animated, type DimensionValue } from "react-native";
 import { cn } from "@/utils/cn";
 
 interface SkeletonProps {
     className?: string;
-    width?: number | string;
-    height?: number | string;
+    width?: DimensionValue;
+    height?: DimensionValue;
 }
 
 export function Skeleton({ className, width, height }: SkeletonProps) {

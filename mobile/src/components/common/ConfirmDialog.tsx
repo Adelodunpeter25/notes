@@ -2,7 +2,6 @@ import React from "react";
 import { Modal, View, Text, StyleSheet, TouchableWithoutFeedback } from "react-native";
 import { AppleNotesIcon } from "./AppleNotesIcon";
 import { Button } from "./Button";
-import { cn } from "@/utils/cn";
 
 interface ConfirmDialogProps {
     visible: boolean;
