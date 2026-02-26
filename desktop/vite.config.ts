@@ -11,6 +11,7 @@ export default defineConfig(async () => ({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@shared": fileURLToPath(new URL("../shared/types", import.meta.url)),
+      "@shared-utils": fileURLToPath(new URL("../shared/utils", import.meta.url)),
     },
   },
 

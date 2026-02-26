@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/api/apiClient";
 import type { NotePatchMessage, NoteSocketServerMessage } from "@shared/ws";
+import { getReconnectDelay } from "@shared-utils/reconnect";
 
 type PendingRequest = {
   resolve: () => void;
@@ -23,15 +24,35 @@ function buildNoteSocketURL(noteId: string, token: string): string {
 
 export class NoteSocket {
   private socket: WebSocket | null = null;
+  private noteID: string | null = null;
+  private token: string | null = null;
+  private shouldReconnect = false;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private handlers: NoteSocketHandlers = {};
 
   connect(noteId: string, token: string, handlers?: NoteSocketHandlers) {
     this.handlers = handlers ?? {};
-    this.socket = new WebSocket(buildNoteSocketURL(noteId, token));
+    this.noteID = noteId;
+    this.token = token;
+    this.shouldReconnect = true;
+    this.openSocket();
+  }
 
+  private openSocket() {
+    if (!this.noteID || !this.token) {
+      return;
+    }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    this.socket = new WebSocket(buildNoteSocketURL(this.noteID, this.token));
     this.socket.onopen = () => {
+      this.reconnectAttempt = 0;
       this.handlers.onReady?.();
     };
 
@@ -68,7 +89,17 @@ export class NoteSocket {
     this.socket.onclose = () => {
       this.rejectAllPending(new Error("websocket closed"));
       this.handlers.onClose?.();
+      if (this.shouldReconnect) {
+        this.scheduleReconnect();
+      }
     };
+  }
+
+  private scheduleReconnect() {
+    const delay = getReconnectDelay(this.reconnectAttempt++);
+    this.reconnectTimer = setTimeout(() => {
+      this.openSocket();
+    }, delay);
   }
 
   get isReady(): boolean {
@@ -102,6 +133,11 @@ export class NoteSocket {
   }
 
   close() {
+    this.shouldReconnect = false;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.rejectAllPending(new Error("socket closed"));
     this.socket?.close();
     this.socket = null;
@@ -115,4 +151,3 @@ export class NoteSocket {
     }
   }
 }
-

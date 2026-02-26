@@ -3,7 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["../shared/types/*"]
+      "@shared/*": ["../shared/types/*"],
+      "@shared-utils/*": ["../shared/utils/*"]
     },
     "target": "ES2021",
     "useDefineForClassFields": true,
@@ -21,6 +22,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../shared/types"],
+  "include": ["src", "../shared/types", "../shared/utils"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

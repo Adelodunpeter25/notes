@@ -9,6 +9,9 @@
       ],
       "@shared/*": [
         "../shared/types/*"
+      ],
+      "@shared-utils/*": [
+        "../shared/utils/*"
       ]
     }
   }
