@@ -96,10 +96,14 @@ export function Editor({
             backgroundColor: EDITOR_SURFACE_COLOR,
             color: "#ffffff",
             placeholderColor: "#636366",
-            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
+            contentCSSText:
+              "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white; " +
+              "max-width: 100%; overflow-x: hidden; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap;",
             cssText:
               "html, body { overflow-x: hidden !important; max-width: 100% !important; } " +
+              "* { max-width: 100% !important; box-sizing: border-box !important; } " +
               "p, div, span, li { max-width: 100% !important; overflow-wrap: anywhere !important; word-break: break-word !important; } " +
+              "pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: anywhere !important; } " +
               "a { color: #eab308 !important; text-decoration: underline; white-space: normal !important; overflow-wrap: anywhere !important; word-break: break-all !important; } " +
               ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; white-space: nowrap; } " +
               ".x-todo-box input { position: static !important; margin: 0 !important; } " +
