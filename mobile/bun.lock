@@ -9,7 +9,9 @@
         "@react-native-community/netinfo": "^12.0.1",
         "@react-navigation/native": "^7.1.28",
         "@react-navigation/stack": "^7.7.2",
+        "@tanstack/query-async-storage-persister": "^5.90.23",
         "@tanstack/react-query": "^5.90.21",
+        "@tanstack/react-query-persist-client": "^5.90.23",
         "axios": "^1.13.5",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
@@ -360,9 +362,15 @@
 
     "@sinonjs/fake-timers": ["@sinonjs/fake-timers@10.3.0", "", { "dependencies": { "@sinonjs/commons": "^3.0.0" } }, "sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA=="],
 
+    "@tanstack/query-async-storage-persister": ["@tanstack/query-async-storage-persister@5.90.23", "", { "dependencies": { "@tanstack/query-core": "5.90.20", "@tanstack/query-persist-client-core": "5.92.0" } }, "sha512-ANaoGlefQh3YYpyllrJDOLq9THLekhIrXPuV3OCi/CHNw5skCB6T7x/sN0/lridckmrZ8DwrdRXknf3HRkWpFg=="],
+
     "@tanstack/query-core": ["@tanstack/query-core@5.90.20", "", {}, "sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg=="],
 
+    "@tanstack/query-persist-client-core": ["@tanstack/query-persist-client-core@5.92.0", "", { "dependencies": { "@tanstack/query-core": "5.90.20" } }, "sha512-Q6gBeNwwA4fyC/PyW6xXBaAFggeEH+HmgQpmiNjVpTLsV1Una7j5Dzh4N130ZX5So13MAYOglUooceDEJJ479A=="],
+
     "@tanstack/react-query": ["@tanstack/react-query@5.90.21", "", { "dependencies": { "@tanstack/query-core": "5.90.20" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg=="],
+
+    "@tanstack/react-query-persist-client": ["@tanstack/react-query-persist-client@5.90.23", "", { "dependencies": { "@tanstack/query-persist-client-core": "5.92.0" }, "peerDependencies": { "@tanstack/react-query": "^5.90.21", "react": "^18 || ^19" } }, "sha512-GJH6/qnX+r/wdDJJ/zrAzQhBrOeV6KAFKo5L/HTcHnqaz3JBdWLkWUVcWCKYrGrOJqupMfJEdiH8kxzXBmDS3A=="],
 
     "@types/babel__core": ["@types/babel__core@7.20.5", "", { "dependencies": { "@babel/parser": "^7.20.7", "@babel/types": "^7.20.7", "@types/babel__generator": "*", "@types/babel__template": "*", "@types/babel__traverse": "*" } }, "sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA=="],
 

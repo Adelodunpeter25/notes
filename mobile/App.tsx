@@ -5,10 +5,10 @@ import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as NavigationBar from "expo-navigation-bar";
 
-import { queryClient } from "@/api/queryClient";
+import { queryClient, asyncStoragePersister } from "@/api/queryClient";
 import { RootNavigator } from "@/navigation";
 
 export default function App() {
@@ -21,12 +21,15 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister: asyncStoragePersister }}
+      >
         <SafeAreaProvider>
           <RootNavigator />
           <StatusBar style="light" backgroundColor="#252525" />
         </SafeAreaProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }

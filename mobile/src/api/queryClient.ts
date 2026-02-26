@@ -1,6 +1,8 @@
 import { QueryClient, focusManager, onlineManager } from "@tanstack/react-query";
 import { AppState, type AppStateStatus, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 
 onlineManager.setEventListener((setOnline) => {
     return NetInfo.addEventListener((state) => {
@@ -11,15 +13,21 @@ onlineManager.setEventListener((setOnline) => {
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 30, // 30 seconds
-            gcTime: 1000 * 60 * 10, // 10 minutes
+            staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+            gcTime: 1000 * 60 * 60 * 24 * 7, // 1 week
             retry: 1,
             refetchOnWindowFocus: Platform.OS === 'web',
+            refetchOnMount: true, // refetch on mount to sync with server when possible
+            refetchOnReconnect: true,
         },
         mutations: {
             retry: 0,
         },
     },
+});
+
+export const asyncStoragePersister = createAsyncStoragePersister({
+    storage: AsyncStorage,
 });
 
 // Handle refetch on app focus for mobile
