@@ -7,5 +7,6 @@ export * from "./useDashboardSelection";
 export * from "./useDashboardData";
 export * from "./useDashboardNotes";
 export * from "./useKeyboardShortcuts";
+export * from "./useNoteRealtime";
 export * from "./useSearch";
 export * from "./useWindowSizePersist";

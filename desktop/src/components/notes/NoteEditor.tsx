@@ -3,7 +3,7 @@ import { NotebookText } from "lucide-react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 
 import type { Note } from "@shared/notes";
-import { useDebounce } from "@/hooks";
+import { useDebounce, useNoteRealtime } from "@/hooks";
 import { formatNoteDateTime } from "@/utils/formatDate";
 import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { Toolbar } from "./Toolbar";
@@ -38,6 +38,7 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
 
     const debouncedContent = useDebounce(content, 500);
     const debouncedIsPinned = useDebounce(isPinned, 500);
+    const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
 
@@ -102,22 +103,33 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     useEffect(() => {
         if (!hasDebouncedChanges || !note) return;
         const timer = setTimeout(() => {
+            const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
+
+            if (isRealtimeReady) {
+                void sendRealtimePatch(payload)
+                    .catch(() => Promise.resolve(onSave(payload)))
+                    .then(() => {
+                        if (activeNoteIdRef.current !== note.id) {
+                            return;
+                        }
+
+                        initialValues.current = payload;
+                    });
+                return;
+            }
+
             void Promise.resolve(
-                onSave({ title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned }),
+                onSave(payload),
             ).then(() => {
                 if (activeNoteIdRef.current !== note.id) {
                     return;
                 }
 
-                initialValues.current = {
-                    title: derivedTitle || "Untitled",
-                    content: debouncedContent,
-                    isPinned: debouncedIsPinned,
-                };
+                initialValues.current = payload;
             });
         }, 500);
         return () => clearTimeout(timer);
-    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, note, onSave]);
+    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note, onSave, sendRealtimePatch]);
 
     const noteDateLabel = formatNoteDateTime(note?.updatedAt || note?.createdAt);
 

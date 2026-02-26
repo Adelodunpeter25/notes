@@ -11,11 +11,13 @@ import { NoteContextMenu } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import {
   useDebounce,
+  useNoteRealtime,
   useNotesQuery,
   useUpdateNoteMutation,
   useDeleteNoteMutation,
   useFoldersQuery,
 } from "@/hooks";
+import { useAuthStore } from "@/stores/authStore";
 import { deriveNoteTitleFromHtml, isEmptyDraftNote } from "@/utils/noteContent";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
@@ -26,10 +28,12 @@ export function NoteEditorScreen() {
   const route = useRoute<EditorRoute>();
   const { noteId } = route.params;
 
+  const token = useAuthStore((state) => state.token);
   const notesQuery = useNotesQuery();
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
   const foldersQuery = useFoldersQuery();
+  const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime({ noteId, token });
 
   const note = useMemo(
     () => (notesQuery.data ?? []).find((currentNote) => currentNote.id === noteId),
@@ -89,13 +93,24 @@ export function NoteEditorScreen() {
       payload.title = derivedTitle;
     }
 
+    if (isRealtimeReady) {
+      try {
+        await sendRealtimePatch(payload, true);
+        lastSavedContent.current = content;
+        lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
+        return;
+      } catch {
+        // Fallback to REST patch
+      }
+    }
+
     const updatedNote = await updateNoteMutation.mutateAsync({
       noteId: note.id,
       payload,
     });
     lastSavedContent.current = updatedNote.content;
     lastSavedTitle.current = updatedNote.title;
-  }, [content, note, updateNoteMutation]);
+  }, [content, isRealtimeReady, note, sendRealtimePatch, updateNoteMutation]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
@@ -145,19 +160,39 @@ export function NoteEditorScreen() {
       return;
     }
 
+    const payload = {
+      content: debouncedContent,
+      ...(derivedTitle !== lastSavedTitle.current ? { title: derivedTitle } : {}),
+    };
+
+    if (isRealtimeReady) {
+      void sendRealtimePatch(payload).then(() => {
+        lastSavedContent.current = debouncedContent;
+        lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
+      }).catch(() => {
+        updateNoteMutation.mutate({
+          noteId: note.id,
+          payload,
+        }, {
+          onSuccess: (updatedNote) => {
+            lastSavedContent.current = updatedNote.content;
+            lastSavedTitle.current = updatedNote.title;
+          },
+        });
+      });
+      return;
+    }
+
     updateNoteMutation.mutate({
       noteId: note.id,
-      payload: {
-        content: debouncedContent,
-        ...(derivedTitle !== lastSavedTitle.current ? { title: derivedTitle } : {}),
-      },
+      payload,
     }, {
       onSuccess: (updatedNote) => {
         lastSavedContent.current = updatedNote.content;
         lastSavedTitle.current = updatedNote.title;
       },
     });
-  }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
+  }, [debouncedContent, isRealtimeReady, note, sendRealtimePatch, updateNoteMutation, updateNoteMutation.isPending]);
 
   const handlePinToggle = async () => {
     if (!note) return;

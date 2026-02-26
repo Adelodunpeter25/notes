@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -16,23 +17,44 @@ const userIDContextKey contextKey = "userID"
 func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			header := strings.TrimSpace(r.Header.Get("Authorization"))
-			if !strings.HasPrefix(header, "Bearer ") {
+			userID, err := AuthenticateRequest(jwtSecret, r)
+			if err != nil || userID == "" {
 				WriteAuthError(w)
 				return
 			}
 
-			token := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
-			claims, err := utils.ParseAuthToken(jwtSecret, token)
-			if err != nil || claims.UserID == "" {
-				WriteAuthError(w)
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), userIDContextKey, claims.UserID)
+			ctx := context.WithValue(r.Context(), userIDContextKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func AuthenticateRequest(jwtSecret string, r *http.Request) (string, error) {
+	token, err := ExtractAuthToken(r)
+	if err != nil || token == "" {
+		return "", errors.New("missing token")
+	}
+
+	claims, err := utils.ParseAuthToken(jwtSecret, token)
+	if err != nil || claims.UserID == "" {
+		return "", errors.New("invalid token")
+	}
+
+	return claims.UserID, nil
+}
+
+func ExtractAuthToken(r *http.Request) (string, error) {
+	header := strings.TrimSpace(r.Header.Get("Authorization"))
+	if strings.HasPrefix(header, "Bearer ") {
+		return strings.TrimSpace(strings.TrimPrefix(header, "Bearer ")), nil
+	}
+
+	queryToken := strings.TrimSpace(r.URL.Query().Get("token"))
+	if queryToken != "" {
+		return queryToken, nil
+	}
+
+	return "", errors.New("missing auth token")
 }
 
 func UserIDFromContext(ctx context.Context) string {
