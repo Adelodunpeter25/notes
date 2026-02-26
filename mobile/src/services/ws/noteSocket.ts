@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "@/api/apiClient";
 import type { NotePatchMessage, NoteSocketServerMessage } from "@shared/ws";
-import { getReconnectDelay } from "@shared-utils/reconnect";
+import { getReconnectDelay } from "../../../../shared/utils/reconnect";
 
 type PendingRequest = {
   resolve: () => void;
