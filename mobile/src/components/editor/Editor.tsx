@@ -82,9 +82,10 @@ export function Editor({
               "ul.task-list, ul[data-type='taskList'], ul.x-todo-list { margin-left: 0 !important; padding-left: 0 !important; } " +
               "li.task-list-item, li[data-type='taskItem'], li.x-todo-item { margin-left: 0 !important; padding-left: 0 !important; text-indent: 0 !important; } " +
               ".x-todo-box + span, .x-todo-box + div, .x-todo-box + p { display: inline !important; } " +
-              "ul.x-todo-list > li, ul.task-list > li, ul[data-type='taskList'] > li { list-style: none !important; display: flex !important; align-items: center !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; } " +
-              "ul.x-todo-list > li > .x-todo-box, ul.task-list > li > .x-todo-box, ul[data-type='taskList'] > li > .x-todo-box { float: none !important; flex: 0 0 auto !important; margin: -1px 0 0 0 !important; } " +
-              "ul.x-todo-list > li > *, ul.task-list > li > *, ul[data-type='taskList'] > li > * { min-width: 0; line-height: 1.5; }",
+              "ul.x-todo-list > li, ul.task-list > li, ul[data-type='taskList'] > li { list-style: none !important; display: flex !important; align-items: flex-start !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; } " +
+              "ul.x-todo-list > li > .x-todo-box, ul.task-list > li > .x-todo-box, ul[data-type='taskList'] > li > .x-todo-box { float: none !important; flex: 0 0 auto !important; margin: 1px 0 0 0 !important; } " +
+              "ul.x-todo-list > li > *, ul.task-list > li > *, ul[data-type='taskList'] > li > * { min-width: 0; line-height: 1.5; } " +
+              "ul.x-todo-list > li > span, ul.x-todo-list > li > p, ul.x-todo-list > li > div, ul.task-list > li > span, ul.task-list > li > p, ul.task-list > li > div, ul[data-type='taskList'] > li > span, ul[data-type='taskList'] > li > p, ul[data-type='taskList'] > li > div { flex: 1 1 auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; margin: 0 !important; }",
           }}
           useContainer={false}
           initialHeight={500}
