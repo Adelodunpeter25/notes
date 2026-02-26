@@ -87,8 +87,8 @@ export function NoteList({
                 // Keep the swipeable open while the confirmation dialog is visible.
                 // It will be closed onCancel.
               }}
-              friction={2}
-              leftThreshold={40}
+              friction={1}
+              leftThreshold={22}
               overshootLeft={false}
             >
               <ListItem
