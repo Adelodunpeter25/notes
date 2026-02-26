@@ -3,6 +3,7 @@ import { Alert, Pressable, Text, View } from "react-native";
 import { ChevronLeft, EllipsisVertical } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout";
@@ -17,8 +18,10 @@ import {
   useDeleteNoteMutation,
   useFoldersQuery,
 } from "@/hooks";
+import { notesKeys } from "@/hooks/useNotes";
 import { useAuthStore } from "@/stores/authStore";
 import { deriveNoteTitleFromHtml, isEmptyDraftNote } from "@/utils/noteContent";
+import type { Note } from "@shared/notes";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
@@ -27,6 +30,7 @@ export function NoteEditorScreen() {
   const navigation = useNavigation<Navigation>();
   const route = useRoute<EditorRoute>();
   const { noteId } = route.params;
+  const queryClient = useQueryClient();
 
   const token = useAuthStore((state) => state.token);
   const notesQuery = useNotesQuery();
@@ -52,6 +56,10 @@ export function NoteEditorScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    void notesQuery.refetch();
+  }, [noteId]);
 
   useEffect(() => {
     // Only set content if we switched to a different note
@@ -98,6 +106,19 @@ export function NoteEditorScreen() {
         await sendRealtimePatch(payload, true);
         lastSavedContent.current = content;
         lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
+        queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (current) => {
+          if (!current) return current;
+          return current.map((entry) =>
+            entry.id === note.id
+              ? {
+                  ...entry,
+                  content,
+                  title: payload.title ?? entry.title,
+                  updatedAt: new Date().toISOString(),
+                }
+              : entry,
+          );
+        });
         return;
       } catch {
         // Fallback to REST patch
@@ -169,6 +190,19 @@ export function NoteEditorScreen() {
       void sendRealtimePatch(payload).then(() => {
         lastSavedContent.current = debouncedContent;
         lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
+        queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (current) => {
+          if (!current) return current;
+          return current.map((entry) =>
+            entry.id === note.id
+              ? {
+                  ...entry,
+                  content: debouncedContent,
+                  title: payload.title ?? entry.title,
+                  updatedAt: new Date().toISOString(),
+                }
+              : entry,
+          );
+        });
       }).catch(() => {
         updateNoteMutation.mutate({
           noteId: note.id,
@@ -192,7 +226,7 @@ export function NoteEditorScreen() {
         lastSavedTitle.current = updatedNote.title;
       },
     });
-  }, [debouncedContent, isRealtimeReady, note, sendRealtimePatch, updateNoteMutation, updateNoteMutation.isPending]);
+  }, [debouncedContent, isRealtimeReady, note, queryClient, sendRealtimePatch, updateNoteMutation, updateNoteMutation.isPending]);
 
   const handlePinToggle = async () => {
     if (!note) return;
