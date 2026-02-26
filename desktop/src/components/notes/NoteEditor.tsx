@@ -85,7 +85,6 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
 
         const frame = window.requestAnimationFrame(() => {
             contentContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-            editorRef.current?.commands.focus("start");
         });
 
         return () => {
