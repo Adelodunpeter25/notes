@@ -61,7 +61,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
             backgroundColor: "#000000",
             color: "#ffffff",
             placeholderColor: "#636366",
-            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.5; padding: 16px; color: white;",
+            contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
             cssText: "a { color: #eab308 !important; text-decoration: underline; }"
           }}
           useContainer={false}
