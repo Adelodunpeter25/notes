@@ -44,6 +44,28 @@ export function Editor({
     onChange(nextContent);
   }, [onChange]);
 
+  useEffect(() => {
+    if (!editable) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      richText.current?.getContentHtml()?.then((currentHtml) => {
+        const nextContent = currentHtml || "";
+        if (nextContent === lastEditorContentRef.current) {
+          return;
+        }
+
+        lastEditorContentRef.current = nextContent;
+        onChange(nextContent);
+      }).catch(() => {
+        // Ignore transient WebView bridge errors
+      });
+    }, 700);
+
+    return () => clearInterval(interval);
+  }, [editable, onChange]);
+
   return (
     <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }} className="flex-1">
       <ScrollView
