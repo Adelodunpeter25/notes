@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import toIco from "to-ico";
+import { Icns, IcnsImage } from "@fiahfy/icns";
 
 const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const sourceSvg = path.join(rootDir, "shared/assets/notes-icon.svg");
@@ -41,6 +43,41 @@ async function generate() {
 
     console.log(`generated ${target.file} (${target.size}x${target.size})`);
   }
+
+  const icoSizes = [16, 24, 32, 48, 64, 128, 256];
+  const icoPngs = await Promise.all(
+    icoSizes.map((size) =>
+      sharp(svgBuffer)
+        .resize(size, size, { fit: "contain" })
+        .png()
+        .toBuffer(),
+    ),
+  );
+  const icoBuffer = await toIco(icoPngs);
+  const icoPath = path.join(rootDir, "desktop/src-tauri/icons/icon.ico");
+  await fs.writeFile(icoPath, icoBuffer);
+  console.log("generated desktop/src-tauri/icons/icon.ico");
+
+  const icnsIconTypes = [
+    { osType: "icp4", size: 16 },
+    { osType: "icp5", size: 32 },
+    { osType: "icp6", size: 64 },
+    { osType: "ic07", size: 128 },
+    { osType: "ic08", size: 256 },
+    { osType: "ic09", size: 512 },
+    { osType: "ic10", size: 1024 },
+  ];
+  const icns = new Icns();
+  for (const iconType of icnsIconTypes) {
+    const pngBuffer = await sharp(svgBuffer)
+      .resize(iconType.size, iconType.size, { fit: "contain" })
+      .png()
+      .toBuffer();
+    icns.append(IcnsImage.fromPNG(pngBuffer, iconType.osType));
+  }
+  const icnsPath = path.join(rootDir, "desktop/src-tauri/icons/icon.icns");
+  await fs.writeFile(icnsPath, icns.data);
+  console.log("generated desktop/src-tauri/icons/icon.icns");
 }
 
 generate().catch((error) => {

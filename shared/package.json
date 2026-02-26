@@ -6,6 +6,8 @@
     "icons": "bun run ./scripts/generate-icons.js"
   },
   "devDependencies": {
-    "sharp": "^0.34.5"
+    "@fiahfy/icns": "^0.0.7",
+    "sharp": "^0.34.5",
+    "to-ico": "^1.1.5"
   }
 }
