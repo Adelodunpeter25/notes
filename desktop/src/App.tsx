@@ -32,25 +32,32 @@ function App() {
   useWindowSizePersist();
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const timeoutByElement = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 
-    const handleScroll = () => {
-      document.documentElement.classList.add("is-scrolling");
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    const handleScroll = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
       }
-      timeoutId = setTimeout(() => {
-        document.documentElement.classList.remove("is-scrolling");
-      }, 180);
+
+      target.classList.add("is-scrolling");
+
+      const existingTimeout = timeoutByElement.get(target);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+
+      const timeoutId = setTimeout(() => {
+        target.classList.remove("is-scrolling");
+        timeoutByElement.delete(target);
+      }, 80);
+
+      timeoutByElement.set(target, timeoutId);
     };
 
     window.addEventListener("scroll", handleScroll, true);
     return () => {
       window.removeEventListener("scroll", handleScroll, true);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      document.documentElement.classList.remove("is-scrolling");
     };
   }, []);
 
