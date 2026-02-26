@@ -1,59 +1,53 @@
-const BREAK_TAG_REGEX = /<(\/?(p|div|h1|h2|h3|h4|h5|h6|li|blockquote|pre|br|hr))[^>]*>/gi;
+const LINE_BREAK_TAG_REGEX = /<(\/p|\/div|\/h[1-6]|br)\s*>/gi;
 const TAG_REGEX = /<[^>]*>/g;
 
-function htmlToPlainText(html: string): string {
-  if (!html) return "";
-
-  // 1. Replace block-level tags and breaks with newlines
-  let text = html.replace(BREAK_TAG_REGEX, "\n");
-
-  // 2. Remove all remaining tags
-  text = text.replace(TAG_REGEX, " ");
-
-  // 3. Decode common HTML entities
-  text = text
+function decodeEntities(value: string): string {
+  return value
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
+    .replace(/&quot;/gi, "\"")
     .replace(/&#39;/gi, "'")
     .replace(/\u00a0/g, " ");
-
-  return text;
 }
 
-function getMeaningfulLines(text: string): string[] {
+function toLines(content: string): string[] {
+  const normalizedHtml = (content || "")
+    .replace(LINE_BREAK_TAG_REGEX, "\n")
+    .replace(/<li[^>]*>/gi, "\n")
+    .replace(/<blockquote[^>]*>/gi, "\n")
+    .replace(/<pre[^>]*>/gi, "\n")
+    .replace(/<\/li>/gi, "")
+    .replace(/<\/blockquote>/gi, "")
+    .replace(/<\/pre>/gi, "");
+
+  const text = decodeEntities(normalizedHtml.replace(TAG_REGEX, " "));
+
   return text
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 }
 
-export function deriveNoteTitleFromHtml(html: string): string {
-  const lines = getMeaningfulLines(htmlToPlainText(html));
-  const title = lines[0] || "Untitled";
-  return title.length > 100 ? title.substring(0, 100) + "..." : title;
+export function deriveNoteTitleFromHtml(content: string): string {
+  const lines = toLines(content);
+  const firstLine = lines[0] || "Untitled";
+  return firstLine.length > 100 ? `${firstLine.slice(0, 100)}…` : firstLine;
 }
 
-export function deriveNotePreviewFromHtml(html: string): string {
-  const lines = getMeaningfulLines(htmlToPlainText(html));
-  // Skip the title line and join the rest with spaces
-  if (lines.length <= 1) return "";
-  return lines.slice(1).join(" ").trim();
+export function deriveNotePreviewFromHtml(content: string): string {
+  const lines = toLines(content);
+  const previewSource = lines.slice(1).join(" ").trim() || lines[0] || "";
+  return previewSource;
 }
 
 export function hasMeaningfulHtmlContent(content: string): boolean {
-  if (!content) return false;
-  const text = htmlToPlainText(content).trim();
-  return text.length > 0;
+  return toLines(content).length > 0;
 }
 
 export function isEmptyDraftNote(note: { title?: string; content?: string; isPinned?: boolean }): boolean {
   const normalizedTitle = (note.title || "").trim();
   const hasContent = hasMeaningfulHtmlContent(note.content || "");
-
-  // A note is an empty draft if it's not pinned, has no content, 
-  // and has no title or the default "Untitled" title
   return !note.isPinned && !hasContent && (normalizedTitle === "" || normalizedTitle === "Untitled");
 }
