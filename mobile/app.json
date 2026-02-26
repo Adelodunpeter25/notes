@@ -21,7 +21,8 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.adelodunpeter.notes"
     },
     "web": {
       "favicon": "./assets/favicon.png"
