@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { ScrollView, Platform, KeyboardAvoidingView, View, Text } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollView, Platform, Keyboard, View, Text } from "react-native";
 import { formatNoteDateTime } from "@/utils/formatDate";
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +25,7 @@ export function Editor({
   const insets = useSafeAreaInsets();
   const latestValueRef = useRef(value);
   const lastEditorContentRef = useRef(value || "");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     const nextValue = value || "";
@@ -65,6 +66,40 @@ export function Editor({
 
     return () => clearInterval(interval);
   }, [editable, onChange]);
+
+  useEffect(() => {
+    if (!editable) {
+      setKeyboardHeight(0);
+      return;
+    }
+
+    if (Platform.OS === "ios") {
+      const frameSub = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
+        const height = Math.max(0, event.endCoordinates.height - insets.bottom);
+        setKeyboardHeight(height);
+      });
+      const hideSub = Keyboard.addListener("keyboardWillHide", () => {
+        setKeyboardHeight(0);
+      });
+
+      return () => {
+        frameSub.remove();
+        hideSub.remove();
+      };
+    }
+
+    const showSub = Keyboard.addListener("keyboardDidShow", (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [editable, insets.bottom]);
 
   return (
     <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }} className="flex-1">
@@ -120,38 +155,36 @@ export function Editor({
         />
       </ScrollView>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      <View
+        style={{
+          marginBottom: keyboardHeight,
+          paddingBottom: Platform.OS === "ios" ? insets.bottom : 8,
+        }}
+        className="border-t border-white/5"
       >
-        <View
-          style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-          className="border-t border-white/5"
-        >
-          <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
-            <RichToolbar
-              editor={richText}
-              actions={[
-                actions.setBold,
-                actions.setItalic,
-                actions.setStrikethrough,
-                actions.insertBulletsList,
-                actions.insertOrderedList,
-                actions.checkboxList,
-                actions.undo,
-                actions.redo,
-              ]}
-              iconTint="#ffffff"
-              selectedIconTint="#eab308"
-              disabledIconTint="#48484a"
-              style={{
-                backgroundColor: "transparent",
-                opacity: editable ? 1 : 0.45,
-              }}
-            />
-          </View>
+        <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
+          <RichToolbar
+            editor={richText}
+            actions={[
+              actions.setBold,
+              actions.setItalic,
+              actions.setStrikethrough,
+              actions.insertBulletsList,
+              actions.insertOrderedList,
+              actions.checkboxList,
+              actions.undo,
+              actions.redo,
+            ]}
+            iconTint="#ffffff"
+            selectedIconTint="#eab308"
+            disabledIconTint="#48484a"
+            style={{
+              backgroundColor: "transparent",
+              opacity: editable ? 1 : 0.45,
+            }}
+          />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
