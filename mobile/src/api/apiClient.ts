@@ -10,7 +10,9 @@ import type { ApiError, ApiErrorPayload } from "@shared/api";
 
 // For Android emulator, use IP address of your computer instead of localhost
 // For real devices, replace with your computer's local IP (e.g., 192.168.1.5)
-const API_BASE_URL = "http://192.168.1.107:8000/api";
+const API_BASE_URL = __DEV__
+    ? "http://192.168.1.107:8000/api"
+    : "https://notes-api.pxxl.click/api";
 
 const instance: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,
