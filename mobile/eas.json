@@ -29,7 +29,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": ""
+        "appleId": "placeholder@example.com"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
