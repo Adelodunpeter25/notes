@@ -52,7 +52,7 @@
   transition: background-color 140ms ease-out;
 }
 
-*:hover::-webkit-scrollbar-thumb {
+html.is-scrolling *::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.24);
   border: 2px solid transparent;
   background-clip: padding-box;

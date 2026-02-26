@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Navigate, Route, Routes, HashRouter } from "react-router-dom";
 
 import { LoginPage, SignupPage } from "@/pages/auth";
@@ -30,6 +30,29 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const handleScroll = () => {
+      document.documentElement.classList.add("is-scrolling");
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => {
+        document.documentElement.classList.remove("is-scrolling");
+      }, 180);
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      document.documentElement.classList.remove("is-scrolling");
+    };
+  }, []);
 
   return (
     <HashRouter>
