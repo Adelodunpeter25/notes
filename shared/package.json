@@ -1,0 +1,11 @@
+{
+  "name": "@notes/shared-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "icons": "bun run ./scripts/generate-icons.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}
