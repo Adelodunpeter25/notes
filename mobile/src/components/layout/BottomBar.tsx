@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { Folder, NotebookText } from "lucide-react-native";
+import { Folder, NotebookPen } from "lucide-react-native";
 
 type BottomTab = "notes" | "folders";
 
@@ -19,7 +19,7 @@ export function BottomBar({ activeTab, onChangeTab }: BottomBarProps) {
           activeTab === "notes" ? "bg-surfaceSecondary/60" : "",
         ].join(" ")}
       >
-        <NotebookText
+        <NotebookPen
           size={18}
           color={activeTab === "notes" ? "#eab308" : "#a0a0a0"}
           strokeWidth={2.2}
