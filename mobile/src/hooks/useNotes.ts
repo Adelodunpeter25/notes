@@ -38,6 +38,7 @@ export function useCreateNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['createNote'],
     mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
@@ -50,6 +51,7 @@ export function useUpdateNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['updateNote'],
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
       apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
     onSuccess: (updatedNote, variables) => {

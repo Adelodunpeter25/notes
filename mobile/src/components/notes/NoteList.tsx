@@ -82,14 +82,14 @@ export function NoteList({
             <Swipeable
               ref={(ref) => { swipeableRefs.current[item.id] = ref; }}
               renderLeftActions={renderLeftActions}
-              onSwipeableLeftOpen={() => {
+              onSwipeableOpen={() => {
                 setNoteToDelete(item);
                 // Snap closed immediately to let the dialog handle it
                 swipeableRefs.current[item.id]?.close();
               }}
-              friction={1}
+              friction={2}
               leftThreshold={40}
-              overshootLeft={true}
+              overshootLeft={false}
             >
               <ListItem
                 title={title}

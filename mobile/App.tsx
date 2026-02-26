@@ -23,7 +23,12 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister: asyncStoragePersister }}
+        persistOptions={{
+          persister: asyncStoragePersister,
+          dehydrateOptions: {
+            shouldDehydrateMutation: () => true,
+          },
+        }}
       >
         <SafeAreaProvider>
           <RootNavigator />

@@ -3,7 +3,8 @@ import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search, Plus } from "lucide-react-native";
+import { Search, Plus, WifiOff } from "lucide-react-native";
+import { useNetInfo } from "@react-native-community/netinfo";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
@@ -20,6 +21,7 @@ export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<"notes" | "folders">("notes");
   const dashboard = useDashboardData();
+  const netInfo = useNetInfo();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -91,9 +93,19 @@ export function DashboardScreen() {
   return (
     <ScreenContainer>
       <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-        <Text className="text-xl font-semibold text-text">
-          {activeTab === "folders" ? "Folders" : "Notes"}
-        </Text>
+        <View className="flex-row items-center">
+          <Text className="text-xl font-semibold text-text">
+            {activeTab === "folders" ? "Folders" : "Notes"}
+          </Text>
+          {netInfo.isConnected === false && (
+            <View className="ml-3 flex-row items-center rounded-full bg-danger/20 px-2 py-1">
+              <WifiOff size={12} color="#ff4444" />
+              <Text className="ml-1 text-[11px] font-medium text-danger uppercase tracking-wider">
+                Offline
+              </Text>
+            </View>
+          )}
+        </View>
         <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
           <Search size={18} color="#eab308" />
         </Pressable>
