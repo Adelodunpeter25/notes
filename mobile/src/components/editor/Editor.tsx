@@ -77,25 +77,26 @@ export function Editor({
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
             cssText:
               "a { color: #eab308 !important; text-decoration: underline; } " +
-              ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; } " +
+              ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; white-space: nowrap; } " +
               ".x-todo-box input { position: static !important; margin: 0 !important; } " +
-              "li:has(.x-todo-box) { list-style-type: none; display: flex; align-items: flex-start; gap: 8px; }",
+              ".x-todo-box + span, .x-todo-box + div, .x-todo-box + p { display: inline !important; } " +
+              "li .x-todo-box { float: left; } " +
+              "li { overflow: hidden; }",
           }}
           useContainer={false}
           initialHeight={500}
         />
       </ScrollView>
 
-      {editable && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <View
+          style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
+          className="border-t border-white/5"
         >
-          <View
-            style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-            className="border-t border-white/5"
-            >
-            <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
+          <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
             <RichToolbar
               editor={richText}
               actions={[
@@ -113,12 +114,12 @@ export function Editor({
               disabledIconTint="#48484a"
               style={{
                 backgroundColor: "transparent",
+                opacity: editable ? 1 : 0.45,
               }}
             />
-            </View>
           </View>
-        </KeyboardAvoidingView>
-      )}
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

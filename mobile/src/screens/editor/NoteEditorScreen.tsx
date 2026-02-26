@@ -25,6 +25,7 @@ import type { Note } from "@shared/notes";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
+const EDITOR_SURFACE_COLOR = "#1A1B1E";
 
 export function NoteEditorScreen() {
   const navigation = useNavigation<Navigation>();
@@ -272,8 +273,8 @@ export function NoteEditorScreen() {
 
 
   return (
-    <ScreenContainer className="bg-black">
-      <View className="bg-black px-2 pt-4 pb-2">
+    <ScreenContainer style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
+      <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }} className="px-2 pt-4 pb-2">
         <View className="flex-row items-center justify-between">
         <Pressable
           onPress={async () => {
