@@ -98,7 +98,9 @@ export function Editor({
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
             cssText:
-              "a { color: #eab308 !important; text-decoration: underline; } " +
+              "html, body { overflow-x: hidden !important; max-width: 100% !important; } " +
+              "p, div, span, li { max-width: 100% !important; overflow-wrap: anywhere !important; word-break: break-word !important; } " +
+              "a { color: #eab308 !important; text-decoration: underline; white-space: normal !important; overflow-wrap: anywhere !important; word-break: break-all !important; } " +
               ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; white-space: nowrap; } " +
               ".x-todo-box input { position: static !important; margin: 0 !important; } " +
               "ul.task-list, ul[data-type='taskList'], ul.x-todo-list { margin-left: 0 !important; padding-left: 0 !important; } " +
