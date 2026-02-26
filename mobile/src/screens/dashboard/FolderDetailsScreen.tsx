@@ -1,7 +1,7 @@
 import { Text, View, Alert } from "react-native";
 import { Pressable } from "react-native";
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Plus } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
@@ -9,7 +9,13 @@ import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { NoteList, NoteContextMenu } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
-import { useDeleteNoteMutation, useFolderNotesQuery, useFoldersQuery, useUpdateNoteMutation } from "@/hooks";
+import {
+  useCreateNoteMutation,
+  useDeleteNoteMutation,
+  useFolderNotesQuery,
+  useFoldersQuery,
+  useUpdateNoteMutation,
+} from "@/hooks";
 import type { Note } from "@shared/notes";
 
 type FolderDetailsRoute = RouteProp<AppStackParamList, "FolderDetails">;
@@ -22,6 +28,7 @@ export function FolderDetailsScreen() {
 
   const notesQuery = useFolderNotesQuery(folderId);
   const foldersQuery = useFoldersQuery();
+  const createNoteMutation = useCreateNoteMutation();
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
@@ -79,8 +86,18 @@ export function FolderDetailsScreen() {
           <ChevronLeft size={18} color="#eab308" />
           <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="text-lg font-semibold text-text">{folderName}</Text>
-        <Text className="mt-1 text-xs text-textMuted">Notes in this folder</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-text">{folderName}</Text>
+          <Pressable
+            onPress={() => {
+              void handleCreateNote();
+            }}
+            disabled={createNoteMutation.isPending}
+            className="rounded-md p-1.5"
+          >
+            <Plus size={18} color="#eab308" />
+          </Pressable>
+        </View>
       </View>
 
       <View className="flex-1">
@@ -137,3 +154,16 @@ export function FolderDetailsScreen() {
     </ScreenContainer>
   );
 }
+  const handleCreateNote = async () => {
+    try {
+      const created = await createNoteMutation.mutateAsync({
+        folderId,
+        title: "Untitled",
+        content: "",
+        isPinned: false,
+      });
+      navigation.navigate("Editor", { noteId: created.id });
+    } catch (error) {
+      console.error("Failed to create note in folder:", error);
+    }
+  };
