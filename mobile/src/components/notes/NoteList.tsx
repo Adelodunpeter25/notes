@@ -94,6 +94,8 @@ export function NoteList({
               <ListItem
                 title={title}
                 subtitle={`${dateStr} ${preview}`.trim()}
+                titleClassName="text-[16px]"
+                subtitleClassName="text-[13px]"
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
                 onPress={() => onSelectNote?.(item)}
                 onLongPress={(event) => onLongPressNote?.(item, event)}

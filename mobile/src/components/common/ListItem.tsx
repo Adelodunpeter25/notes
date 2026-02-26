@@ -6,6 +6,8 @@ import { cn } from "@/utils/cn";
 interface ListItemProps {
     title: string;
     subtitle?: React.ReactNode;
+    titleClassName?: string;
+    subtitleClassName?: string;
     icon?: React.ReactNode;
     count?: number;
     onPress: () => void;
@@ -18,6 +20,8 @@ interface ListItemProps {
 export function ListItem({
     title,
     subtitle,
+    titleClassName,
+    subtitleClassName,
     icon,
     count,
     onPress,
@@ -41,10 +45,10 @@ export function ListItem({
             <View className="flex-row items-center flex-1">
                 {icon && <View className="mr-3">{icon}</View>}
                 <View className="flex-1">
-                    <Text className="text-[17px] font-medium text-text" numberOfLines={1}>{title}</Text>
+                    <Text className={cn("text-[17px] font-medium text-text", titleClassName)} numberOfLines={1}>{title}</Text>
                     {subtitle && (
                         typeof subtitle === "string" ? (
-                            <Text className="text-[14px] text-textMuted mt-0.5" numberOfLines={1}>
+                            <Text className={cn("text-[14px] text-textMuted mt-0.5", subtitleClassName)} numberOfLines={1}>
                                 {subtitle}
                             </Text>
                         ) : (
