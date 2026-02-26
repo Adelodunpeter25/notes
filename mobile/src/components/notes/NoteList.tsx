@@ -84,8 +84,8 @@ export function NoteList({
               renderLeftActions={renderLeftActions}
               onSwipeableOpen={() => {
                 setNoteToDelete(item);
-                // Snap closed immediately to let the dialog handle it
-                swipeableRefs.current[item.id]?.close();
+                // Keep the swipeable open while the confirmation dialog is visible.
+                // It will be closed onCancel.
               }}
               friction={2}
               leftThreshold={40}
