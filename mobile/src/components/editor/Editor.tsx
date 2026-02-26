@@ -12,6 +12,8 @@ type EditorProps = {
   editable?: boolean;
 };
 
+const EDITOR_SURFACE_COLOR = "#1A1B1E";
+
 export function Editor({
   value,
   onChange,
@@ -43,7 +45,7 @@ export function Editor({
   }, [onChange]);
 
   return (
-    <View className="flex-1 bg-[#101113]">
+    <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }} className="flex-1">
       <ScrollView
         className="flex-1"
         keyboardDismissMode="on-drag"
@@ -69,7 +71,7 @@ export function Editor({
           }}
           placeholder={placeholder}
           editorStyle={{
-            backgroundColor: "#101113",
+            backgroundColor: EDITOR_SURFACE_COLOR,
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
@@ -91,8 +93,9 @@ export function Editor({
         >
           <View
             style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-            className="bg-[#101113] border-t border-white/5"
-          >
+            className="border-t border-white/5"
+            >
+            <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }}>
             <RichToolbar
               editor={richText}
               actions={[
@@ -112,6 +115,7 @@ export function Editor({
                 backgroundColor: "transparent",
               }}
             />
+            </View>
           </View>
         </KeyboardAvoidingView>
       )}
