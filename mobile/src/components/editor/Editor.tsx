@@ -65,7 +65,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
-            cssText: "a { color: #eab308 !important; text-decoration: underline; }"
+            cssText: "a { color: #eab308 !important; text-decoration: underline; } .x-todo-box { position: static; left: auto; margin-right: 8px; display: inline-flex; align-items: center; vertical-align: middle; } .x-todo-box input { position: static !important; margin: 0; } li:has(.x-todo-box) { list-style-type: none; }"
           }}
           useContainer={false}
           initialHeight={500}
