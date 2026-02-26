@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes, HashRouter } from "react-router-dom";
 
 import { LoginPage, SignupPage } from "@/pages/auth";
@@ -30,36 +30,6 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
-
-  useEffect(() => {
-    const timeoutByElement = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
-
-    const handleScroll = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) {
-        return;
-      }
-
-      target.classList.add("is-scrolling");
-
-      const existingTimeout = timeoutByElement.get(target);
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-      }
-
-      const timeoutId = setTimeout(() => {
-        target.classList.remove("is-scrolling");
-        timeoutByElement.delete(target);
-      }, 80);
-
-      timeoutByElement.set(target, timeoutId);
-    };
-
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, []);
 
   return (
     <HashRouter>

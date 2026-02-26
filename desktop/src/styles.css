@@ -36,8 +36,8 @@
 
 /* Custom Scrollbar */
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
 }
 
 *::-webkit-scrollbar-track {
@@ -45,13 +45,8 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 9999px;
-  transition: background-color 140ms ease-out;
-}
-
-*.is-scrolling::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.24);
+  border-radius: 9999px;
 }
 
 /* Tiptap / ProseMirror Styles */
