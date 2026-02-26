@@ -36,7 +36,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
   }, [onChange]);
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1 bg-[#101113]">
       <ScrollView
         className="flex-1"
         keyboardDismissMode="on-drag"
@@ -61,7 +61,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           }}
           placeholder={placeholder}
           editorStyle={{
-            backgroundColor: "#000000",
+            backgroundColor: "#101113",
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
@@ -78,7 +78,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
       >
         <View
           style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-          className="bg-[#2c2c2e] border-t border-white/5"
+          className="bg-[#26272a] border-t border-white/5"
         >
           <RichToolbar
             editor={richText}
