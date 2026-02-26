@@ -21,6 +21,7 @@ target/
 # Go build caches
 server/.gocache/
 server/.gomodcache/
+server/.env
 
 # Editors
 .idea/
