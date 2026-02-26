@@ -9,9 +9,16 @@ type EditorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   timestamp?: string;
+  editable?: boolean;
 };
 
-export function Editor({ value, onChange, placeholder = "Start writing...", timestamp }: EditorProps) {
+export function Editor({
+  value,
+  onChange,
+  placeholder = "Start writing...",
+  timestamp,
+  editable = true,
+}: EditorProps) {
   const richText = useRef<RichEditor>(null);
   const insets = useSafeAreaInsets();
   const latestValueRef = useRef(value);
@@ -53,6 +60,7 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           ref={richText}
           initialContentHTML={value}
           onChange={handleChange}
+          disabled={!editable}
           initialFocus={false}
           editorInitializedCallback={() => {
             richText.current?.setContentHTML(latestValueRef.current || "");
@@ -65,42 +73,48 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
             color: "#ffffff",
             placeholderColor: "#636366",
             contentCSSText: "font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.5; padding: 16px; color: white;",
-            cssText: "a { color: #eab308 !important; text-decoration: underline; } .x-todo-box { position: static; left: auto; margin-right: 8px; display: inline-flex; align-items: center; vertical-align: middle; } .x-todo-box input { position: static !important; margin: 0; } li:has(.x-todo-box) { list-style-type: none; }"
+            cssText:
+              "a { color: #eab308 !important; text-decoration: underline; } " +
+              ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; } " +
+              ".x-todo-box input { position: static !important; margin: 0 !important; } " +
+              "li:has(.x-todo-box) { list-style-type: none; display: flex; align-items: flex-start; gap: 8px; }",
           }}
           useContainer={false}
           initialHeight={500}
         />
       </ScrollView>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-      >
-        <View
-          style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-          className="bg-[#26272a] border-t border-white/5"
+      {editable && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
         >
-          <RichToolbar
-            editor={richText}
-            actions={[
-              actions.setBold,
-              actions.setItalic,
-              actions.setStrikethrough,
-              actions.insertBulletsList,
-              actions.insertOrderedList,
-              actions.checkboxList,
-              actions.undo,
-              actions.redo,
-            ]}
-            iconTint="#ffffff"
-            selectedIconTint="#eab308"
-            disabledIconTint="#48484a"
-            style={{
-              backgroundColor: "transparent",
-            }}
-          />
-        </View>
-      </KeyboardAvoidingView>
+          <View
+            style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
+            className="bg-[#101113] border-t border-white/5"
+          >
+            <RichToolbar
+              editor={richText}
+              actions={[
+                actions.setBold,
+                actions.setItalic,
+                actions.setStrikethrough,
+                actions.insertBulletsList,
+                actions.insertOrderedList,
+                actions.checkboxList,
+                actions.undo,
+                actions.redo,
+              ]}
+              iconTint="#ffffff"
+              selectedIconTint="#eab308"
+              disabledIconTint="#48484a"
+              style={{
+                backgroundColor: "transparent",
+              }}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      )}
     </View>
   );
 }

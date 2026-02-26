@@ -56,6 +56,7 @@ export function NoteEditorScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     void notesQuery.refetch();
@@ -71,6 +72,7 @@ export function NoteEditorScreen() {
       hasUserEdited.current = false;
       lastSavedContent.current = initialContent;
       lastSavedTitle.current = note.title || "Untitled";
+      setIsEditing(false);
     }
   }, [note]);
 
@@ -294,16 +296,30 @@ export function NoteEditorScreen() {
           <ChevronLeft size={20} color="#eab308" />
           <Text className="ml-0.5 text-sm font-medium text-accent">Back</Text>
         </Pressable>
-          <Pressable
-            onPress={(event) => {
-              setMenuAnchor({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
-              setIsMenuOpen(true);
-            }}
-            className="rounded-md px-2 py-1"
-            hitSlop={12}
-          >
-            <EllipsisVertical size={20} color="#eab308" />
-          </Pressable>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => {
+                if (isEditing) {
+                  void saveNow();
+                }
+                setIsEditing((previous) => !previous);
+              }}
+              className="rounded-md px-2 py-1"
+              hitSlop={12}
+            >
+              <Text className="text-sm font-medium text-accent">{isEditing ? "Done" : "Edit"}</Text>
+            </Pressable>
+            <Pressable
+              onPress={(event) => {
+                setMenuAnchor({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
+                setIsMenuOpen(true);
+              }}
+              className="rounded-md px-2 py-1"
+              hitSlop={12}
+            >
+              <EllipsisVertical size={20} color="#eab308" />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -313,6 +329,7 @@ export function NoteEditorScreen() {
           value={content}
           onChange={handleEditorChange}
           timestamp={note?.updatedAt || note?.createdAt}
+          editable={isEditing}
         />
       </View>
 
