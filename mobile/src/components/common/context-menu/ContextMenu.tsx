@@ -22,7 +22,7 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
         { backgroundColor: pressed ? "rgba(255, 255, 255, 0.1)" : "transparent" }
     ];
 
-    const menuWidth = 280;
+    const menuWidth = 256;
     const estimatedHeight = (title ? 52 : 0) + items.length * 50 + 12;
     const left = Math.max(12, Math.min((anchor?.x ?? 20) - 20, 390 - menuWidth));
     const top = Math.max(56, Math.min((anchor?.y ?? 120) + 8, 844 - estimatedHeight));
@@ -38,7 +38,7 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
                 <View className="flex-1 bg-black/40">
                     <TouchableWithoutFeedback>
                         <View
-                            className="absolute w-[280px] bg-[#2c2c2e] rounded-2xl overflow-hidden shadow-2xl"
+                            className="absolute w-[256px] bg-[#2c2c2e] rounded-2xl overflow-hidden shadow-2xl"
                             style={{ left, top }}
                         >
                             {title && (

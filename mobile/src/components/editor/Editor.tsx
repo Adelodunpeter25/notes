@@ -35,14 +35,6 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
     onChange(nextContent);
   }, [onChange]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      richText.current?.focusContentEditor();
-    }, 120);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
   return (
     <View className="flex-1 bg-black">
       <ScrollView
@@ -63,7 +55,6 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           onChange={handleChange}
           editorInitializedCallback={() => {
             richText.current?.setContentHTML(latestValueRef.current || "");
-            richText.current?.focusContentEditor();
           }}
           placeholder={placeholder}
           editorStyle={{
