@@ -79,6 +79,8 @@ export function Editor({
               "a { color: #eab308 !important; text-decoration: underline; } " +
               ".x-todo-box { position: static !important; left: auto !important; margin-right: 8px; display: inline-flex !important; align-items: center; vertical-align: middle; white-space: nowrap; } " +
               ".x-todo-box input { position: static !important; margin: 0 !important; } " +
+              "ul.task-list, ul[data-type='taskList'], ul.x-todo-list { margin-left: 0 !important; padding-left: 0 !important; } " +
+              "li.task-list-item, li[data-type='taskItem'], li.x-todo-item { margin-left: 0 !important; padding-left: 0 !important; text-indent: 0 !important; } " +
               ".x-todo-box + span, .x-todo-box + div, .x-todo-box + p { display: inline !important; } " +
               "li .x-todo-box { float: left; } " +
               "li { overflow: hidden; }",
