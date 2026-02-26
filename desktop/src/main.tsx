@@ -13,7 +13,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister }}
+      persistOptions={{
+        persister,
+        dehydrateOptions: {
+          shouldDehydrateMutation: () => true,
+        },
+      }}
     >
       <App />
     </PersistQueryClientProvider>
