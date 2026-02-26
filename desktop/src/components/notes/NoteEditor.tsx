@@ -20,6 +20,7 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     const [content, setContent] = useState("");
     const [isPinned, setIsPinned] = useState(false);
     const editorRef = useRef<TiptapEditor | null>(null);
+    const contentContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Force re-render of Toolbar when editor updates state
     const [, setEditorStateTick] = useState(0);
@@ -83,7 +84,8 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
         }
 
         const frame = window.requestAnimationFrame(() => {
-            editorRef.current?.commands.focus("end");
+            contentContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+            editorRef.current?.commands.focus("start");
         });
 
         return () => {
@@ -156,7 +158,10 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
                     </div>
                 </div>
             ) : (
-                <div className="min-h-0 flex-1 overflow-y-auto px-10 py-5 max-w-4xl mx-auto w-full pb-24">
+                <div
+                    ref={contentContainerRef}
+                    className="min-h-0 flex-1 overflow-y-auto px-10 py-5 max-w-4xl mx-auto w-full pb-24"
+                >
                     <p className="mb-3 text-center text-[11px] font-normal leading-none text-muted/70">{noteDateLabel}</p>
 
                     <Editor
