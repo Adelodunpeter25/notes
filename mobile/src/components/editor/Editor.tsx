@@ -53,8 +53,11 @@ export function Editor({ value, onChange, placeholder = "Start writing...", time
           ref={richText}
           initialContentHTML={value}
           onChange={handleChange}
+          initialFocus={false}
           editorInitializedCallback={() => {
             richText.current?.setContentHTML(latestValueRef.current || "");
+            // Ensure we blur the editor when it is initialized to prevent keyboard auto-open
+            richText.current?.blurContentEditor();
           }}
           placeholder={placeholder}
           editorStyle={{
