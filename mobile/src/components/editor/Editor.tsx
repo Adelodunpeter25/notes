@@ -31,6 +31,12 @@ export function Editor({
     const nextValue = value || "";
     latestValueRef.current = nextValue;
 
+    // While actively editing, never force HTML from props.
+    // This prevents cursor/selection resets during autosave or cache updates.
+    if (editable) {
+      return;
+    }
+
     // Prevent cursor jump: don't re-set HTML when change originated from editor typing
     if (nextValue === lastEditorContentRef.current) {
       return;
@@ -38,7 +44,7 @@ export function Editor({
 
     lastEditorContentRef.current = nextValue;
     richText.current?.setContentHTML(nextValue);
-  }, [value]);
+  }, [editable, value]);
 
   const handleChange = useCallback((nextContent: string) => {
     lastEditorContentRef.current = nextContent || "";
