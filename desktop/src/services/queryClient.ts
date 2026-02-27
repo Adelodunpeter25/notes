@@ -7,7 +7,7 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
       gcTime: 1000 * 60 * 60 * 24 * 7,    // 1 week
       refetchOnWindowFocus: false,
-      refetchOnMount: true, // Allow refetching on mount to sync with server
+      refetchOnMount: "always", // Always sync with server when screens mount
       refetchOnReconnect: true,
       retry: 1,
     },
