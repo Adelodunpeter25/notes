@@ -76,6 +76,20 @@ export function FolderDetailsScreen() {
     },
   }));
 
+  const handleCreateNote = async () => {
+    try {
+      const created = await createNoteMutation.mutateAsync({
+        folderId,
+        title: "Untitled",
+        content: "",
+        isPinned: false,
+      });
+      navigation.navigate("Editor", { noteId: created.id });
+    } catch (error) {
+      console.error("Failed to create note in folder:", error);
+    }
+  };
+
   return (
     <ScreenContainer>
       <View className="border-b border-border px-4 py-3">
@@ -154,16 +168,3 @@ export function FolderDetailsScreen() {
     </ScreenContainer>
   );
 }
-  const handleCreateNote = async () => {
-    try {
-      const created = await createNoteMutation.mutateAsync({
-        folderId,
-        title: "Untitled",
-        content: "",
-        isPinned: false,
-      });
-      navigation.navigate("Editor", { noteId: created.id });
-    } catch (error) {
-      console.error("Failed to create note in folder:", error);
-    }
-  };
