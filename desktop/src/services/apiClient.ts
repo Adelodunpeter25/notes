@@ -8,7 +8,7 @@ import axios, {
 import type { ApiError, ApiErrorPayload } from "@shared/api";
 
 const API_BASE_URL = import.meta.env.PROD
-  ? "https://notes-api.pxxl.click/api"
+  ? "https://tunnel-6e9m.onrender.com/notes/api"
   : import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000/api";
 
 const AUTH_TOKEN_STORAGE_KEY = "notes_access_token";
