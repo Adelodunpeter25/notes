@@ -19,7 +19,7 @@ export const queryClient = new QueryClient({
             gcTime: 1000 * 60 * 60 * 24 * 7, // 1 week
             retry: 1,
             refetchOnWindowFocus: Platform.OS === 'web',
-            refetchOnMount: true, // refetch on mount to sync with server when possible
+            refetchOnMount: "always", // always sync with server when screens mount
             refetchOnReconnect: true,
         },
         mutations: {
