@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Note } from "@shared/notes";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useDebounce } from "./useDebounce";
 import { useFoldersQuery, useCreateFolderMutation, useRenameFolderMutation, useDeleteFolderMutation } from "./useFolders";
-import { useNotesQuery } from "./useNotes";
+import { syncPatchedNoteInCache, useNotesQuery } from "./useNotes";
 import { useNotesActions } from "./useNotesActions";
 import { isEmptyDraftNote } from "@/utils/noteContent";
 
@@ -18,6 +19,7 @@ type DashboardSelectionState = {
 };
 
 export function useDashboardData(selection: DashboardSelectionState) {
+  const queryClient = useQueryClient();
   const debouncedSearchQuery = useDebounce(selection.searchQuery, 300);
 
   const foldersQuery = useFoldersQuery();
@@ -126,6 +128,14 @@ export function useDashboardData(selection: DashboardSelectionState) {
     return notesActions.saveSelectedNote(selection.selectedNoteId, payload);
   }
 
+  function saveNoteLocal(payload: { title: string; content: string; isPinned: boolean }) {
+    if (!selection.selectedNoteId) {
+      return;
+    }
+
+    syncPatchedNoteInCache(queryClient, selection.selectedNoteId, payload);
+  }
+
   async function createFolder() {
     const created = await createFolderMutation.mutateAsync({ name: "Untitled Folder" });
     selection.setSelectedFolderId(created.id);
@@ -165,6 +175,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
     setEditingFolderId,
     createNote,
     saveNote,
+    saveNoteLocal,
     updateNote: notesActions.updateNote,
     deleteNote,
     createFolder,

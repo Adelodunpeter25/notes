@@ -75,6 +75,7 @@ export function DashboardPage() {
             <NoteEditor
               note={data.selectedNote}
               onSave={data.saveNote}
+              onLocalSave={data.saveNoteLocal}
               onClearSelection={selection.clearSelectedNote}
               searchResultsOverlay={
                 selection.isSearchExpanded && selection.searchQuery.length > 0 ? (

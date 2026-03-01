@@ -12,11 +12,12 @@ import { Editor } from "@/components/editor";
 type NoteEditorProps = {
     note?: Note;
     onSave: (payload: { title: string; content: string; isPinned: boolean }) => Promise<unknown> | void;
+    onLocalSave?: (payload: { title: string; content: string; isPinned: boolean }) => void;
     onClearSelection?: () => void;
     searchResultsOverlay?: React.ReactNode;
 };
 
-export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverlay }: NoteEditorProps) {
+export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, searchResultsOverlay }: NoteEditorProps) {
     const [content, setContent] = useState("");
     const [isPinned, setIsPinned] = useState(false);
     const editorRef = useRef<TiptapEditor | null>(null);
@@ -37,8 +38,8 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
         };
     }, [editorRef.current]);
 
-    const debouncedContent = useDebounce(content, 100);
-    const debouncedIsPinned = useDebounce(isPinned, 100);
+    const debouncedContent = useDebounce(content, 80);
+    const debouncedIsPinned = useDebounce(isPinned, 80);
     const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
@@ -103,34 +104,39 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
 
     useEffect(() => {
         if (!hasDebouncedChanges || !note) return;
-        const timer = setTimeout(() => {
-            const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
+        let cancelled = false;
+        const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
+        onLocalSave?.(payload);
 
-            if (isRealtimeReady) {
-                void sendRealtimePatch(payload)
-                    .catch(() => Promise.resolve(onSave(payload)))
-                    .then(() => {
-                        if (activeNoteIdRef.current !== note.id) {
-                            return;
-                        }
+        if (isRealtimeReady) {
+            void sendRealtimePatch(payload)
+                .catch(() => Promise.resolve(onSave(payload)))
+                .then(() => {
+                    if (cancelled || activeNoteIdRef.current !== note.id) {
+                        return;
+                    }
 
-                        initialValues.current = payload;
-                    });
+                    initialValues.current = payload;
+                });
+            return () => {
+                cancelled = true;
+            };
+        }
+
+        void Promise.resolve(
+            onSave(payload),
+        ).then(() => {
+            if (cancelled || activeNoteIdRef.current !== note.id) {
                 return;
             }
 
-            void Promise.resolve(
-                onSave(payload),
-            ).then(() => {
-                if (activeNoteIdRef.current !== note.id) {
-                    return;
-                }
+            initialValues.current = payload;
+        });
 
-                initialValues.current = payload;
-            });
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note, onSave, sendRealtimePatch]);
+        return () => {
+            cancelled = true;
+        };
+    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note, onLocalSave, onSave, sendRealtimePatch]);
 
     const noteDateLabel = formatNoteDateTime(note?.updatedAt || note?.createdAt);
 
