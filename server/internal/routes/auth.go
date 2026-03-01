@@ -16,14 +16,14 @@ type AuthHandler struct {
 	service services.AuthService
 }
 
-func RegisterAuthRoutes(r chi.Router, authService services.AuthService, jwtSecret string) {
+func RegisterAuthRoutes(r chi.Router, authService services.AuthService, jwtSecret string, conn *gorm.DB) {
 	handler := AuthHandler{service: authService}
 
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/signup", handler.signup)
 		r.Post("/login", handler.login)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.AuthMiddleware(jwtSecret))
+			r.Use(middleware.AuthMiddleware(jwtSecret, conn))
 			r.Get("/me", handler.me)
 		})
 	})

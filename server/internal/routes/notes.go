@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 	"notes/server/internal/middleware"
 	"notes/server/internal/schemas"
 	"notes/server/internal/services"
@@ -15,11 +16,11 @@ type NoteHandler struct {
 	service services.NoteService
 }
 
-func RegisterNoteRoutes(r chi.Router, noteService services.NoteService, jwtSecret string) {
+func RegisterNoteRoutes(r chi.Router, noteService services.NoteService, jwtSecret string, conn *gorm.DB) {
 	handler := NoteHandler{service: noteService}
 
 	r.Route("/api/notes", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware(jwtSecret))
+		r.Use(middleware.AuthMiddleware(jwtSecret, conn))
 		r.Post("/", handler.create)
 		r.Get("/", handler.list)
 		r.Patch("/{noteId}", handler.update)

@@ -27,10 +27,10 @@ func NewRouter(cfg config.Config, poller *db.HealthPoller, conn *gorm.DB) http.H
 	realtimeHub := ws.NewHub()
 
 	RegisterHealthRoutes(r, poller)
-	RegisterAuthRoutes(r, authService, cfg.JWTSecret)
-	RegisterNoteRoutes(r, noteService, cfg.JWTSecret)
-	RegisterFolderRoutes(r, folderService, cfg.JWTSecret)
-	RegisterRealtimeNoteRoutes(r, realtimeNoteService, realtimeHub, cfg.JWTSecret)
+	RegisterAuthRoutes(r, authService, cfg.JWTSecret, conn)
+	RegisterNoteRoutes(r, noteService, cfg.JWTSecret, conn)
+	RegisterFolderRoutes(r, folderService, cfg.JWTSecret, conn)
+	RegisterRealtimeNoteRoutes(r, realtimeNoteService, realtimeHub, cfg.JWTSecret, conn)
 
 	return r
 }

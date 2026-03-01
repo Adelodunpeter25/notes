@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 	"notes/server/internal/middleware"
 	"notes/server/internal/schemas"
 	"notes/server/internal/services"
@@ -15,11 +16,11 @@ type FolderHandler struct {
 	service services.FolderService
 }
 
-func RegisterFolderRoutes(r chi.Router, folderService services.FolderService, jwtSecret string) {
+func RegisterFolderRoutes(r chi.Router, folderService services.FolderService, jwtSecret string, conn *gorm.DB) {
 	handler := FolderHandler{service: folderService}
 
 	r.Route("/api/folders", func(r chi.Router) {
-		r.Use(middleware.AuthMiddleware(jwtSecret))
+		r.Use(middleware.AuthMiddleware(jwtSecret, conn))
 		r.Post("/", handler.create)
 		r.Get("/", handler.list)
 		r.Get("/{folderId}/notes", handler.listNotes)

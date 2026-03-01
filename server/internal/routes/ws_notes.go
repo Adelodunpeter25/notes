@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 	appmiddleware "notes/server/internal/middleware"
 	"notes/server/internal/services"
 	"notes/server/internal/ws"
@@ -12,6 +13,7 @@ import (
 
 type RealtimeNoteHandler struct {
 	jwtSecret string
+	db        *gorm.DB
 	service   services.RealtimeNoteService
 	hub       *ws.Hub
 	upgrader  websocket.Upgrader
@@ -22,9 +24,11 @@ func RegisterRealtimeNoteRoutes(
 	realtimeService services.RealtimeNoteService,
 	hub *ws.Hub,
 	jwtSecret string,
+	conn *gorm.DB,
 ) {
 	handler := RealtimeNoteHandler{
 		jwtSecret: jwtSecret,
+		db:        conn,
 		service:   realtimeService,
 		hub:       hub,
 		upgrader: websocket.Upgrader{
@@ -42,7 +46,7 @@ func (handler RealtimeNoteHandler) connect(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userID, err := appmiddleware.AuthenticateRequest(handler.jwtSecret, r)
+	userID, err := appmiddleware.AuthenticateRequest(handler.jwtSecret, handler.db, r)
 	if err != nil || userID == "" {
 		appmiddleware.WriteAuthError(w)
 		return
