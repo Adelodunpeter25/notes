@@ -37,8 +37,8 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
         };
     }, [editorRef.current]);
 
-    const debouncedContent = useDebounce(content, 500);
-    const debouncedIsPinned = useDebounce(isPinned, 500);
+    const debouncedContent = useDebounce(content, 100);
+    const debouncedIsPinned = useDebounce(isPinned, 100);
     const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
@@ -128,7 +128,7 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
 
                 initialValues.current = payload;
             });
-        }, 500);
+        }, 100);
         return () => clearTimeout(timer);
     }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note, onSave, sendRealtimePatch]);
 
