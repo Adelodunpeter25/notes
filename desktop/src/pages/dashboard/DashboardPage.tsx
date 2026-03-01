@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { NoteEditor, NotesList, FoldersSidebar } from "@/components/notes";
 import { ResizableLayout } from "@/components/common";
@@ -14,26 +14,36 @@ export function DashboardPage() {
   const data = useDashboardData(selection);
   const setNewNoteHandler = useKeyboardShortcutsStore((state) => state.setNewNoteHandler);
   const setNewFolderHandler = useKeyboardShortcutsStore((state) => state.setNewFolderHandler);
+  const createNoteRef = useRef(data.createNote);
+  const createFolderRef = useRef(data.createFolder);
+
+  useEffect(() => {
+    createNoteRef.current = data.createNote;
+  }, [data.createNote]);
+
+  useEffect(() => {
+    createFolderRef.current = data.createFolder;
+  }, [data.createFolder]);
 
   useEffect(() => {
     setNewNoteHandler(() => {
-      void data.createNote();
+      void createNoteRef.current();
     });
 
     return () => {
       setNewNoteHandler(null);
     };
-  }, [data.createNote, setNewNoteHandler]);
+  }, [setNewNoteHandler]);
 
   useEffect(() => {
     setNewFolderHandler(() => {
-      void data.createFolder();
+      void createFolderRef.current();
     });
 
     return () => {
       setNewFolderHandler(null);
     };
-  }, [data.createFolder, setNewFolderHandler]);
+  }, [setNewFolderHandler]);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">

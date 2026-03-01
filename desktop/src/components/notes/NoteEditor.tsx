@@ -43,6 +43,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
+    const isSavingRef = useRef(false);
 
     const derivedTitle = useMemo(() => deriveNoteTitleFromHtml(debouncedContent), [debouncedContent]);
 
@@ -62,6 +63,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
             content: note?.content ?? "",
             isPinned: note?.isPinned ?? false,
         };
+        isSavingRef.current = false;
     }, [note?.id]);
 
     useEffect(() => {
@@ -103,8 +105,10 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     }, [debouncedContent, debouncedIsPinned, derivedTitle, isDebounceSettled, note]);
 
     useEffect(() => {
-        if (!hasDebouncedChanges || !note) return;
+        const noteId = note?.id;
+        if (!hasDebouncedChanges || !noteId || isSavingRef.current) return;
         let cancelled = false;
+        isSavingRef.current = true;
         const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
         onLocalSave?.(payload);
 
@@ -112,11 +116,14 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
             void sendRealtimePatch(payload)
                 .catch(() => Promise.resolve(onSave(payload)))
                 .then(() => {
-                    if (cancelled || activeNoteIdRef.current !== note.id) {
+                    if (cancelled || activeNoteIdRef.current !== noteId) {
                         return;
                     }
 
                     initialValues.current = payload;
+                })
+                .finally(() => {
+                    isSavingRef.current = false;
                 });
             return () => {
                 cancelled = true;
@@ -126,17 +133,19 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         void Promise.resolve(
             onSave(payload),
         ).then(() => {
-            if (cancelled || activeNoteIdRef.current !== note.id) {
+            if (cancelled || activeNoteIdRef.current !== noteId) {
                 return;
             }
 
             initialValues.current = payload;
+        }).finally(() => {
+            isSavingRef.current = false;
         });
 
         return () => {
             cancelled = true;
         };
-    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note, onLocalSave, onSave, sendRealtimePatch]);
+    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note?.id, onLocalSave, onSave, sendRealtimePatch]);
 
     const noteDateLabel = formatNoteDateTime(note?.updatedAt || note?.createdAt);
 
