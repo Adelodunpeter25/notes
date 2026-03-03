@@ -11,8 +11,8 @@ import { Editor } from "@/components/editor";
 
 type NoteEditorProps = {
     note?: Note;
-    onSave: (payload: { title: string; content: string; isPinned: boolean }) => Promise<unknown> | void;
-    onLocalSave?: (payload: { title: string; content: string; isPinned: boolean }) => void;
+    onSave: (noteId: string, payload: { title: string; content: string; isPinned: boolean }) => Promise<unknown> | void;
+    onLocalSave?: (noteId: string, payload: { title: string; content: string; isPinned: boolean }) => void;
     onClearSelection?: () => void;
     searchResultsOverlay?: React.ReactNode;
 };
@@ -104,17 +104,45 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         );
     }, [debouncedContent, debouncedIsPinned, derivedTitle, isDebounceSettled, note]);
 
+    const latestStateRef = useRef({ noteId: note?.id, title: derivedTitle, content: debouncedContent, isPinned: debouncedIsPinned });
+    useEffect(() => {
+        latestStateRef.current = { noteId: note?.id, title: derivedTitle, content: debouncedContent, isPinned: debouncedIsPinned };
+    }, [note?.id, derivedTitle, debouncedContent, debouncedIsPinned]);
+
+    useEffect(() => {
+        return () => {
+            const state = latestStateRef.current;
+            const noteId = state.noteId;
+            if (!noteId) return;
+
+            const hasUnsavedChanges =
+                (state.title || "Untitled") !== (initialValues.current.title || "Untitled") ||
+                state.content !== initialValues.current.content ||
+                state.isPinned !== initialValues.current.isPinned;
+
+            if (hasUnsavedChanges && !isSavingRef.current) {
+                const payload = { title: state.title || "Untitled", content: state.content, isPinned: state.isPinned };
+                onLocalSave?.(noteId, payload);
+                if (isRealtimeReady) {
+                    void sendRealtimePatch(payload);
+                } else {
+                    void Promise.resolve(onSave(noteId, payload));
+                }
+            }
+        };
+    }, [isRealtimeReady, onLocalSave, onSave, sendRealtimePatch]);
+
     useEffect(() => {
         const noteId = note?.id;
         if (!hasDebouncedChanges || !noteId || isSavingRef.current) return;
         let cancelled = false;
         isSavingRef.current = true;
         const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
-        onLocalSave?.(payload);
+        onLocalSave?.(noteId, payload);
 
         if (isRealtimeReady) {
             void sendRealtimePatch(payload)
-                .catch(() => Promise.resolve(onSave(payload)))
+                .catch(() => Promise.resolve(onSave(noteId, payload)))
                 .then(() => {
                     if (cancelled || activeNoteIdRef.current !== noteId) {
                         return;
@@ -131,7 +159,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         }
 
         void Promise.resolve(
-            onSave(payload),
+            onSave(noteId, payload),
         ).then(() => {
             if (cancelled || activeNoteIdRef.current !== noteId) {
                 return;

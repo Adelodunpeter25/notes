@@ -4,8 +4,8 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
-      gcTime: 1000 * 60 * 60 * 24 * 7,    // 1 week
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24,    // 24 hours
       refetchOnWindowFocus: false,
       refetchOnMount: "always", // Always sync with server when screens mount
       refetchOnReconnect: true,

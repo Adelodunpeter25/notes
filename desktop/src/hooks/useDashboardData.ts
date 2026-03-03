@@ -124,16 +124,16 @@ export function useDashboardData(selection: DashboardSelectionState) {
     selection.setSelectedNoteId(created.id);
   }
 
-  async function saveNote(payload: { title: string; content: string; isPinned: boolean }) {
-    return notesActions.saveSelectedNote(selection.selectedNoteId, payload);
+  async function saveNote(noteId: string, payload: { title: string; content: string; isPinned: boolean }) {
+    return notesActions.saveSelectedNote(noteId, payload);
   }
 
-  function saveNoteLocal(payload: { title: string; content: string; isPinned: boolean }) {
-    if (!selection.selectedNoteId) {
+  function saveNoteLocal(noteId: string, payload: { title: string; content: string; isPinned: boolean }) {
+    if (!noteId) {
       return;
     }
 
-    syncPatchedNoteInCache(queryClient, selection.selectedNoteId, payload);
+    syncPatchedNoteInCache(queryClient, noteId, payload);
   }
 
   async function createFolder() {
