@@ -109,6 +109,11 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         latestStateRef.current = { noteId: note?.id, title: derivedTitle, content: debouncedContent, isPinned: debouncedIsPinned };
     }, [note?.id, derivedTitle, debouncedContent, debouncedIsPinned]);
 
+    const callbacksRef = useRef({ onLocalSave, onSave, sendRealtimePatch, isRealtimeReady });
+    useEffect(() => {
+        callbacksRef.current = { onLocalSave, onSave, sendRealtimePatch, isRealtimeReady };
+    }, [onLocalSave, onSave, sendRealtimePatch, isRealtimeReady]);
+
     useEffect(() => {
         return () => {
             const state = latestStateRef.current;
@@ -122,15 +127,16 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
 
             if (hasUnsavedChanges && !isSavingRef.current) {
                 const payload = { title: state.title || "Untitled", content: state.content, isPinned: state.isPinned };
-                onLocalSave?.(noteId, payload);
-                if (isRealtimeReady) {
-                    void sendRealtimePatch(payload);
+                const cb = callbacksRef.current;
+                cb.onLocalSave?.(noteId, payload);
+                if (cb.isRealtimeReady) {
+                    void cb.sendRealtimePatch(payload);
                 } else {
-                    void Promise.resolve(onSave(noteId, payload));
+                    void Promise.resolve(cb.onSave(noteId, payload));
                 }
             }
         };
-    }, [isRealtimeReady, onLocalSave, onSave, sendRealtimePatch]);
+    }, []);
 
     useEffect(() => {
         const noteId = note?.id;

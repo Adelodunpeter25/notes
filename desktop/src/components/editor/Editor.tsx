@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { open } from "@tauri-apps/plugin-shell";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -51,34 +51,36 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
         return doc.body.innerHTML || "<p></p>";
     }
 
+    const extensions = useMemo(() => [
+        StarterKit,
+        Underline,
+        TaskList,
+        TaskItem.configure({
+            nested: true,
+        }),
+        Table.configure({
+            resizable: true,
+        }),
+        TableRow,
+        TableHeader,
+        TableCell,
+        Link.configure({
+            autolink: true,
+            linkOnPaste: true,
+            openOnClick: false,
+            HTMLAttributes: {
+                class: "editor-link underline underline-offset-2",
+                rel: "noopener noreferrer",
+                target: "_blank",
+            },
+        }),
+        Placeholder.configure({
+            placeholder: "Write your note here...",
+        }),
+    ], []);
+
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Underline,
-            TaskList,
-            TaskItem.configure({
-                nested: true,
-            }),
-            Table.configure({
-                resizable: true,
-            }),
-            TableRow,
-            TableHeader,
-            TableCell,
-            Link.configure({
-                autolink: true,
-                linkOnPaste: true,
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: "editor-link underline underline-offset-2",
-                    rel: "noopener noreferrer",
-                    target: "_blank",
-                },
-            }),
-            Placeholder.configure({
-                placeholder: "Write your note here...",
-            }),
-        ],
+        extensions,
         content,
         onUpdate: ({ editor }) => {
             isInternalUpdate.current = true;

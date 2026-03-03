@@ -19,13 +19,19 @@ export function useNoteRealtime(noteID?: string) {
       return;
     }
 
-    socket.connect(noteID, token, {
-      onReady: () => setIsReady(true),
-      onClose: () => setIsReady(false),
-      onError: () => setIsReady(false),
-    });
+    let isMounted = true;
+    const connectTimeout = setTimeout(() => {
+      if (!isMounted) return;
+      socket.connect(noteID, token, {
+        onReady: () => setIsReady(true),
+        onClose: () => setIsReady(false),
+        onError: () => setIsReady(false),
+      });
+    }, 50);
 
     return () => {
+      isMounted = false;
+      clearTimeout(connectTimeout);
       socket.close();
       setIsReady(false);
     };
