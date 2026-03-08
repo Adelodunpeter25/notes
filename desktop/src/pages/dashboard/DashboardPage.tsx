@@ -94,7 +94,6 @@ export function DashboardPage() {
           }
           right={
             <NoteEditor
-              key={data.selectedNote?.id ?? 'empty'}
               note={data.selectedNote}
               onSave={data.saveNote}
               onLocalSave={data.saveNoteLocal}
