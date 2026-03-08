@@ -64,22 +64,20 @@ export function DashboardPage() {
             />
           }
           center={
-            !(selection.isSearchExpanded && selection.searchQuery.length > 0) ? (
-              <NotesList
-                notes={data.notes}
-                folders={data.folders}
-                selectedNoteId={selection.selectedNoteId}
-                selectedFolderName={data.selectedFolderName}
-                isSidebarCollapsed={selection.isSidebarCollapsed}
-                isLoading={data.isNotesLoading}
-                isDeleting={data.isDeleting}
-                onSelectNote={selection.setSelectedNoteId}
-                onCreateNote={data.createNote}
-                onUpdateNote={data.updateNote}
-                onDeleteNote={data.deleteNote}
-                onToggleSidebar={selection.toggleSidebarCollapsed}
-              />
-            ) : null
+            <NotesList
+              notes={data.notes}
+              folders={data.folders}
+              selectedNoteId={selection.selectedNoteId}
+              selectedFolderName={data.selectedFolderName}
+              isSidebarCollapsed={selection.isSidebarCollapsed}
+              isLoading={data.isNotesLoading}
+              isDeleting={data.isDeleting}
+              onSelectNote={selection.setSelectedNoteId}
+              onCreateNote={data.createNote}
+              onUpdateNote={data.updateNote}
+              onDeleteNote={data.deleteNote}
+              onToggleSidebar={selection.toggleSidebarCollapsed}
+            />
           }
           right={
             <NoteEditor
