@@ -5,7 +5,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { runSyncCycle } from "@/db";
 import { useAuthStore } from "@/stores/authStore";
 
-export function useSync() {
+const SYNC_INTERVAL_MS = 10_000;
+let globalSyncPromise: Promise<void> | null = null;
+
+export function useSync(options?: { auto?: boolean }) {
+  const auto = options?.auto ?? true;
   const token = useAuthStore((state) => state.token);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const netInfo = useNetInfo();
@@ -20,8 +24,8 @@ export function useSync() {
       return;
     }
 
-    if (activeSyncRef.current) {
-      return activeSyncRef.current;
+    if (globalSyncPromise) {
+      return globalSyncPromise;
     }
 
     const pending = (async () => {
@@ -33,27 +37,35 @@ export function useSync() {
         await queryClient.invalidateQueries({ queryKey: ["folders"] });
       } finally {
         setIsSyncing(false);
+        globalSyncPromise = null;
         activeSyncRef.current = null;
       }
     })();
 
+    globalSyncPromise = pending;
     activeSyncRef.current = pending;
     return pending;
   }, [token, isAuthenticated, netInfo.isConnected, queryClient]);
 
   useEffect(() => {
+    if (!auto) {
+      return;
+    }
     void syncNow();
-  }, [syncNow]);
+  }, [auto, syncNow]);
 
   useEffect(() => {
+    if (!auto) {
+      return;
+    }
     const interval = setInterval(() => {
       void syncNow();
-    }, 10_000);
+    }, SYNC_INTERVAL_MS);
 
     return () => {
       clearInterval(interval);
     };
-  }, [syncNow]);
+  }, [auto, syncNow]);
 
   return {
     isSyncing,
@@ -61,4 +73,3 @@ export function useSync() {
     syncNow,
   };
 }
-

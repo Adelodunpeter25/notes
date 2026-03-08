@@ -3,14 +3,14 @@ import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search, Plus, WifiOff } from "lucide-react-native";
+import { Search, Plus, WifiOff, RefreshCw } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
-import { useDashboardData } from "@/hooks";
+import { useDashboardData, useSync } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
@@ -21,6 +21,7 @@ export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<"notes" | "folders">("notes");
   const dashboard = useDashboardData();
+  const { syncNow, isSyncing } = useSync({ auto: false });
   const netInfo = useNetInfo();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);
@@ -106,9 +107,20 @@ export function DashboardScreen() {
             </View>
           )}
         </View>
-        <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
-          <Search size={18} color="#eab308" />
-        </Pressable>
+        <View className="flex-row items-center">
+          <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
+            <Search size={18} color="#eab308" />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              void syncNow();
+            }}
+            disabled={isSyncing}
+            className="ml-1 rounded-md p-1.5"
+          >
+            <RefreshCw size={18} color={isSyncing ? "#a0a0a0" : "#eab308"} />
+          </Pressable>
+        </View>
       </View>
 
       <View className="flex-1">
