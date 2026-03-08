@@ -4,7 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateFolderPayload, Folder, RenameFolderPayload } from "@shared/folders";
 import type { Note } from "@shared/notes";
 import { apiClient } from "@/api/apiClient";
-import { listFoldersLocal, listNotesLocal, upsertFoldersLocal, upsertFolderNotesLocal } from "@/db";
+import {
+  createFolderLocal,
+  enqueueFolderDelete,
+  enqueueFolderUpsert,
+  listFoldersLocal,
+  listNotesLocal,
+  markFolderDeletedLocal,
+  renameFolderLocal,
+  upsertFoldersLocal,
+  upsertFolderNotesLocal,
+} from "@/db";
 
 const folderKeys = {
   all: ["folders"] as const,
@@ -83,8 +93,11 @@ export function useCreateFolderMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateFolderPayload) =>
-      apiClient.post<Folder, CreateFolderPayload>("/folders/", payload),
+    mutationFn: async (payload: CreateFolderPayload) => {
+      const created = await createFolderLocal(payload.name);
+      await enqueueFolderUpsert(created.id, { name: created.name });
+      return created;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: folderKeys.all });
     },
@@ -95,8 +108,14 @@ export function useRenameFolderMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ folderId, payload }: { folderId: string; payload: RenameFolderPayload }) =>
-      apiClient.patch<Folder, RenameFolderPayload>(`/folders/${folderId}`, payload),
+    mutationFn: async ({ folderId, payload }: { folderId: string; payload: RenameFolderPayload }) => {
+      const renamed = await renameFolderLocal(folderId, payload.name);
+      if (!renamed) {
+        throw new Error("Folder not found");
+      }
+      await enqueueFolderUpsert(folderId, { name: payload.name });
+      return renamed;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: folderKeys.all });
     },
@@ -107,7 +126,10 @@ export function useDeleteFolderMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (folderId: string) => apiClient.delete<void>(`/folders/${folderId}`),
+    mutationFn: async (folderId: string) => {
+      await markFolderDeletedLocal(folderId);
+      await enqueueFolderDelete(folderId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: folderKeys.all });
       queryClient.invalidateQueries({ queryKey: ["notes"] });

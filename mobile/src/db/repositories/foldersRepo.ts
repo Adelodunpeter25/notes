@@ -16,6 +16,19 @@ function mapFolderRow(row: FolderRow): Folder {
   };
 }
 
+function nowISO() {
+  return new Date().toISOString();
+}
+
+function generateID() {
+  const uniquePart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return `local_${uniquePart}`;
+}
+
 export async function listFoldersLocal(): Promise<Folder[]> {
   const db = await getLocalDatabase();
 
@@ -42,7 +55,7 @@ export async function upsertFoldersLocal(folders: Folder[]): Promise<void> {
   }
 
   const db = await getLocalDatabase();
-  const now = new Date().toISOString();
+  const now = nowISO();
 
   for (const folder of folders) {
     await db.runAsync(
@@ -60,6 +73,7 @@ export async function upsertFoldersLocal(folders: Folder[]): Promise<void> {
           name = excluded.name,
           updated_at = excluded.updated_at,
           deleted_at = NULL
+        WHERE folders.dirty = 0
       `,
       folder.id,
       folder.name,
@@ -99,6 +113,7 @@ export async function upsertFolderNotesLocal(notes: Note[]): Promise<void> {
           created_at = excluded.created_at,
           updated_at = excluded.updated_at,
           deleted_at = NULL
+        WHERE notes.dirty = 0
       `,
       note.id,
       note.folderId ?? null,
@@ -111,3 +126,74 @@ export async function upsertFolderNotesLocal(notes: Note[]): Promise<void> {
   }
 }
 
+export async function getFolderByIDLocal(folderId: string): Promise<Folder | null> {
+  const db = await getLocalDatabase();
+  const row = await db.getFirstAsync<{ id: string; name: string }>(
+    `SELECT id, name FROM folders WHERE id = ? AND deleted_at IS NULL`,
+    folderId,
+  );
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    notesCount: 0,
+  };
+}
+
+export async function createFolderLocal(name: string): Promise<Folder> {
+  const db = await getLocalDatabase();
+  const id = generateID();
+  const now = nowISO();
+  await db.runAsync(
+    `
+      INSERT INTO folders (id, name, created_at, updated_at, deleted_at, dirty)
+      VALUES (?, ?, ?, ?, NULL, 1)
+    `,
+    id,
+    name,
+    now,
+    now,
+  );
+
+  return { id, name, notesCount: 0 };
+}
+
+export async function renameFolderLocal(folderId: string, name: string): Promise<Folder | null> {
+  const db = await getLocalDatabase();
+  await db.runAsync(
+    `
+      UPDATE folders
+      SET name = ?, updated_at = ?, dirty = 1
+      WHERE id = ? AND deleted_at IS NULL
+    `,
+    name,
+    nowISO(),
+    folderId,
+  );
+
+  return getFolderByIDLocal(folderId);
+}
+
+export async function markFolderDeletedLocal(folderId: string): Promise<void> {
+  const db = await getLocalDatabase();
+  const now = nowISO();
+  await db.runAsync(
+    `
+      UPDATE folders
+      SET deleted_at = ?, updated_at = ?, dirty = 1
+      WHERE id = ?
+    `,
+    now,
+    now,
+    folderId,
+  );
+}
+
+export async function replaceLocalFolderID(oldID: string, newID: string): Promise<void> {
+  const db = await getLocalDatabase();
+  await db.runAsync(`UPDATE folders SET id = ? WHERE id = ?`, newID, oldID);
+  await db.runAsync(`UPDATE notes SET folder_id = ? WHERE folder_id = ?`, newID, oldID);
+}

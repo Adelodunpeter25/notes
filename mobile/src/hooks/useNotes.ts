@@ -8,7 +8,15 @@ import type {
   UpdateNotePayload,
 } from "@shared/notes";
 import { apiClient } from "@/api/apiClient";
-import { listNotesLocal, upsertNotesLocal } from "@/db";
+import {
+  createNoteLocal,
+  enqueueNoteDelete,
+  enqueueNoteUpsert,
+  listNotesLocal,
+  markNoteDeletedLocal,
+  updateNoteLocal,
+  upsertNotesLocal,
+} from "@/db";
 
 const notesKeys = {
   all: ["notes"] as const,
@@ -66,7 +74,16 @@ export function useCreateNoteMutation() {
 
   return useMutation({
     mutationKey: ['createNote'],
-    mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
+    mutationFn: async (payload: CreateNotePayload) => {
+      const created = await createNoteLocal(payload);
+      await enqueueNoteUpsert(created.id, {
+        title: created.title,
+        content: created.content,
+        isPinned: created.isPinned,
+        ...(created.folderId ? { folderId: created.folderId } : {}),
+      });
+      return created;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
       queryClient.invalidateQueries({ queryKey: ["folders"] });
@@ -79,8 +96,14 @@ export function useUpdateNoteMutation() {
 
   return useMutation({
     mutationKey: ['updateNote'],
-    mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
-      apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
+    mutationFn: async ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) => {
+      const updated = await updateNoteLocal(noteId, payload);
+      if (!updated) {
+        throw new Error("Note not found");
+      }
+      await enqueueNoteUpsert(noteId, payload);
+      return updated;
+    },
     onSuccess: (updatedNote, variables) => {
       queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (currentNotes) => {
         if (!currentNotes) {
@@ -94,7 +117,6 @@ export function useUpdateNoteMutation() {
         queryClient.invalidateQueries({ queryKey: ["folders"] });
       }
 
-      // Always invalidate to ensure freshness across all filter variations
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
     },
   });
@@ -104,7 +126,10 @@ export function useDeleteNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (noteId: string) => apiClient.delete<void>(`/notes/${noteId}`),
+    mutationFn: async (noteId: string) => {
+      await markNoteDeletedLocal(noteId);
+      await enqueueNoteDelete(noteId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
       queryClient.invalidateQueries({ queryKey: ["folders"] });

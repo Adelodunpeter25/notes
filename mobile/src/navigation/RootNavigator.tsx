@@ -14,6 +14,7 @@ import { navigationTheme } from "@/theme/navigationTheme";
 import { apiClient } from "@/api/apiClient";
 import type { AuthUser } from "@shared/auth";
 import { authStorage } from "@/utils/authStorage";
+import { useSync } from "@/hooks";
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 const AppStack = createStackNavigator<AppStackParamList>();
@@ -57,6 +58,7 @@ export function RootNavigator() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isBootstrappingAuth, setIsBootstrappingAuth] = useState(true);
+  useSync();
 
   useEffect(() => {
     let active = true;

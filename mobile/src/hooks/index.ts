@@ -5,3 +5,4 @@ export * from "./useFolders";
 export * from "./useNoteRealtime";
 export * from "./useNotes";
 export * from "./useSearch";
+export * from "./useSync";
