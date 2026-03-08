@@ -17,6 +17,8 @@ export function DashboardPage() {
   const createNoteRef = useRef(data.createNote);
   const createFolderRef = useRef(data.createFolder);
 
+  const isSearchActive = selection.isSearchExpanded && selection.searchQuery.trim().length > 0;
+
   useEffect(() => {
     createNoteRef.current = data.createNote;
   }, [data.createNote]);
@@ -49,7 +51,7 @@ export function DashboardPage() {
     <main className="flex min-h-0 flex-1 flex-col bg-background">
       <div className="min-h-0 flex-1">
         <ResizableLayout
-          leftCollapsed={selection.isSidebarCollapsed}
+          leftCollapsed={selection.isSidebarCollapsed || isSearchActive}
           left={
             <FoldersSidebar
               folders={data.folders}
@@ -64,20 +66,31 @@ export function DashboardPage() {
             />
           }
           center={
-            <NotesList
-              notes={data.notes}
-              folders={data.folders}
-              selectedNoteId={selection.selectedNoteId}
-              selectedFolderName={data.selectedFolderName}
-              isSidebarCollapsed={selection.isSidebarCollapsed}
-              isLoading={data.isNotesLoading}
-              isDeleting={data.isDeleting}
-              onSelectNote={selection.setSelectedNoteId}
-              onCreateNote={data.createNote}
-              onUpdateNote={data.updateNote}
-              onDeleteNote={data.deleteNote}
-              onToggleSidebar={selection.toggleSidebarCollapsed}
-            />
+            isSearchActive ? (
+              <SearchResultsPage
+                notes={data.notes}
+                searchQuery={selection.searchQuery}
+                selectedNoteId={selection.selectedNoteId}
+                onSelectNote={(noteId) => {
+                  selection.setSelectedNoteId(noteId);
+                }}
+              />
+            ) : (
+              <NotesList
+                notes={data.notes}
+                folders={data.folders}
+                selectedNoteId={selection.selectedNoteId}
+                selectedFolderName={data.selectedFolderName}
+                isSidebarCollapsed={selection.isSidebarCollapsed}
+                isLoading={data.isNotesLoading}
+                isDeleting={data.isDeleting}
+                onSelectNote={selection.setSelectedNoteId}
+                onCreateNote={data.createNote}
+                onUpdateNote={data.updateNote}
+                onDeleteNote={data.deleteNote}
+                onToggleSidebar={selection.toggleSidebarCollapsed}
+              />
+            )
           }
           right={
             <NoteEditor
@@ -86,20 +99,6 @@ export function DashboardPage() {
               onSave={data.saveNote}
               onLocalSave={data.saveNoteLocal}
               onClearSelection={selection.clearSelectedNote}
-              searchResultsOverlay={
-                selection.isSearchExpanded && selection.searchQuery.length > 0 ? (
-                  <SearchResultsPage
-                    notes={data.notes}
-                    searchQuery={selection.searchQuery}
-                    selectedNoteId={selection.selectedNoteId}
-                    onSelectNote={(noteId) => {
-                      selection.setSelectedNoteId(noteId);
-                      selection.setIsSearchExpanded(false);
-                      selection.setSearchQuery('');
-                    }}
-                  />
-                ) : undefined
-              }
             />
           }
         />
