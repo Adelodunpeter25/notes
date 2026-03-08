@@ -7,13 +7,18 @@ type UseNoteRealtimeParams = {
   token: string | null;
 };
 
+function isServerNoteID(noteId: string): boolean {
+  return Boolean(noteId) && !noteId.startsWith("local_");
+}
+
 export function useNoteRealtime({ noteId, token }: UseNoteRealtimeParams) {
   const [isReady, setIsReady] = useState(false);
 
   const socket = useMemo(() => new NoteSocket(), [noteId]);
 
   useEffect(() => {
-    if (!token || !noteId) {
+    if (!token || !noteId || !isServerNoteID(noteId)) {
+      socket.close();
       setIsReady(false);
       return;
     }
