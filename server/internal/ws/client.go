@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -23,6 +24,7 @@ type Client struct {
 	userID     string
 	noteID     string
 	send       chan []byte
+	closeOnce  sync.Once
 }
 
 type RealtimeSaver interface {
@@ -47,11 +49,7 @@ func (client *Client) Start() {
 }
 
 func (client *Client) readPump() {
-	defer func() {
-		client.hub.Unregister(client)
-		close(client.send)
-		_ = client.connection.Close()
-	}()
+	defer client.shutdown()
 
 	_ = client.connection.SetReadDeadline(time.Now().Add(pongWait))
 	client.connection.SetPongHandler(func(string) error {
@@ -121,6 +119,7 @@ func (client *Client) readPump() {
 func (client *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
+	defer client.shutdown()
 
 	for {
 		select {
@@ -141,6 +140,14 @@ func (client *Client) writePump() {
 			}
 		}
 	}
+}
+
+func (client *Client) shutdown() {
+	client.closeOnce.Do(func() {
+		client.hub.Unregister(client)
+		close(client.send)
+		_ = client.connection.Close()
+	})
 }
 
 func (client *Client) flushPatch(message PatchMessage) {
