@@ -44,6 +44,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
     const isSavingRef = useRef(false);
+    const hasUserEditedRef = useRef(false);
 
     const derivedTitle = useMemo(() => deriveNoteTitleFromHtml(debouncedContent), [debouncedContent]);
 
@@ -64,6 +65,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
             isPinned: note?.isPinned ?? false,
         };
         isSavingRef.current = false;
+        hasUserEditedRef.current = false;
     }, [note?.id]);
 
     useEffect(() => {
@@ -97,6 +99,16 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
 
     const hasDebouncedChanges = useMemo(() => {
         if (!note || !isDebounceSettled) return false;
+
+        const hasPinChanged = debouncedIsPinned !== initialValues.current.isPinned;
+        if (hasPinChanged) {
+            return true;
+        }
+
+        if (!hasUserEditedRef.current) {
+            return false;
+        }
+
         return (
             (derivedTitle || "Untitled") !== (initialValues.current.title || "Untitled") ||
             debouncedContent !== initialValues.current.content ||
@@ -214,7 +226,10 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
 
                     <Editor
                         content={content}
-                        onChange={setContent}
+                        onChange={(value) => {
+                            hasUserEditedRef.current = true;
+                            setContent(value);
+                        }}
                         editorRef={editorRef}
                     />
                 </div>
