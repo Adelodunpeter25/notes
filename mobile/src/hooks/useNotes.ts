@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -7,6 +8,7 @@ import type {
   UpdateNotePayload,
 } from "@shared/notes";
 import { apiClient } from "@/api/apiClient";
+import { listNotesLocal, upsertNotesLocal } from "@/db";
 
 const notesKeys = {
   all: ["notes"] as const,
@@ -28,10 +30,35 @@ function notesQuery(params?: ListNotesParams): string {
 }
 
 export function useNotesQuery(params?: ListNotesParams) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const query = useQuery({
     queryKey: notesKeys.list(params),
-    queryFn: () => apiClient.get<Note[]>(notesQuery(params)),
+    queryFn: () => listNotesLocal(params),
   });
+
+  const paramsKey = JSON.stringify(params ?? {});
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncFromServer() {
+      try {
+        const remoteNotes = await apiClient.get<Note[]>(notesQuery(params));
+        await upsertNotesLocal(remoteNotes);
+        if (!cancelled) {
+          queryClient.invalidateQueries({ queryKey: notesKeys.list(params) });
+        }
+      } catch {
+        // Offline / unavailable server, keep local cache
+      }
+    }
+
+    void syncFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [paramsKey, queryClient]);
+
+  return query;
 }
 
 export function useCreateNoteMutation() {
