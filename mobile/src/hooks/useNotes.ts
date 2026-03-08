@@ -76,17 +76,22 @@ export function useCreateNoteMutation() {
     mutationKey: ['createNote'],
     mutationFn: async (payload: CreateNotePayload) => {
       const created = await createNoteLocal(payload);
-      await enqueueNoteUpsert(created.id, {
-        title: created.title,
-        content: created.content,
-        isPinned: created.isPinned,
-        ...(created.folderId ? { folderId: created.folderId } : {}),
-      });
+      try {
+        await enqueueNoteUpsert(created.id, {
+          title: created.title,
+          content: created.content,
+          isPinned: created.isPinned,
+          ...(created.folderId ? { folderId: created.folderId } : {}),
+        });
+      } catch (error) {
+        console.error("Failed to enqueue note create for sync:", error);
+      }
       return created;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
       queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["folders", "notes"] });
     },
   });
 }
@@ -101,7 +106,11 @@ export function useUpdateNoteMutation() {
       if (!updated) {
         throw new Error("Note not found");
       }
-      await enqueueNoteUpsert(noteId, payload);
+      try {
+        await enqueueNoteUpsert(noteId, payload);
+      } catch (error) {
+        console.error("Failed to enqueue note update for sync:", error);
+      }
       return updated;
     },
     onSuccess: (updatedNote, variables) => {
@@ -118,6 +127,7 @@ export function useUpdateNoteMutation() {
       }
 
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["folders", "notes"] });
     },
   });
 }
@@ -128,11 +138,16 @@ export function useDeleteNoteMutation() {
   return useMutation({
     mutationFn: async (noteId: string) => {
       await markNoteDeletedLocal(noteId);
-      await enqueueNoteDelete(noteId);
+      try {
+        await enqueueNoteDelete(noteId);
+      } catch (error) {
+        console.error("Failed to enqueue note delete for sync:", error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
       queryClient.invalidateQueries({ queryKey: ["folders"] });
+      queryClient.invalidateQueries({ queryKey: ["folders", "notes"] });
     },
   });
 }

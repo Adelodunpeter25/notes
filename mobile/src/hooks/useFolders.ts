@@ -95,7 +95,11 @@ export function useCreateFolderMutation() {
   return useMutation({
     mutationFn: async (payload: CreateFolderPayload) => {
       const created = await createFolderLocal(payload.name);
-      await enqueueFolderUpsert(created.id, { name: created.name });
+      try {
+        await enqueueFolderUpsert(created.id, { name: created.name });
+      } catch (error) {
+        console.error("Failed to enqueue folder create for sync:", error);
+      }
       return created;
     },
     onSuccess: () => {
@@ -113,7 +117,11 @@ export function useRenameFolderMutation() {
       if (!renamed) {
         throw new Error("Folder not found");
       }
-      await enqueueFolderUpsert(folderId, { name: payload.name });
+      try {
+        await enqueueFolderUpsert(folderId, { name: payload.name });
+      } catch (error) {
+        console.error("Failed to enqueue folder rename for sync:", error);
+      }
       return renamed;
     },
     onSuccess: () => {
@@ -128,7 +136,11 @@ export function useDeleteFolderMutation() {
   return useMutation({
     mutationFn: async (folderId: string) => {
       await markFolderDeletedLocal(folderId);
-      await enqueueFolderDelete(folderId);
+      try {
+        await enqueueFolderDelete(folderId);
+      } catch (error) {
+        console.error("Failed to enqueue folder delete for sync:", error);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: folderKeys.all });
