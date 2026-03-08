@@ -46,7 +46,6 @@ export function ResizableLayout({
   const centerDefaultSize = centerPanel?.defaultSize ?? 25;
   const hasCenterPanel = Boolean(center);
   const hasRightPanel = Boolean(right);
-  const centerMinSize = leftCollapsed ? centerDefaultSize : (centerPanel?.minSize ?? 20);
   const centerMaxSize = leftCollapsed ? centerDefaultSize : centerPanel?.maxSize;
 
   useEffect(() => {
@@ -123,7 +122,6 @@ export function ResizableLayout({
         <Panel
           id="panel-center"
           defaultSize={centerDefaultSize}
-          minSize={centerMinSize}
           maxSize={centerMaxSize}
           className={panelClassName(centerPanel?.className)}
         >
