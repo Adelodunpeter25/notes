@@ -3,8 +3,6 @@ import { AppState, type AppStateStatus, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import type { Note, UpdateNotePayload, CreateNotePayload } from "@shared/notes";
-import { apiClient } from "@/api/apiClient";
 
 onlineManager.setEventListener((setOnline) => {
     return NetInfo.addEventListener((state) => {
@@ -24,6 +22,7 @@ export const queryClient = new QueryClient({
         },
         mutations: {
             retry: 0,
+            networkMode: "always",
         },
     },
 });
@@ -40,14 +39,3 @@ function onAppStateChange(status: AppStateStatus) {
 }
 
 AppState.addEventListener("change", onAppStateChange);
-
-queryClient.setMutationDefaults(['updateNote'], {
-    mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
-        apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
-    retry: 3,
-});
-
-queryClient.setMutationDefaults(['createNote'], {
-    mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
-    retry: 3,
-});
