@@ -23,21 +23,6 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const editorRef = useRef<TiptapEditor | null>(null);
     const contentContainerRef = useRef<HTMLDivElement | null>(null);
 
-    // Force re-render of Toolbar when editor updates state
-    const [, setEditorStateTick] = useState(0);
-    useEffect(() => {
-        if (!editorRef.current) return;
-        const editor = editorRef.current;
-
-        // We listen to the editor transaction to trigger a React re-render of this top level component,
-        // so the Toolbar buttons correctly update their "active" state when text is bolded.
-        const handleUpdate = () => setEditorStateTick(t => t + 1);
-        editor.on('transaction', handleUpdate);
-        return () => {
-            editor.off('transaction', handleUpdate);
-        };
-    }, [editorRef.current]);
-
     const debouncedContent = useDebounce(content, 80);
     const debouncedIsPinned = useDebounce(isPinned, 80);
     const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
@@ -45,6 +30,8 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const activeNoteIdRef = useRef<string | null>(null);
     const isSavingRef = useRef(false);
     const hasUserEditedRef = useRef(false);
+    const saveRevisionRef = useRef(0);
+    const appliedRevisionRef = useRef(0);
 
     const derivedTitle = useMemo(() => deriveNoteTitleFromHtml(debouncedContent), [debouncedContent]);
 
@@ -66,6 +53,8 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         };
         isSavingRef.current = false;
         hasUserEditedRef.current = false;
+        saveRevisionRef.current = 0;
+        appliedRevisionRef.current = 0;
     }, [note?.id]);
 
     useEffect(() => {
@@ -116,56 +105,36 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         );
     }, [debouncedContent, debouncedIsPinned, derivedTitle, isDebounceSettled, note]);
 
-    const latestStateRef = useRef({ noteId: note?.id, title: derivedTitle, content: debouncedContent, isPinned: debouncedIsPinned });
-    useEffect(() => {
-        latestStateRef.current = { noteId: note?.id, title: derivedTitle, content: debouncedContent, isPinned: debouncedIsPinned };
-    }, [note?.id, derivedTitle, debouncedContent, debouncedIsPinned]);
-
-    const callbacksRef = useRef({ onLocalSave, onSave, sendRealtimePatch, isRealtimeReady });
-    useEffect(() => {
-        callbacksRef.current = { onLocalSave, onSave, sendRealtimePatch, isRealtimeReady };
-    }, [onLocalSave, onSave, sendRealtimePatch, isRealtimeReady]);
-
-    useEffect(() => {
-        return () => {
-            const state = latestStateRef.current;
-            const noteId = state.noteId;
-            if (!noteId) return;
-
-            const hasUnsavedChanges =
-                (state.title || "Untitled") !== (initialValues.current.title || "Untitled") ||
-                state.content !== initialValues.current.content ||
-                state.isPinned !== initialValues.current.isPinned;
-
-            if (hasUnsavedChanges && !isSavingRef.current) {
-                const payload = { title: state.title || "Untitled", content: state.content, isPinned: state.isPinned };
-                const cb = callbacksRef.current;
-                cb.onLocalSave?.(noteId, payload);
-                if (cb.isRealtimeReady) {
-                    void cb.sendRealtimePatch(payload);
-                } else {
-                    void Promise.resolve(cb.onSave(noteId, payload));
-                }
-            }
-        };
-    }, []);
-
     useEffect(() => {
         const noteId = note?.id;
         if (!hasDebouncedChanges || !noteId || isSavingRef.current) return;
         let cancelled = false;
         isSavingRef.current = true;
+        const revision = ++saveRevisionRef.current;
         const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
         onLocalSave?.(noteId, payload);
 
         if (isRealtimeReady) {
             void sendRealtimePatch(payload)
-                .catch(() => Promise.resolve(onSave(noteId, payload)))
+                .catch((error: unknown) => {
+                    const message = error instanceof Error ? error.message : "";
+                    const shouldFallbackToHTTP =
+                        message.includes("socket not ready") ||
+                        message.includes("websocket") ||
+                        message.includes("socket closed");
+
+                    if (shouldFallbackToHTTP) {
+                        return Promise.resolve(onSave(noteId, payload));
+                    }
+
+                    return Promise.reject(error);
+                })
                 .then(() => {
-                    if (cancelled || activeNoteIdRef.current !== noteId) {
+                    if (cancelled || activeNoteIdRef.current !== noteId || revision < appliedRevisionRef.current) {
                         return;
                     }
 
+                    appliedRevisionRef.current = revision;
                     initialValues.current = payload;
                 })
                 .finally(() => {

@@ -1,6 +1,7 @@
 import { Bold, ListChecks, Search, Pin, Italic, Underline as UnderlineIcon, Strikethrough, Check, X } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import * as Popover from '@radix-ui/react-popover';
+import { useEffect, useState } from "react";
 import { useSearch } from "@/hooks";
 
 type ToolbarProps = {
@@ -41,6 +42,7 @@ export function Toolbar({
     onTogglePin,
     showFormatting = true,
 }: ToolbarProps) {
+    const [, forceUpdate] = useState(0);
     const {
         isSearchExpanded,
         searchQuery,
@@ -49,6 +51,19 @@ export function Toolbar({
         closeSearch,
         inputRef
     } = useSearch();
+
+    useEffect(() => {
+        if (!editor) return;
+
+        const syncToolbarState = () => forceUpdate((current) => current + 1);
+        editor.on("transaction", syncToolbarState);
+        editor.on("selectionUpdate", syncToolbarState);
+
+        return () => {
+            editor.off("transaction", syncToolbarState);
+            editor.off("selectionUpdate", syncToolbarState);
+        };
+    }, [editor]);
 
     if (!editor) return null;
 

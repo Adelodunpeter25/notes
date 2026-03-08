@@ -33,10 +33,13 @@ export function useDashboardData(selection: DashboardSelectionState) {
   });
   const notesActions = useNotesActions();
   const pendingCreatedNoteIdRef = useRef<string | null>(null);
-  const autoSelectSuppressedRef = useRef(false);
+  const suppressAutoSelectRef = useRef(false);
   const createdDraftNoteIdsRef = useRef<Set<string>>(new Set());
+  const draftCreatedAtRef = useRef<Map<string, number>>(new Map());
+  const draftCleanupTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const notesByIdRef = useRef<Map<string, Note>>(new Map());
   const previousSelectedNoteIdRef = useRef<string | undefined>(selection.selectedNoteId);
+  const selectedNoteIdRef = useRef<string | undefined>(selection.selectedNoteId);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
 
@@ -48,10 +51,14 @@ export function useDashboardData(selection: DashboardSelectionState) {
     [folders, selection.selectedFolderId],
   );
 
-  const selectedNote = useMemo(
-    () => notes.find((note) => note.id === selection.selectedNoteId),
-    [notes, selection.selectedNoteId],
-  );
+  const selectedNote = useMemo(() => {
+    if (!selection.selectedNoteId) {
+      return undefined;
+    }
+
+    return notes.find((note) => note.id === selection.selectedNoteId)
+      ?? notesByIdRef.current.get(selection.selectedNoteId);
+  }, [notes, selection.selectedNoteId]);
 
   useEffect(() => {
     notes.forEach((note) => {
@@ -60,7 +67,11 @@ export function useDashboardData(selection: DashboardSelectionState) {
   }, [notes]);
 
   useEffect(() => {
-    autoSelectSuppressedRef.current = true;
+    selectedNoteIdRef.current = selection.selectedNoteId;
+  }, [selection.selectedNoteId]);
+
+  useEffect(() => {
+    suppressAutoSelectRef.current = true;
   }, [selection.manualClearCount]);
 
   useEffect(() => {
@@ -72,20 +83,46 @@ export function useDashboardData(selection: DashboardSelectionState) {
       previousSelectedId !== nextSelectedId &&
       createdDraftNoteIdsRef.current.has(previousSelectedId)
     ) {
-      const previousNote = notesByIdRef.current.get(previousSelectedId);
-      if (previousNote && isEmptyDraftNote(previousNote)) {
-        createdDraftNoteIdsRef.current.delete(previousSelectedId);
-        notesByIdRef.current.delete(previousSelectedId);
-        void notesActions.deleteNote(previousSelectedId);
-      } else if (previousNote) {
-        createdDraftNoteIdsRef.current.delete(previousSelectedId);
+      const existingTimer = draftCleanupTimersRef.current.get(previousSelectedId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
       }
+
+      const timer = setTimeout(() => {
+        if (selectedNoteIdRef.current === previousSelectedId) {
+          return;
+        }
+
+        const previousNote = notesByIdRef.current.get(previousSelectedId);
+        if (!previousNote) {
+          return;
+        }
+
+        const createdAt = draftCreatedAtRef.current.get(previousSelectedId) ?? 0;
+        if (Date.now() - createdAt < 1200) {
+          return;
+        }
+
+        if (isEmptyDraftNote(previousNote)) {
+          createdDraftNoteIdsRef.current.delete(previousSelectedId);
+          draftCreatedAtRef.current.delete(previousSelectedId);
+          notesByIdRef.current.delete(previousSelectedId);
+          void notesActions.deleteNote(previousSelectedId);
+          return;
+        }
+
+        createdDraftNoteIdsRef.current.delete(previousSelectedId);
+        draftCreatedAtRef.current.delete(previousSelectedId);
+      }, 350);
+
+      draftCleanupTimersRef.current.set(previousSelectedId, timer);
     }
 
     previousSelectedNoteIdRef.current = nextSelectedId;
   }, [selection.selectedNoteId]);
 
   useEffect(() => {
+    const isSearchActive = debouncedSearchQuery.trim().length > 0;
     const pendingCreatedId = pendingCreatedNoteIdRef.current;
     if (pendingCreatedId) {
       if (notes.some((note) => note.id === pendingCreatedId)) {
@@ -93,34 +130,47 @@ export function useDashboardData(selection: DashboardSelectionState) {
           selection.setSelectedNoteId(pendingCreatedId);
         }
         pendingCreatedNoteIdRef.current = null;
-        autoSelectSuppressedRef.current = false;
+        suppressAutoSelectRef.current = false;
       }
       return;
     }
 
-    if (!selection.selectedNoteId && autoSelectSuppressedRef.current) {
-      return;
-    }
-
-    // Only auto-select if we have notes and the query is successful
     if (!notesQuery.isSuccess || notesQuery.isFetching) {
       return;
     }
 
-    if (!selection.selectedNoteId && notes.length > 0) {
-      selection.setSelectedNoteId(notes[0].id);
+    if (selection.selectedNoteId) {
+      suppressAutoSelectRef.current = false;
+      if (!notes.some((note) => note.id === selection.selectedNoteId) && !isSearchActive) {
+        selection.setSelectedNoteId(notes[0]?.id);
+      }
       return;
     }
 
-    if (selection.selectedNoteId && !notes.some((note) => note.id === selection.selectedNoteId)) {
-      selection.setSelectedNoteId(notes[0]?.id);
+    if (suppressAutoSelectRef.current) {
+      return;
     }
-  }, [notes, selection, notesQuery.isSuccess, notesQuery.isFetching]);
+
+    if (notes.length > 0) {
+      selection.setSelectedNoteId(notes[0].id);
+    }
+  }, [notes, selection.selectedNoteId, selection.setSelectedNoteId, notesQuery.isSuccess, notesQuery.isFetching, debouncedSearchQuery]);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of draftCleanupTimersRef.current.values()) {
+        clearTimeout(timer);
+      }
+      draftCleanupTimersRef.current.clear();
+    };
+  }, []);
 
   async function createNote() {
     const created = await notesActions.createNote(selection.selectedFolderId);
     pendingCreatedNoteIdRef.current = created.id;
     createdDraftNoteIdsRef.current.add(created.id);
+    draftCreatedAtRef.current.set(created.id, Date.now());
+    suppressAutoSelectRef.current = false;
     selection.setSelectedNoteId(created.id);
   }
 
@@ -158,6 +208,12 @@ export function useDashboardData(selection: DashboardSelectionState) {
 
   async function deleteNote(noteId: string) {
     createdDraftNoteIdsRef.current.delete(noteId);
+    draftCreatedAtRef.current.delete(noteId);
+    const timer = draftCleanupTimersRef.current.get(noteId);
+    if (timer) {
+      clearTimeout(timer);
+      draftCleanupTimersRef.current.delete(noteId);
+    }
     notesByIdRef.current.delete(noteId);
     return notesActions.deleteNote(noteId);
   }

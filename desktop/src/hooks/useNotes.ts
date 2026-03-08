@@ -13,6 +13,36 @@ const notesKeys = {
   list: (params?: ListNotesParams) => [...notesKeys.all, "list", params] as const,
 };
 
+function getListParamsFromQueryKey(queryKey: readonly unknown[]): ListNotesParams | undefined {
+  if (!Array.isArray(queryKey) || queryKey.length < 3) {
+    return undefined;
+  }
+
+  if (queryKey[0] !== notesKeys.all[0] || queryKey[1] !== "list") {
+    return undefined;
+  }
+
+  const params = queryKey[2];
+  return (params && typeof params === "object") ? (params as ListNotesParams) : undefined;
+}
+
+function noteMatchesListParams(note: Note, params?: ListNotesParams): boolean {
+  if (params?.folderId && note.folderId !== params.folderId) {
+    return false;
+  }
+
+  if (params?.q) {
+    const query = params.q.toLowerCase();
+    const title = note.title.toLowerCase();
+    const content = note.content.toLowerCase();
+    if (!title.includes(query) && !content.includes(query)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function getNoteTimestamp(note: Note): number {
   const value = note.updatedAt ?? note.createdAt;
   if (!value) {
@@ -97,9 +127,24 @@ export function useCreateNoteMutation() {
   return useMutation({
     mutationKey: ['createNote'],
     mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.all });
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
+    onSuccess: (created) => {
+      const noteLists = queryClient.getQueriesData<Note[]>({ queryKey: notesKeys.all });
+      for (const [queryKey, current] of noteLists) {
+        if (!Array.isArray(current)) {
+          continue;
+        }
+
+        const params = getListParamsFromQueryKey(queryKey);
+        if (!noteMatchesListParams(created, params)) {
+          continue;
+        }
+
+        queryClient.setQueryData<Note[]>(queryKey, sortNotes([created, ...current]));
+      }
+
+      if (created.folderId) {
+        queryClient.invalidateQueries({ queryKey: ["folders"] });
+      }
     },
   });
 }
@@ -134,9 +179,38 @@ export function useDeleteNoteMutation() {
 
   return useMutation({
     mutationFn: (noteId: string) => apiClient.delete<void>(`/notes/${noteId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.all });
-      queryClient.invalidateQueries({ queryKey: ["folders"] });
+    onMutate: async (noteId) => {
+      let removedNote: Note | undefined;
+      const noteLists = queryClient.getQueriesData<Note[]>({ queryKey: notesKeys.all });
+      for (const [, current] of noteLists) {
+        if (!Array.isArray(current)) {
+          continue;
+        }
+
+        const found = current.find((note) => note.id === noteId);
+        if (found) {
+          removedNote = found;
+          break;
+        }
+      }
+
+      for (const [queryKey, current] of noteLists) {
+        if (!Array.isArray(current)) {
+          continue;
+        }
+
+        queryClient.setQueryData<Note[]>(
+          queryKey,
+          current.filter((note) => note.id !== noteId),
+        );
+      }
+
+      return { removedNote };
+    },
+    onSuccess: (_data, _noteId, context) => {
+      if (context?.removedNote?.folderId) {
+        queryClient.invalidateQueries({ queryKey: ["folders"] });
+      }
     },
   });
 }

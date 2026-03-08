@@ -1,15 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { authStorage } from "@/services/apiClient";
 import { NoteSocket } from "@/services/ws/noteSocket";
 
 export function useNoteRealtime(noteID?: string) {
   const [isReady, setIsReady] = useState(false);
-  const socket = useMemo(() => new NoteSocket(), [noteID]);
+  const socketRef = useRef<NoteSocket | null>(null);
+
+  if (!socketRef.current) {
+    socketRef.current = new NoteSocket();
+  }
 
   useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) {
+      setIsReady(false);
+      return;
+    }
+
     if (!noteID) {
       setIsReady(false);
+      socket.close();
       return;
     }
 
@@ -35,17 +46,22 @@ export function useNoteRealtime(noteID?: string) {
       socket.close();
       setIsReady(false);
     };
-  }, [noteID, socket]);
+  }, [noteID]);
 
   const sendPatch = useCallback(
-    (payload: { content: string; title?: string; isPinned?: boolean }, flush = false) =>
-      socket.sendPatch(payload, flush),
-    [socket],
+    (payload: { content: string; title?: string; isPinned?: boolean }, flush = false) => {
+      const socket = socketRef.current;
+      if (!socket) {
+        return Promise.reject(new Error("socket not ready"));
+      }
+      return socket.sendPatch(payload, flush);
+    },
+    [],
   );
 
   const close = useCallback(() => {
-    socket.close();
-  }, [socket]);
+    socketRef.current?.close();
+  }, []);
 
   return {
     isReady,
