@@ -58,6 +58,7 @@ export function RootNavigator() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [isBootstrappingAuth, setIsBootstrappingAuth] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
   useSync();
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function RootNavigator() {
 
         if (existingToken) {
           if (active) {
-            useAuthStore.setState({ token: existingToken, isAuthenticated: true });
+            useAuthStore.setState({ token: existingToken, user: null, isAuthenticated: false });
           }
 
           try {
@@ -80,15 +81,29 @@ export function RootNavigator() {
 
             if (active) {
               setAuth({ token: existingToken, user: response.data });
+              setHasSession(true);
             }
           } catch (error: any) {
-            if (error?.status === 401) {
+            if (!active) {
+              return;
+            }
+
+            if (error?.status === 401 || error?.response?.status === 401) {
               clearAuth();
+              setHasSession(false);
+            } else {
+              setHasSession(true);
             }
           }
+        } else if (active) {
+          clearAuth();
+          setHasSession(false);
         }
       } catch (err) {
         console.error("Bootstrap error:", err);
+        if (active) {
+          setHasSession(false);
+        }
       } finally {
         if (active) {
           setIsBootstrappingAuth(false);
@@ -113,7 +128,7 @@ export function RootNavigator() {
 
   // Source of truth: Do we have a token? If yes, show the app.
   // /auth/me will kick them out later if the token is invalid.
-  const isUserAuthenticated = isAuthenticated || !!token;
+  const isUserAuthenticated = isAuthenticated || hasSession;
 
   return (
     <NavigationContainer theme={navigationTheme}>
