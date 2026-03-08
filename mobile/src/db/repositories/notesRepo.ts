@@ -36,34 +36,74 @@ function generateID() {
   return `local_${uniquePart}`;
 }
 
+function buildFtsMatchQuery(input: string | null | undefined): string | null {
+  const trimmed = input?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const tokens = trimmed
+    .split(/\s+/)
+    .map((token) => token.replace(/"/g, '""').trim())
+    .filter(Boolean);
+
+  if (!tokens.length) {
+    return null;
+  }
+
+  return tokens.map((token) => `"${token}"*`).join(" AND ");
+}
+
 export async function listNotesLocal(params?: ListNotesParams): Promise<Note[]> {
   const db = await getLocalDatabase();
 
   const q = params?.q?.trim() || null;
-  const search = q ? `%${q}%` : null;
+  const folderID = params?.folderId ?? null;
+  const ftsQuery = buildFtsMatchQuery(q);
 
-  const rows = await db.getAllAsync<NoteRow>(
-    `
-      SELECT
-        id,
-        folder_id,
-        title,
-        content,
-        is_pinned,
-        created_at,
-        updated_at
-      FROM notes
-      WHERE deleted_at IS NULL
-        AND (? IS NULL OR folder_id = ?)
-        AND (? IS NULL OR title LIKE ? OR content LIKE ?)
-      ORDER BY is_pinned DESC, COALESCE(updated_at, created_at) DESC
-    `,
-    params?.folderId ?? null,
-    params?.folderId ?? null,
-    q,
-    search,
-    search,
-  );
+  const rows = ftsQuery
+    ? await db.getAllAsync<NoteRow>(
+      `
+        SELECT
+          n.id,
+          n.folder_id,
+          n.title,
+          n.content,
+          n.is_pinned,
+          n.created_at,
+          n.updated_at
+        FROM notes n
+        JOIN notes_fts ON notes_fts.rowid = n.rowid
+        WHERE n.deleted_at IS NULL
+          AND (? IS NULL OR n.folder_id = ?)
+          AND notes_fts MATCH ?
+        ORDER BY
+          n.is_pinned DESC,
+          bm25(notes_fts),
+          COALESCE(n.updated_at, n.created_at) DESC
+      `,
+      folderID,
+      folderID,
+      ftsQuery,
+    )
+    : await db.getAllAsync<NoteRow>(
+      `
+        SELECT
+          id,
+          folder_id,
+          title,
+          content,
+          is_pinned,
+          created_at,
+          updated_at
+        FROM notes
+        WHERE deleted_at IS NULL
+          AND (? IS NULL OR folder_id = ?)
+        ORDER BY is_pinned DESC, COALESCE(updated_at, created_at) DESC
+      `,
+      folderID,
+      folderID,
+    );
 
   return rows.map(mapRow);
 }
