@@ -47,11 +47,15 @@ func (service *GormFolderService) List(userID string) ([]schemas.FolderResponse,
 	}
 
 	var rows []row
+	noteCountsSubQuery := service.db.Table("notes").
+		Select("folder_id, COUNT(*) AS notes_count").
+		Where("user_id = ?", userID).
+		Group("folder_id")
+
 	err := service.db.Table("folders AS f").
-		Select("f.id, f.name, COUNT(n.id) AS notes_count").
-		Joins("LEFT JOIN notes AS n ON n.folder_id = f.id").
+		Select("f.id, f.name, COALESCE(nc.notes_count, 0) AS notes_count").
+		Joins("LEFT JOIN (?) AS nc ON nc.folder_id = f.id", noteCountsSubQuery).
 		Where("f.user_id = ?", userID).
-		Group("f.id").
 		Order("f.created_at DESC").
 		Scan(&rows).Error
 	if err != nil {

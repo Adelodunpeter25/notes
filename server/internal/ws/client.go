@@ -44,8 +44,19 @@ func NewClient(connection *websocket.Conn, hub *Hub, service RealtimeSaver, user
 
 func (client *Client) Start() {
 	client.hub.Register(client)
-	go client.writePump()
-	client.readPump()
+	go client.runPump("writePump", client.writePump)
+	client.runPump("readPump", client.readPump)
+}
+
+func (client *Client) runPump(name string, pump func()) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Printf("ws %s panic for note %s: %v", name, client.noteID, recovered)
+		}
+		client.shutdown()
+	}()
+
+	pump()
 }
 
 func (client *Client) readPump() {
