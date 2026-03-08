@@ -10,3 +10,4 @@ export * from "./useKeyboardShortcuts";
 export * from "./useNoteRealtime";
 export * from "./useSearch";
 export * from "./useWindowSizePersist";
+export * from "./useSync";

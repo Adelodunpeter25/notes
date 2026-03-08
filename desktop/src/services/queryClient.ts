@@ -13,24 +13,11 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: 0,
+      networkMode: "always",
     },
   },
 });
 
 export const persister = createSyncStoragePersister({
   storage: window.localStorage,
-});
-
-import type { Note, UpdateNotePayload, CreateNotePayload } from "@shared/notes";
-import { apiClient } from "@/services/apiClient";
-
-queryClient.setMutationDefaults(['updateNote'], {
-  mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
-    apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
-  retry: 3,
-});
-
-queryClient.setMutationDefaults(['createNote'], {
-  mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
-  retry: 3,
 });

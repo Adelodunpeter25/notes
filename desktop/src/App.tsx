@@ -4,7 +4,7 @@ import { Navigate, Route, Routes, HashRouter } from "react-router-dom";
 import { LoginPage, SignupPage } from "@/pages/auth";
 import { DashboardPage } from "@/pages/dashboard";
 import { Titlebar } from "@/components/layout";
-import { useKeyboardShortcuts, useWindowSizePersist } from "@/hooks";
+import { useKeyboardShortcuts, useSync, useWindowSizePersist } from "@/hooks";
 import { useAuthStore } from "@/stores";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -30,6 +30,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
+  useSync({ auto: true });
 
   return (
     <HashRouter>

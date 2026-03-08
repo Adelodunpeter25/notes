@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -7,6 +8,15 @@ import type {
   UpdateNotePayload,
 } from "@shared/notes";
 import { apiClient } from "@/services";
+import {
+  createNoteLocal,
+  enqueueNoteDelete,
+  enqueueNoteUpsert,
+  listNotesLocal,
+  markNoteDeletedLocal,
+  updateNoteLocal,
+  upsertNotesLocal,
+} from "@/db";
 
 const notesKeys = {
   all: ["notes"] as const,
@@ -115,36 +125,64 @@ function notesQuery(params?: ListNotesParams): string {
 }
 
 export function useNotesQuery(params?: ListNotesParams) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const query = useQuery({
     queryKey: notesKeys.list(params),
-    queryFn: () => apiClient.get<Note[]>(notesQuery(params)),
+    queryFn: () => listNotesLocal(params),
   });
+
+  const paramsKey = JSON.stringify(params ?? {});
+  useEffect(() => {
+    let cancelled = false;
+    async function syncFromServer() {
+      try {
+        const remoteNotes = await apiClient.get<Note[]>(notesQuery(params));
+        await upsertNotesLocal(remoteNotes);
+        if (!cancelled) {
+          queryClient.invalidateQueries({ queryKey: notesKeys.list(params) });
+        }
+      } catch {
+        // offline
+      }
+    }
+
+    void syncFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [paramsKey, queryClient]);
+
+  return query;
 }
 
 export function useCreateNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: ['createNote'],
-    mutationFn: (payload: CreateNotePayload) => apiClient.post<Note, CreateNotePayload>("/notes/", payload),
+    mutationKey: ["createNote"],
+    mutationFn: async (payload: CreateNotePayload) => {
+      const created = await createNoteLocal(payload);
+      try {
+        await enqueueNoteUpsert(created.id, {
+          title: created.title,
+          content: created.content,
+          isPinned: created.isPinned,
+          ...(created.folderId ? { folderId: created.folderId } : {}),
+        });
+      } catch (error) {
+        console.error("Failed to enqueue note create:", error);
+      }
+      return created;
+    },
     onSuccess: (created) => {
       const noteLists = queryClient.getQueriesData<Note[]>({ queryKey: notesKeys.all });
       for (const [queryKey, current] of noteLists) {
-        if (!Array.isArray(current)) {
-          continue;
-        }
-
+        if (!Array.isArray(current)) continue;
         const params = getListParamsFromQueryKey(queryKey);
-        if (!noteMatchesListParams(created, params)) {
-          continue;
-        }
-
+        if (!noteMatchesListParams(created, params)) continue;
         queryClient.setQueryData<Note[]>(queryKey, sortNotes([created, ...current]));
       }
-
-      if (created.folderId) {
-        queryClient.invalidateQueries({ queryKey: ["folders"] });
-      }
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
     },
   });
 }
@@ -153,23 +191,28 @@ export function useUpdateNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: ['updateNote'],
-    mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
-      apiClient.patch<Note, UpdateNotePayload>(`/notes/${noteId}`, payload),
+    mutationKey: ["updateNote"],
+    mutationFn: async ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) => {
+      const updated = await updateNoteLocal(noteId, payload);
+      if (!updated) throw new Error("note not found");
+      try {
+        await enqueueNoteUpsert(noteId, payload);
+      } catch (error) {
+        console.error("Failed to enqueue note update:", error);
+      }
+      return updated;
+    },
     onMutate: async ({ noteId, payload }) => {
       const optimisticUpdatedAt = new Date().toISOString();
-
       syncPatchedNoteInCache(queryClient, noteId, payload, optimisticUpdatedAt);
-
       return { optimisticUpdatedAt };
     },
     onSuccess: (note, variables) => {
       syncPatchedNoteInCache(queryClient, variables.noteId, note, note.updatedAt ?? new Date().toISOString());
-
       if (variables.payload.folderId !== undefined) {
         queryClient.invalidateQueries({ queryKey: notesKeys.all });
-        queryClient.invalidateQueries({ queryKey: ["folders"] });
       }
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
     },
   });
 }
@@ -178,15 +221,19 @@ export function useDeleteNoteMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (noteId: string) => apiClient.delete<void>(`/notes/${noteId}`),
+    mutationFn: async (noteId: string) => {
+      await markNoteDeletedLocal(noteId);
+      try {
+        await enqueueNoteDelete(noteId);
+      } catch (error) {
+        console.error("Failed to enqueue note delete:", error);
+      }
+    },
     onMutate: async (noteId) => {
       let removedNote: Note | undefined;
       const noteLists = queryClient.getQueriesData<Note[]>({ queryKey: notesKeys.all });
       for (const [, current] of noteLists) {
-        if (!Array.isArray(current)) {
-          continue;
-        }
-
+        if (!Array.isArray(current)) continue;
         const found = current.find((note) => note.id === noteId);
         if (found) {
           removedNote = found;
@@ -195,24 +242,17 @@ export function useDeleteNoteMutation() {
       }
 
       for (const [queryKey, current] of noteLists) {
-        if (!Array.isArray(current)) {
-          continue;
-        }
-
-        queryClient.setQueryData<Note[]>(
-          queryKey,
-          current.filter((note) => note.id !== noteId),
-        );
+        if (!Array.isArray(current)) continue;
+        queryClient.setQueryData<Note[]>(queryKey, current.filter((note) => note.id !== noteId));
       }
 
       return { removedNote };
     },
-    onSuccess: (_data, _noteId, context) => {
-      if (context?.removedNote?.folderId) {
-        queryClient.invalidateQueries({ queryKey: ["folders"] });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
     },
   });
 }
 
 export { notesKeys };
+
