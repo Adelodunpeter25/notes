@@ -29,27 +29,6 @@ export function useFoldersQuery() {
     queryFn: () => listFoldersLocal(),
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function syncFromServer() {
-      try {
-        const remoteFolders = await apiClient.get<Folder[]>("/folders/");
-        await upsertFoldersLocal(remoteFolders);
-        if (!cancelled) {
-          queryClient.invalidateQueries({ queryKey: folderKeys.list() });
-        }
-      } catch {
-        // Offline / unavailable server, keep local cache
-      }
-    }
-
-    void syncFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [queryClient]);
-
   return query;
 }
 
@@ -60,31 +39,6 @@ export function useFolderNotesQuery(folderId: string | undefined) {
     queryFn: () => listNotesLocal({ folderId }),
     enabled: Boolean(folderId),
   });
-
-  useEffect(() => {
-    if (!folderId) {
-      return;
-    }
-    const activeFolderId = folderId;
-
-    let cancelled = false;
-    async function syncFromServer() {
-      try {
-        const remoteNotes = await apiClient.get<Note[]>(`/folders/${activeFolderId}/notes`);
-        await upsertFolderNotesLocal(remoteNotes);
-        if (!cancelled) {
-          queryClient.invalidateQueries({ queryKey: folderKeys.notes(activeFolderId) });
-        }
-      } catch {
-        // Offline / unavailable server, keep local cache
-      }
-    }
-
-    void syncFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [folderId, queryClient]);
 
   return query;
 }

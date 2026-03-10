@@ -12,7 +12,6 @@ import { NoteContextMenu } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import {
   useDebounce,
-  useNoteRealtime,
   useNotesQuery,
   useUpdateNoteMutation,
   useDeleteNoteMutation,
@@ -38,7 +37,6 @@ export function NoteEditorScreen() {
   const updateNoteMutation = useUpdateNoteMutation();
   const deleteNoteMutation = useDeleteNoteMutation();
   const foldersQuery = useFoldersQuery();
-  const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime({ noteId, token });
 
   const note = useMemo(
     () => (notesQuery.data ?? []).find((currentNote) => currentNote.id === noteId),
@@ -104,37 +102,13 @@ export function NoteEditorScreen() {
       payload.title = derivedTitle;
     }
 
-    if (isRealtimeReady) {
-      try {
-        await sendRealtimePatch(payload, true);
-        lastSavedContent.current = content;
-        lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
-        queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (current) => {
-          if (!current) return current;
-          return current.map((entry) =>
-            entry.id === note.id
-              ? {
-                  ...entry,
-                  content,
-                  title: payload.title ?? entry.title,
-                  updatedAt: new Date().toISOString(),
-                }
-              : entry,
-          );
-        });
-        return;
-      } catch {
-        // Fallback to REST patch
-      }
-    }
-
     const updatedNote = await updateNoteMutation.mutateAsync({
       noteId: note.id,
       payload,
     });
     lastSavedContent.current = updatedNote.content;
     lastSavedTitle.current = updatedNote.title;
-  }, [content, isRealtimeReady, note, sendRealtimePatch, updateNoteMutation]);
+  }, [content, note, updateNoteMutation]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
@@ -189,37 +163,6 @@ export function NoteEditorScreen() {
       ...(derivedTitle !== lastSavedTitle.current ? { title: derivedTitle } : {}),
     };
 
-    if (isRealtimeReady) {
-      void sendRealtimePatch(payload).then(() => {
-        lastSavedContent.current = debouncedContent;
-        lastSavedTitle.current = payload.title ?? lastSavedTitle.current;
-        queryClient.setQueriesData<Note[] | undefined>({ queryKey: notesKeys.all }, (current) => {
-          if (!current) return current;
-          return current.map((entry) =>
-            entry.id === note.id
-              ? {
-                  ...entry,
-                  content: debouncedContent,
-                  title: payload.title ?? entry.title,
-                  updatedAt: new Date().toISOString(),
-                }
-              : entry,
-          );
-        });
-      }).catch(() => {
-        updateNoteMutation.mutate({
-          noteId: note.id,
-          payload,
-        }, {
-          onSuccess: (updatedNote) => {
-            lastSavedContent.current = updatedNote.content;
-            lastSavedTitle.current = updatedNote.title;
-          },
-        });
-      });
-      return;
-    }
-
     updateNoteMutation.mutate({
       noteId: note.id,
       payload,
@@ -229,7 +172,7 @@ export function NoteEditorScreen() {
         lastSavedTitle.current = updatedNote.title;
       },
     });
-  }, [debouncedContent, isRealtimeReady, note, queryClient, sendRealtimePatch, updateNoteMutation, updateNoteMutation.isPending]);
+  }, [debouncedContent, note, updateNoteMutation, updateNoteMutation.isPending]);
 
   const handlePinToggle = async () => {
     if (!note) return;

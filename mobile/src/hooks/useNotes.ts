@@ -38,33 +38,10 @@ function notesQuery(params?: ListNotesParams): string {
 }
 
 export function useNotesQuery(params?: ListNotesParams) {
-  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: notesKeys.list(params),
     queryFn: () => listNotesLocal(params),
   });
-
-  const paramsKey = JSON.stringify(params ?? {});
-  useEffect(() => {
-    let cancelled = false;
-
-    async function syncFromServer() {
-      try {
-        const remoteNotes = await apiClient.get<Note[]>(notesQuery(params));
-        await upsertNotesLocal(remoteNotes);
-        if (!cancelled) {
-          queryClient.invalidateQueries({ queryKey: notesKeys.list(params) });
-        }
-      } catch {
-        // Offline / unavailable server, keep local cache
-      }
-    }
-
-    void syncFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [paramsKey, queryClient]);
 
   return query;
 }
