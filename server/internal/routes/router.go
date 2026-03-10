@@ -22,6 +22,7 @@ func NewRouter(cfg config.Config, poller *db.HealthPoller, conn *gorm.DB) http.H
 
 	authService := services.NewGormAuthService(conn, cfg.JWTSecret)
 	noteService := services.NewGormNoteService(conn)
+	taskService := services.NewGormTaskService(conn)
 	realtimeNoteService := services.NewGormRealtimeNoteService(conn, noteService)
 	folderService := services.NewGormFolderService(conn)
 	realtimeHub := ws.NewHub()
@@ -29,6 +30,7 @@ func NewRouter(cfg config.Config, poller *db.HealthPoller, conn *gorm.DB) http.H
 	RegisterHealthRoutes(r, poller)
 	RegisterAuthRoutes(r, authService, cfg.JWTSecret, conn)
 	RegisterNoteRoutes(r, noteService, cfg.JWTSecret, conn)
+	RegisterTaskRoutes(r, taskService, cfg.JWTSecret, conn)
 	RegisterFolderRoutes(r, folderService, cfg.JWTSecret, conn)
 	RegisterRealtimeNoteRoutes(r, realtimeNoteService, realtimeHub, cfg.JWTSecret, conn)
 

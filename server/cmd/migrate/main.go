@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("failed to enable pgcrypto extension: %v", err)
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Folder{}, &models.Note{}, &models.Token{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Folder{}, &models.Note{}, &models.Task{}, &models.Token{}); err != nil {
 		log.Fatalf("auto migration failed: %v", err)
 	}
 
