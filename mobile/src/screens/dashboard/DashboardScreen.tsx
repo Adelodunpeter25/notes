@@ -8,18 +8,20 @@ import { useNetInfo } from "@react-native-community/netinfo";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
+import { TaskList, TaskModal } from "@/components/tasks";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData, useSync } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
+import type { Task } from "@shared/tasks";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
 
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
-  const [activeTab, setActiveTab] = useState<"notes" | "folders">("notes");
+  const [activeTab, setActiveTab] = useState<"notes" | "folders" | "tasks">("notes");
   const dashboard = useDashboardData();
   const { syncNow, isSyncing } = useSync({ auto: false });
   const netInfo = useNetInfo();
@@ -31,6 +33,8 @@ export function DashboardScreen() {
   const [folderToRename, setFolderToRename] = useState<Folder | null>(null);
   const [noteToMove, setNoteToMove] = useState<Note | null>(null);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleCreateNote = async () => {
     try {
@@ -96,7 +100,7 @@ export function DashboardScreen() {
       <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
         <View className="flex-row items-center">
           <Text className="text-xl font-semibold text-text">
-            {activeTab === "folders" ? "Folders" : "Notes"}
+            {activeTab === "folders" ? "Folders" : activeTab === "tasks" ? "Tasks" : "Notes"}
           </Text>
           {netInfo.isConnected === false && (
             <View className="ml-3 flex-row items-center rounded-full bg-danger/20 px-2 py-1">
@@ -145,6 +149,27 @@ export function DashboardScreen() {
               }}
             />
           </View>
+        ) : activeTab === "tasks" ? (
+          <View className="flex-1">
+            <TaskList
+              tasks={dashboard.tasks}
+              isLoading={dashboard.isTasksLoading}
+              refreshing={dashboard.isTasksRefreshing}
+              onRefresh={() => {
+                void dashboard.refetchTasks();
+              }}
+              onToggleTask={(task) => {
+                void dashboard.toggleTask(task);
+              }}
+              onDeleteTask={(task) => {
+                void dashboard.deleteTask(task.id);
+              }}
+              onSelectTask={(task) => {
+                setEditingTask(task);
+                setIsTaskModalOpen(true);
+              }}
+            />
+          </View>
         ) : (
           <View className="flex-1">
             <NoteList
@@ -174,12 +199,25 @@ export function DashboardScreen() {
             setIsCreateFolderOpen(true);
             return;
           }
+          if (activeTab === "tasks") {
+            setEditingTask(null);
+            setIsTaskModalOpen(true);
+            return;
+          }
           void handleCreateNote();
         }}
-        disabled={activeTab === "folders" ? dashboard.isCreatingFolder : dashboard.isCreatingNote}
+        disabled={
+          activeTab === "folders"
+            ? dashboard.isCreatingFolder
+            : activeTab === "tasks"
+            ? dashboard.isCreatingTask
+            : dashboard.isCreatingNote
+        }
         className="absolute bottom-28 right-8 h-[65px] w-[65px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         {activeTab === "folders" ? (
+          <Plus size={32} color="#000000" />
+        ) : activeTab === "tasks" ? (
           <Plus size={32} color="#000000" />
         ) : (
           <PenLine size={30} color="#000000" />
@@ -266,6 +304,28 @@ export function DashboardScreen() {
         loading={dashboard.isCreatingFolder}
         onCancel={() => setIsCreateFolderOpen(false)}
         onSave={handleCreateFolder}
+      />
+
+      <TaskModal
+        visible={isTaskModalOpen}
+        loading={dashboard.isCreatingTask || dashboard.isUpdatingTask}
+        initialTask={editingTask}
+        onCancel={() => {
+          setIsTaskModalOpen(false);
+          setEditingTask(null);
+        }}
+        onSave={async (payload) => {
+          if (editingTask) {
+            await dashboard.updateTask(editingTask.id, {
+              title: payload.title,
+              description: payload.description,
+            });
+          } else {
+            await dashboard.createTask(payload);
+          }
+          setIsTaskModalOpen(false);
+          setEditingTask(null);
+        }}
       />
     </ScreenContainer>
   );

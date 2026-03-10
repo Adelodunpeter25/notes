@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
-import { Folder, NotebookPen } from "lucide-react-native";
+import { CheckSquare, Folder, NotebookPen } from "lucide-react-native";
 
-type BottomTab = "notes" | "folders";
+type BottomTab = "notes" | "folders" | "tasks";
 
 type BottomBarProps = {
   activeTab: BottomTab;
@@ -55,6 +55,28 @@ export function BottomBar({ activeTab, onChangeTab }: BottomBarProps) {
           Folders
         </Text>
       </Pressable>
+
+        <Pressable
+          onPress={() => onChangeTab("tasks")}
+          className={[
+            "ml-2 flex-1 items-center justify-center rounded-xl py-2",
+            activeTab === "tasks" ? "bg-surfaceSecondary/60" : "",
+          ].join(" ")}
+        >
+          <CheckSquare
+            size={18}
+            color={activeTab === "tasks" ? "#eab308" : "#a0a0a0"}
+            strokeWidth={2.2}
+          />
+          <Text
+            className={[
+              "mt-1 text-[12px]",
+              activeTab === "tasks" ? "font-semibold text-accent" : "text-textMuted",
+            ].join(" ")}
+          >
+            Tasks
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

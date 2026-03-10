@@ -1,5 +1,6 @@
 import type { Note, UpdateNotePayload } from "@shared/notes";
 import type { Folder } from "@shared/folders";
+import type { Task, CreateTaskPayload, UpdateTaskPayload } from "@shared/tasks";
 import { getLocalDatabase } from "@/db/client";
 import { apiClient } from "@/api/apiClient";
 import {
@@ -10,8 +11,12 @@ import {
   replaceLocalFolderID,
   upsertFoldersLocal,
 } from "@/db/repositories/foldersRepo";
+import {
+  replaceLocalTaskID,
+  upsertTasksLocal,
+} from "@/db/repositories/tasksRepo";
 
-type SyncEntity = "note" | "folder";
+type SyncEntity = "note" | "folder" | "task";
 type SyncOpType = "upsert" | "delete";
 
 type OutboxRow = {
@@ -106,6 +111,14 @@ export async function enqueueFolderDelete(folderID: string) {
   return enqueueOp("folder", folderID, "delete", {});
 }
 
+export async function enqueueTaskUpsert(taskID: string, payload: UpdateTaskPayload) {
+  return enqueueOp("task", taskID, "upsert", payload);
+}
+
+export async function enqueueTaskDelete(taskID: string) {
+  return enqueueOp("task", taskID, "delete", {});
+}
+
 async function listPendingOps(limit = 50) {
   const db = await getLocalDatabase();
   return db.getAllAsync<OutboxRow>(
@@ -150,6 +163,10 @@ async function clearDirtyFlag(entityType: SyncEntity, entityID: string) {
   const db = await getLocalDatabase();
   if (entityType === "note") {
     await db.runAsync(`UPDATE notes SET dirty = 0 WHERE id = ?`, entityID);
+    return;
+  }
+  if (entityType === "task") {
+    await db.runAsync(`UPDATE tasks SET dirty = 0 WHERE id = ?`, entityID);
     return;
   }
 
@@ -245,12 +262,58 @@ async function processFolderDelete(op: OutboxRow) {
   await db.runAsync(`DELETE FROM folders WHERE id = ?`, op.entity_id);
 }
 
+async function processTaskUpsert(op: OutboxRow, payload: OutboxPayload) {
+  const body = payload as UpdateTaskPayload;
+  const hasServerSideRecord = !op.entity_id.startsWith("local_");
+
+  if (hasServerSideRecord) {
+    const updated = await apiClient.patch<Task, typeof body>(`/tasks/${op.entity_id}`, body);
+    await upsertTasksLocal([updated]);
+    await clearDirtyFlag("task", updated.id);
+    return;
+  }
+
+  const created = await apiClient.post<Task, CreateTaskPayload>("/tasks/", {
+    title: body.title ?? "Untitled",
+    description: body.description ?? "",
+    isCompleted: body.isCompleted ?? false,
+    dueDate: body.dueDate,
+  });
+
+  await replaceLocalTaskID(op.entity_id, created.id);
+  await upsertTasksLocal([created]);
+  await clearDirtyFlag("task", created.id);
+
+  const db = await getLocalDatabase();
+  await db.runAsync(
+    `
+      UPDATE sync_outbox
+      SET entity_id = ?
+      WHERE entity_type = 'task' AND entity_id = ?
+    `,
+    created.id,
+    op.entity_id,
+  );
+}
+
+async function processTaskDelete(op: OutboxRow) {
+  try {
+    await apiClient.delete<void>(`/tasks/${op.entity_id}`);
+  } catch {
+    // Keep local deletion state even if remote already removed
+  }
+  const db = await getLocalDatabase();
+  await db.runAsync(`DELETE FROM tasks WHERE id = ?`, op.entity_id);
+}
+
 export async function runSyncCycle() {
   const remoteFolders = await apiClient.get<Folder[]>("/folders/");
   const remoteNotes = await apiClient.get<Note[]>("/notes/");
+  const remoteTasks = await apiClient.get<Task[]>("/tasks/");
 
   await upsertFoldersLocal(remoteFolders);
   await upsertNotesLocal(remoteNotes);
+  await upsertTasksLocal(remoteTasks);
 
   const ops = await listPendingOps(100);
   for (const op of ops) {
@@ -265,6 +328,10 @@ export async function runSyncCycle() {
         await processFolderUpsert(op, payload);
       } else if (op.entity_type === "folder" && op.op_type === "delete") {
         await processFolderDelete(op);
+      } else if (op.entity_type === "task" && op.op_type === "upsert") {
+        await processTaskUpsert(op, payload);
+      } else if (op.entity_type === "task" && op.op_type === "delete") {
+        await processTaskDelete(op);
       }
 
       await deleteOp(op.op_id);

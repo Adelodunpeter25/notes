@@ -33,3 +33,5 @@ export function formatNoteDateTime(value?: string): string {
 
     return format(parsed, "d MMMM yyyy 'at' h:mm a");
 }
+
+export const formatDate = formatNoteDate;

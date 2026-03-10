@@ -61,6 +61,47 @@ async function initialize(db: SQLite.SQLiteDatabase) {
 
     CREATE INDEX IF NOT EXISTS idx_folders_updated ON folders(updated_at DESC);
 
+    CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT,
+      title TEXT NOT NULL DEFAULT 'Untitled',
+      description TEXT NOT NULL DEFAULT '',
+      is_completed INTEGER NOT NULL DEFAULT 0,
+      due_date TEXT,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT,
+      dirty INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(is_completed, updated_at DESC);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS tasks_fts USING fts5(
+      title,
+      description,
+      content='tasks',
+      content_rowid='rowid',
+      tokenize='unicode61'
+    );
+
+    CREATE TRIGGER IF NOT EXISTS tasks_ai AFTER INSERT ON tasks BEGIN
+      INSERT INTO tasks_fts(rowid, title, description)
+      VALUES (new.rowid, new.title, new.description);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS tasks_ad AFTER DELETE ON tasks BEGIN
+      INSERT INTO tasks_fts(tasks_fts, rowid, title, description)
+      VALUES('delete', old.rowid, old.title, old.description);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS tasks_au AFTER UPDATE ON tasks BEGIN
+      INSERT INTO tasks_fts(tasks_fts, rowid, title, description)
+      VALUES('delete', old.rowid, old.title, old.description);
+      INSERT INTO tasks_fts(rowid, title, description)
+      VALUES (new.rowid, new.title, new.description);
+    END;
+
     CREATE TABLE IF NOT EXISTS sync_outbox (
       op_id TEXT PRIMARY KEY NOT NULL,
       entity_type TEXT NOT NULL,
