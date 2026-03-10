@@ -14,7 +14,7 @@ var ErrFolderNotFound = errors.New("folder not found")
 type FolderService interface {
 	Create(userID string, payload schemas.CreateFolderRequest) (schemas.FolderResponse, error)
 	List(userID string) ([]schemas.FolderResponse, error)
-	Rename(userID, folderID string, payload schemas.UpdateFolderRequest) (schemas.FolderResponse, error)
+	Update(userID, folderID string, payload schemas.UpdateFolderRequest) (schemas.FolderResponse, error)
 	Delete(userID, folderID string) error
 	ListNotes(userID, folderID string) ([]schemas.NoteResponse, error)
 }
@@ -70,7 +70,7 @@ func (service *GormFolderService) List(userID string) ([]schemas.FolderResponse,
 	return response, nil
 }
 
-func (service *GormFolderService) Rename(userID, folderID string, payload schemas.UpdateFolderRequest) (schemas.FolderResponse, error) {
+func (service *GormFolderService) Update(userID, folderID string, payload schemas.UpdateFolderRequest) (schemas.FolderResponse, error) {
 	var folder models.Folder
 	if err := service.db.Where("id = ? AND user_id = ?", folderID, userID).First(&folder).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -132,4 +132,10 @@ func (service *GormFolderService) ListNotes(userID, folderID string) ([]schemas.
 	}
 
 	return response, nil
+}
+func mapFolderResponse(f models.Folder) schemas.FolderResponse {
+	return schemas.FolderResponse{
+		ID:   f.ID,
+		Name: f.Name,
+	}
 }

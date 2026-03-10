@@ -24,7 +24,7 @@ func RegisterFolderRoutes(r chi.Router, folderService services.FolderService, jw
 		r.Post("/", handler.create)
 		r.Get("/", handler.list)
 		r.Get("/{folderId}/notes", handler.listNotes)
-		r.Patch("/{folderId}", handler.rename)
+		r.Patch("/{folderId}", handler.update)
 		r.Delete("/{folderId}", handler.delete)
 	})
 }
@@ -99,7 +99,7 @@ func (handler FolderHandler) listNotes(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (handler FolderHandler) rename(w http.ResponseWriter, r *http.Request) {
+func (handler FolderHandler) update(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	if userID == "" {
 		middleware.WriteAuthError(w)
@@ -118,7 +118,7 @@ func (handler FolderHandler) rename(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := handler.service.Rename(userID, folderID, req)
+	resp, err := handler.service.Update(userID, folderID, req)
 	if err != nil {
 		if errors.Is(err, services.ErrFolderNotFound) {
 			http.Error(w, "folder not found", http.StatusNotFound)

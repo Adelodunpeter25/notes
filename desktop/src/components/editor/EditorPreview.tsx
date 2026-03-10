@@ -5,11 +5,36 @@ type EditorPreviewProps = {
     maxLength?: number;
 };
 
+function extractText(content: string): string {
+  if (!content) return "";
+  const trimmed = content.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object" && parsed.type === "doc" && Array.isArray(parsed.content)) {
+        return parsed.content
+          .map((node: any) => {
+            if (node.type === "text") return node.text;
+            if (node.content) return extractText(JSON.stringify(node));
+            return " ";
+          })
+          .join("")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    } catch {
+      // Not valid JSON or Tiptap JSON, fallback to raw
+    }
+  }
+  return content;
+}
+
 export function EditorPreview({ content, maxLength = 40 }: EditorPreviewProps) {
     const snippet = useMemo(() => {
         if (!content) return "No additional text";
 
-        const normalizedHtml = content
+        const plainText = extractText(content);
+        const normalizedHtml = plainText
             .replace(/<(\/p|\/div|\/h[1-6]|br)\s*>/gi, "\n")
             .replace(/&nbsp;/g, " ");
 

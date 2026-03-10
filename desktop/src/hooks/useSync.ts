@@ -28,8 +28,8 @@ export function useSync(options?: { auto?: boolean }) {
     const pending = (async () => {
       setIsSyncing(true);
       try {
-        await runSyncCycle();
-        setLastSyncedAt(new Date().toISOString());
+        const nextSyncAt = await runSyncCycle(lastSyncedAt);
+        setLastSyncedAt(nextSyncAt);
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
         await queryClient.invalidateQueries({ queryKey: ["folders"] });
         await queryClient.invalidateQueries({ queryKey: ["tasks"] });
