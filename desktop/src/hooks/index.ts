@@ -1,6 +1,7 @@
 export * from "./useAuth";
 export * from "./useNotes";
 export * from "./useFolders";
+export * from "./useTasks";
 export * from "./useDebounce";
 export * from "./useNotesActions";
 export * from "./useDashboardSelection";

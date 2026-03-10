@@ -1,11 +1,13 @@
 import type { Folder } from "@shared/folders";
 import type { Note, UpdateNotePayload } from "@shared/notes";
 import { apiClient } from "@/services";
-import { getLocalDatabase, persistDatabase } from "@/db/client";
+import { getLocalDatabase } from "@/db/client";
 import { replaceLocalFolderID, upsertFoldersLocal } from "@/db/repositories/foldersRepo";
 import { replaceLocalNoteID, upsertNotesLocal } from "@/db/repositories/notesRepo";
+import { replaceLocalTaskID, upsertTasksLocal } from "@/db/repositories/tasksRepo";
+import type { Task, UpdateTaskPayload } from "@shared/tasks";
 
-type SyncEntity = "note" | "folder";
+type SyncEntity = "note" | "folder" | "task";
 type SyncOpType = "upsert" | "delete";
 
 type OutboxRow = {
@@ -31,15 +33,14 @@ function generateID() {
 async function enqueue(entityType: SyncEntity, entityID: string, opType: SyncOpType, payload: OutboxPayload) {
   const db = await getLocalDatabase();
   const opID = generateID();
-  db.run(
+  await db.execute(
     `
       INSERT INTO sync_outbox (
         op_id, entity_type, entity_id, op_type, payload_json, created_at, retry_count, next_retry_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 0, NULL)
+      ) VALUES ($1, $2, $3, $4, $5, $6, 0, NULL)
     `,
     [opID, entityType, entityID, opType, JSON.stringify(payload), nowISO()],
   );
-  await persistDatabase();
 }
 
 export async function enqueueNoteUpsert(noteID: string, payload: UpdateNotePayload) {
@@ -58,62 +59,57 @@ export async function enqueueFolderDelete(folderID: string) {
   await enqueue("folder", folderID, "delete", {});
 }
 
+export async function enqueueTaskUpsert(taskID: string, payload: UpdateTaskPayload) {
+  await enqueue("task", taskID, "upsert", payload as OutboxPayload);
+}
+
+export async function enqueueTaskDelete(taskID: string) {
+  await enqueue("task", taskID, "delete", {});
+}
+
 async function listPendingOps(limit = 100): Promise<OutboxRow[]> {
   const db = await getLocalDatabase();
-  const result = db.exec(
+  const rows = await db.select<OutboxRow[]>(
     `
       SELECT op_id, entity_type, entity_id, op_type, payload_json, created_at, retry_count
       FROM sync_outbox
-      WHERE next_retry_at IS NULL OR next_retry_at <= ?
+      WHERE next_retry_at IS NULL OR next_retry_at <= $1
       ORDER BY
         CASE entity_type WHEN 'folder' THEN 0 ELSE 1 END ASC,
         CASE op_type WHEN 'upsert' THEN 0 ELSE 1 END ASC,
         created_at ASC
-      LIMIT ?
+      LIMIT $2
     `,
     [nowISO(), limit],
   );
 
-  if (!result.length) {
-    return [];
-  }
-
-  return result[0].values.map((row: unknown[]) => ({
-    op_id: String(row[0]),
-    entity_type: String(row[1]) as SyncEntity,
-    entity_id: String(row[2]),
-    op_type: String(row[3]) as SyncOpType,
-    payload_json: String(row[4]),
-    created_at: String(row[5]),
-    retry_count: Number(row[6]) || 0,
-  }));
+  return rows;
 }
 
 async function removeOp(opID: string) {
   const db = await getLocalDatabase();
-  db.run(`DELETE FROM sync_outbox WHERE op_id = ?`, [opID]);
-  await persistDatabase();
+  await db.execute(`DELETE FROM sync_outbox WHERE op_id = $1`, [opID]);
 }
 
 async function bumpRetry(opID: string, retryCount: number) {
   const db = await getLocalDatabase();
   const nextCount = retryCount + 1;
   const nextRetryAt = new Date(Date.now() + Math.min(60, 2 ** nextCount) * 1000).toISOString();
-  db.run(
-    `UPDATE sync_outbox SET retry_count = ?, next_retry_at = ? WHERE op_id = ?`,
+  await db.execute(
+    `UPDATE sync_outbox SET retry_count = $1, next_retry_at = $2 WHERE op_id = $3`,
     [nextCount, nextRetryAt, opID],
   );
-  await persistDatabase();
 }
 
 async function markDirtyCleared(entity: SyncEntity, id: string) {
   const db = await getLocalDatabase();
   if (entity === "note") {
-    db.run(`UPDATE notes SET dirty = 0 WHERE id = ?`, [id]);
+    await db.execute(`UPDATE notes SET dirty = 0 WHERE id = $1`, [id]);
+  } else if (entity === "folder") {
+    await db.execute(`UPDATE folders SET dirty = 0 WHERE id = $1`, [id]);
   } else {
-    db.run(`UPDATE folders SET dirty = 0 WHERE id = ?`, [id]);
+    await db.execute(`UPDATE tasks SET dirty = 0 WHERE id = $1`, [id]);
   }
-  await persistDatabase();
 }
 
 async function processFolderUpsert(op: OutboxRow, payload: { name?: string }) {
@@ -172,11 +168,41 @@ async function processNoteDelete(op: OutboxRow) {
   }
 }
 
+async function processTaskUpsert(op: OutboxRow, payload: UpdateTaskPayload) {
+  const isLocal = op.entity_id.startsWith("local_");
+  if (isLocal) {
+    const created = await apiClient.post<Task, UpdateTaskPayload>("/tasks/", {
+      title: payload.title ?? "Untitled",
+      description: payload.description ?? "",
+      isCompleted: payload.isCompleted ?? false,
+      dueDate: payload.dueDate,
+    });
+    await replaceLocalTaskID(op.entity_id, created.id);
+    await upsertTasksLocal([created]);
+    await markDirtyCleared("task", created.id);
+    return;
+  }
+
+  const updated = await apiClient.patch<Task, UpdateTaskPayload>(`/tasks/${op.entity_id}`, payload);
+  await upsertTasksLocal([updated]);
+  await markDirtyCleared("task", updated.id);
+}
+
+async function processTaskDelete(op: OutboxRow) {
+  try {
+    await apiClient.delete<void>(`/tasks/${op.entity_id}`);
+  } catch {
+    // Keep local delete regardless
+  }
+}
+
 export async function runSyncCycle() {
   const remoteFolders = await apiClient.get<Folder[]>("/folders/");
   const remoteNotes = await apiClient.get<Note[]>("/notes/");
+  const remoteTasks = await apiClient.get<Task[]>("/tasks/");
   await upsertFoldersLocal(remoteFolders);
   await upsertNotesLocal(remoteNotes);
+  await upsertTasksLocal(remoteTasks);
 
   const ops = await listPendingOps();
   for (const op of ops) {
@@ -191,6 +217,10 @@ export async function runSyncCycle() {
         await processNoteUpsert(op, payload as UpdateNotePayload);
       } else if (op.entity_type === "note" && op.op_type === "delete") {
         await processNoteDelete(op);
+      } else if (op.entity_type === "task" && op.op_type === "upsert") {
+        await processTaskUpsert(op, payload as UpdateTaskPayload);
+      } else if (op.entity_type === "task" && op.op_type === "delete") {
+        await processTaskDelete(op);
       }
 
       await removeOp(op.op_id);
