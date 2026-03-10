@@ -1,11 +1,13 @@
 import { Text, View } from "react-native";
 
 import type { Note } from "@shared/notes";
+import type { Folder } from "@shared/folders";
 import { NoteList } from "@/components/notes";
 
 type SearchResultsProps = {
   query: string;
   notes: Note[];
+  folders?: Folder[];
   isLoading?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
@@ -15,6 +17,7 @@ type SearchResultsProps = {
 export function SearchResults({
   query,
   notes,
+  folders = [],
   isLoading = false,
   refreshing = false,
   onRefresh,
@@ -31,6 +34,7 @@ export function SearchResults({
   return (
     <NoteList
       notes={notes}
+      folders={folders}
       isLoading={isLoading}
       refreshing={refreshing}
       onRefresh={onRefresh}

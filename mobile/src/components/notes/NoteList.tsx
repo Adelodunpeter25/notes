@@ -4,6 +4,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { useState, useRef } from "react";
 
 import type { Note } from "@shared/notes";
+import type { Folder } from "@shared/folders";
 import { ListItem, Skeleton, ConfirmDialog } from "@/components/common";
 import { deriveNotePreviewFromHtml, deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { formatNoteDate } from "@/utils/formatDate";
@@ -12,6 +13,7 @@ import type { GestureResponderEvent } from "react-native";
 
 type NoteListProps = {
   notes: Note[];
+  folders?: Folder[];
   isLoading?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
@@ -23,6 +25,7 @@ type NoteListProps = {
 
 export function NoteList({
   notes,
+  folders = [],
   isLoading = false,
   refreshing = false,
   onRefresh,
@@ -79,6 +82,8 @@ export function NoteList({
           const title = deriveNoteTitleFromHtml(item.content || "") || item.title?.trim() || "Untitled";
           const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
           const preview = deriveNotePreviewFromHtml(item.content || "");
+          const folderName = folders.find((f) => f.id === item.folderId)?.name;
+          const subtitleText = folderName ? `${dateStr} · ${folderName} · ${preview}`.trim() : `${dateStr} ${preview}`.trim();
 
           return (
             <Swipeable
@@ -95,7 +100,7 @@ export function NoteList({
             >
               <ListItem
                 title={title}
-                subtitle={`${dateStr} ${preview}`.trim()}
+                subtitle={subtitleText}
                 titleClassName="text-[16px]"
                 subtitleClassName="text-[13px]"
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}

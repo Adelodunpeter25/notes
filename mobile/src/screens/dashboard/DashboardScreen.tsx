@@ -149,6 +149,7 @@ export function DashboardScreen() {
           <View className="flex-1">
             <NoteList
               notes={dashboard.notes}
+              folders={dashboard.folders}
               isLoading={dashboard.isNotesLoading}
               refreshing={dashboard.isNotesRefreshing}
               onRefresh={() => {

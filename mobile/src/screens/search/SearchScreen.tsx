@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { ScreenContainer } from "@/components/layout";
 import { SearchResults } from "@/components/search";
-import { useDebounce, useNotesQuery, useSearch } from "@/hooks";
+import { useDebounce, useNotesQuery, useSearch, useFoldersQuery } from "@/hooks";
 
 export function SearchScreen() {
   const navigation = useNavigation();
@@ -14,6 +14,7 @@ export function SearchScreen() {
   const resultsQuery = useNotesQuery({
     q: debouncedQuery.trim() || undefined,
   });
+  const foldersQuery = useFoldersQuery();
 
   return (
     <ScreenContainer>
@@ -47,6 +48,7 @@ export function SearchScreen() {
         <SearchResults
           query={searchQuery}
           notes={resultsQuery.data ?? []}
+          folders={foldersQuery.data ?? []}
           isLoading={resultsQuery.isLoading}
           refreshing={resultsQuery.isRefetching}
           onRefresh={() => {
