@@ -15,6 +15,31 @@ interface ListItemProps {
     className?: string;
     showChevron?: boolean;
     isActive?: boolean;
+    searchQuery?: string;
+}
+
+function HighlightedText({ text, query, className, numberOfLines }: { text: string; query?: string; className?: string; numberOfLines?: number }) {
+    if (!query || !query.trim()) {
+        return <Text className={className} numberOfLines={numberOfLines}>{text}</Text>;
+    }
+
+    const trimmedQuery = query.trim().toLowerCase();
+    const parts = text.split(new RegExp(`(${trimmedQuery})`, 'gi'));
+
+    return (
+        <Text className={className} numberOfLines={numberOfLines}>
+            {parts.map((part, index) => {
+                if (part.toLowerCase() === trimmedQuery) {
+                    return (
+                        <Text key={index} className="text-accent bg-accent/20">
+                            {part}
+                        </Text>
+                    );
+                }
+                return <React.Fragment key={index}>{part}</React.Fragment>;
+            })}
+        </Text>
+    );
 }
 
 export function ListItem({
@@ -29,6 +54,7 @@ export function ListItem({
     className,
     showChevron = true,
     isActive = false,
+    searchQuery = "",
 }: ListItemProps) {
     return (
         <TouchableOpacity
@@ -45,12 +71,10 @@ export function ListItem({
             <View className="flex-row items-center flex-1">
                 {icon && <View className="mr-3">{icon}</View>}
                 <View className="flex-1">
-                    <Text className={cn("text-[17px] font-medium text-text", titleClassName)} numberOfLines={1}>{title}</Text>
+                    <HighlightedText text={title} query={searchQuery} className={cn("text-[17px] font-medium text-text", titleClassName)} numberOfLines={1} />
                     {subtitle && (
                         typeof subtitle === "string" ? (
-                            <Text className={cn("text-[14px] text-textMuted mt-0.5", subtitleClassName)} numberOfLines={1}>
-                                {subtitle}
-                            </Text>
+                            <HighlightedText text={subtitle} query={searchQuery} className={cn("text-[14px] text-textMuted mt-0.5", subtitleClassName)} numberOfLines={1} />
                         ) : (
                             <View className="mt-0.5">{subtitle}</View>
                         )

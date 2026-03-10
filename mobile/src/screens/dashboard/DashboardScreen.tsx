@@ -3,7 +3,7 @@ import { Pressable } from "react-native";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search, Plus, WifiOff, RefreshCw } from "lucide-react-native";
+import { Search, PenLine, Plus, WifiOff, RefreshCw } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
@@ -11,11 +11,14 @@ import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal }
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData, useSync } from "@/hooks";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import type { AppStackParamList } from "@/navigation/types";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
@@ -31,6 +34,11 @@ export function DashboardScreen() {
   const [folderToRename, setFolderToRename] = useState<Folder | null>(null);
   const [noteToMove, setNoteToMove] = useState<Note | null>(null);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+
+  const scale = useSharedValue(1);
+  const fabAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleCreateNote = async () => {
     try {
@@ -167,7 +175,13 @@ export function DashboardScreen() {
         )}
       </View>
 
-      <Pressable
+      <AnimatedPressable
+        onPressIn={() => {
+          scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+        }}
         onPress={() => {
           if (activeTab === "folders") {
             setIsCreateFolderOpen(true);
@@ -176,10 +190,15 @@ export function DashboardScreen() {
           void handleCreateNote();
         }}
         disabled={activeTab === "folders" ? dashboard.isCreatingFolder : dashboard.isCreatingNote}
-        className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg"
+        style={fabAnimatedStyle}
       >
-        <Plus size={32} color="#000000" />
-      </Pressable>
+        {activeTab === "folders" ? (
+          <Plus size={30} color="#000000" />
+        ) : (
+          <PenLine size={28} color="#000000" />
+        )}
+      </AnimatedPressable>
 
       <BottomBar activeTab={activeTab} onChangeTab={setActiveTab} />
 

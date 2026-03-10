@@ -36,6 +36,7 @@ export function SearchResults({
       onRefresh={onRefresh}
       onSelectNote={onSelectNote}
       emptyText={`No results for "${query}"`}
+      searchQuery={query}
     />
   );
 }

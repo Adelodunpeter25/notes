@@ -18,6 +18,7 @@ type NoteListProps = {
   emptyText?: string;
   onSelectNote?: (note: Note) => void;
   onLongPressNote?: (note: Note, event: GestureResponderEvent) => void;
+  searchQuery?: string;
 };
 
 export function NoteList({
@@ -28,6 +29,7 @@ export function NoteList({
   emptyText = "No notes yet.",
   onSelectNote,
   onLongPressNote,
+  searchQuery,
 }: NoteListProps) {
   const deleteNoteMutation = useDeleteNoteMutation();
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
@@ -100,6 +102,7 @@ export function NoteList({
                 onPress={() => onSelectNote?.(item)}
                 onLongPress={(event) => onLongPressNote?.(item, event)}
                 showChevron={false}
+                searchQuery={searchQuery}
               />
             </Swipeable>
           );

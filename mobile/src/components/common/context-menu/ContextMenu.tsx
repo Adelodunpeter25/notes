@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, TouchableWithoutFeedback, View, Text, Pressable, PressableStateCallbackType } from "react-native";
 import { LucideIcon } from "lucide-react-native";
+import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from "react-native-reanimated";
 
 export interface ContextMenuItem {
     label: string;
@@ -35,10 +36,12 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
             onRequestClose={onClose}
         >
             <TouchableWithoutFeedback onPress={onClose}>
-                <View className="flex-1 bg-black/40">
+                <View className="flex-1 bg-black/50">
                     <TouchableWithoutFeedback>
-                        <View
-                            className="absolute w-[240px] bg-[#2c2c2e] rounded-2xl overflow-hidden shadow-2xl"
+                        <Animated.View
+                            entering={ZoomIn.duration(200).springify().damping(18)}
+                            exiting={ZoomOut.duration(150).springify().damping(20)}
+                            className="absolute w-[240px] bg-[#1c1c1e] border border-white/10 rounded-[20px] overflow-hidden shadow-2xl"
                             style={{ left, top }}
                         >
                             {title && (
@@ -84,7 +87,7 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
                                     );
                                 })}
                             </View>
-                        </View>
+                        </Animated.View>
                     </TouchableWithoutFeedback>
                 </View>
             </TouchableWithoutFeedback>
