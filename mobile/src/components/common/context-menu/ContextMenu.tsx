@@ -23,7 +23,7 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
         { backgroundColor: pressed ? "rgba(255, 255, 255, 0.1)" : "transparent" }
     ];
 
-    const menuWidth = 230;
+    const menuWidth = 220;
     const estimatedHeight = (title ? 52 : 0) + items.length * 50 + 12;
     const left = Math.max(12, Math.min((anchor?.x ?? 20) - 20, 390 - menuWidth));
     const top = Math.max(56, Math.min((anchor?.y ?? 120) + 8, 844 - estimatedHeight));
@@ -41,12 +41,12 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
                         <Animated.View
                             entering={ZoomIn.duration(200).springify().damping(18)}
                             exiting={ZoomOut.duration(150).springify().damping(20)}
-                            className="absolute w-[240px] bg-[#1c1c1e] border border-white/10 rounded-[20px] overflow-hidden shadow-2xl"
+                            className="absolute w-[220px] bg-[#1c1c1e] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
                             style={{ left, top }}
                         >
                             {title && (
                                 <View className="px-4 py-3 border-b border-white/10">
-                                    <Text className="text-textMuted text-xs font-semibold uppercase tracking-wider text-center">
+                                    <Text className="text-textMuted text-xs font-semibold uppercase tracking-wider text-center" numberOfLines={1}>
                                         {title}
                                     </Text>
                                 </View>
