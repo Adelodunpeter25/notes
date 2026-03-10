@@ -19,8 +19,8 @@ function mapRow(row: TaskRow): Task {
     description: row.description,
     isCompleted: Boolean(row.is_completed),
     dueDate: row.due_date ?? undefined,
-    createdAt: row.created_at || nowISO(),
-    updatedAt: row.updated_at || nowISO(),
+    createdAt: row.created_at ?? "",
+    updatedAt: row.updated_at ?? "",
   };
 }
 
