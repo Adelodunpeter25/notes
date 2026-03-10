@@ -176,12 +176,12 @@ export function DashboardScreen() {
           void handleCreateNote();
         }}
         disabled={activeTab === "folders" ? dashboard.isCreatingFolder : dashboard.isCreatingNote}
-        className="absolute bottom-28 right-8 h-16 w-16 items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-28 right-8 h-[72px] w-[72px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         {activeTab === "folders" ? (
-          <Plus size={30} color="#000000" />
+          <Plus size={34} color="#000000" />
         ) : (
-          <PenLine size={28} color="#000000" />
+          <PenLine size={32} color="#000000" />
         )}
       </Pressable>
 
