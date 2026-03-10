@@ -42,7 +42,7 @@ function HighlightedText({ text, query, className, numberOfLines }: { text: stri
     );
 }
 
-export function ListItem({
+export const ListItem = React.memo(function ListItem({
     title,
     subtitle,
     titleClassName,
@@ -90,4 +90,4 @@ export function ListItem({
             </View>
         </TouchableOpacity>
     );
-}
+});

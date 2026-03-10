@@ -7,6 +7,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as NavigationBar from "expo-navigation-bar";
+import * as SplashScreen from "expo-splash-screen";
+
+SplashScreen.preventAutoHideAsync();
 
 import { queryClient, asyncStoragePersister } from "@/api/queryClient";
 import { RootNavigator } from "@/navigation";
@@ -21,6 +24,7 @@ export default function App() {
         await initializeLocalDatabase();
       } finally {
         setIsReady(true);
+        await SplashScreen.hideAsync();
       }
 
       if (Platform.OS === "android") {
