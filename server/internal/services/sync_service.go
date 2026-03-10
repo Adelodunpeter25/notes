@@ -48,6 +48,10 @@ func (s *GormSyncService) Sync(userID string, req schemas.SyncRequest) (schemas.
 				})
 			}
 		} else {
+			// If entity not found, still count as processed to clear it from client outbox
+			if strings.Contains(err.Error(), "not found") {
+				processedOpIDs = append(processedOpIDs, op.ID)
+			}
 			fmt.Printf("Sync error processing op %s (entity %s): %v\n", op.ID, op.EntityID, err)
 		}
 	}
@@ -113,12 +117,16 @@ func (s *GormSyncService) processOperation(userID string, op schemas.SyncOperati
 
 func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation, payloadJSON []byte) (string, error) {
 	if op.Type == schemas.SyncOpDelete {
-		return "", s.noteService.Delete(userID, op.EntityID)
+		err := s.noteService.Delete(userID, op.EntityID)
+		if err != nil && strings.Contains(err.Error(), "not found") {
+			return "", nil
+		}
+		return "", err
 	}
 
 	var req schemas.UpdateNoteRequest
 	if err := json.Unmarshal(payloadJSON, &req); err != nil {
-		return "", err
+		return "", fmt.Errorf("note unmarshal error: %v (payload: %s)", err, string(payloadJSON))
 	}
 
 	if strings.HasPrefix(op.EntityID, "local") {
@@ -145,6 +153,9 @@ func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation,
 	}
 
 	resp, err := s.noteService.Update(userID, op.EntityID, req)
+	if err != nil && strings.Contains(err.Error(), "not found") {
+		return "", nil
+	}
 	if err != nil {
 		return "", err
 	}
@@ -153,12 +164,16 @@ func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation,
 
 func (s *GormSyncService) processFolderOp(userID string, op schemas.SyncOperation, payloadJSON []byte) (string, error) {
 	if op.Type == schemas.SyncOpDelete {
-		return "", s.folderService.Delete(userID, op.EntityID)
+		err := s.folderService.Delete(userID, op.EntityID)
+		if err != nil && strings.Contains(err.Error(), "not found") {
+			return "", nil
+		}
+		return "", err
 	}
 
 	var req schemas.UpdateFolderRequest
 	if err := json.Unmarshal(payloadJSON, &req); err != nil {
-		return "", err
+		return "", fmt.Errorf("folder unmarshal error: %v (payload: %s)", err, string(payloadJSON))
 	}
 
 	if strings.HasPrefix(op.EntityID, "local") {
@@ -170,6 +185,9 @@ func (s *GormSyncService) processFolderOp(userID string, op schemas.SyncOperatio
 	}
 
 	resp, err := s.folderService.Update(userID, op.EntityID, req)
+	if err != nil && strings.Contains(err.Error(), "not found") {
+		return "", nil
+	}
 	if err != nil {
 		return "", err
 	}
@@ -178,12 +196,16 @@ func (s *GormSyncService) processFolderOp(userID string, op schemas.SyncOperatio
 
 func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation, payloadJSON []byte) (string, error) {
 	if op.Type == schemas.SyncOpDelete {
-		return "", s.taskService.Delete(userID, op.EntityID)
+		err := s.taskService.Delete(userID, op.EntityID)
+		if err != nil && strings.Contains(err.Error(), "not found") {
+			return "", nil
+		}
+		return "", err
 	}
 
 	var req schemas.UpdateTaskRequest
 	if err := json.Unmarshal(payloadJSON, &req); err != nil {
-		return "", err
+		return "", fmt.Errorf("task unmarshal error: %v (payload: %s)", err, string(payloadJSON))
 	}
 
 	if strings.HasPrefix(op.EntityID, "local") {
@@ -210,10 +232,11 @@ func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation,
 	}
 
 	resp, err := s.taskService.Update(userID, op.EntityID, req)
+	if err != nil && strings.Contains(err.Error(), "not found") {
+		return "", nil
+	}
 	if err != nil {
 		return "", err
 	}
 	return resp.ID, nil
 }
-
-

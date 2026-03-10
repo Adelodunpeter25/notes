@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { runSyncCycle } from "@/db";
 import { useAuthStore } from "@/stores/authStore";
 
-const SYNC_INTERVAL_MS = 10_000;
+const SYNC_INTERVAL_MS = 30_000;
 let globalSyncPromise: Promise<void> | null = null;
 
 export function useSync(options?: { auto?: boolean }) {
@@ -31,10 +31,15 @@ export function useSync(options?: { auto?: boolean }) {
     const pending = (async () => {
       setIsSyncing(true);
       try {
-        await runSyncCycle();
-        setLastSyncedAt(new Date().toISOString());
-        await queryClient.invalidateQueries({ queryKey: ["notes"] });
-        await queryClient.invalidateQueries({ queryKey: ["folders"] });
+        const nextSyncAt = await runSyncCycle(lastSyncedAt);
+        setLastSyncedAt(nextSyncAt);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["notes"] }),
+          queryClient.invalidateQueries({ queryKey: ["folders"] }),
+          queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        ]);
+      } catch (error) {
+        console.error("Sync failed:", error);
       } finally {
         setIsSyncing(false);
         globalSyncPromise = null;
@@ -45,7 +50,7 @@ export function useSync(options?: { auto?: boolean }) {
     globalSyncPromise = pending;
     activeSyncRef.current = pending;
     return pending;
-  }, [token, isAuthenticated, netInfo.isConnected, queryClient]);
+  }, [token, isAuthenticated, netInfo.isConnected, queryClient, lastSyncedAt]);
 
   useEffect(() => {
     if (!auto) {

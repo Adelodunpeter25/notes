@@ -3,9 +3,8 @@ import { getLocalDatabase } from "@/db/client";
 import { upsertFoldersLocal, replaceLocalFolderID } from "@/db/repositories/foldersRepo";
 import { upsertNotesLocal, replaceLocalNoteID } from "@/db/repositories/notesRepo";
 import { upsertTasksLocal, replaceLocalTaskID } from "@/db/repositories/tasksRepo";
-import type { Folder } from "@shared/folders";
-import type { Note, UpdateNotePayload } from "@shared/notes";
-import type { Task, UpdateTaskPayload } from "@shared/tasks";
+import type { UpdateNotePayload } from "@shared/notes";
+import type { UpdateTaskPayload } from "@shared/tasks";
 import type { SyncRequest, SyncResponse } from "@shared/sync";
 
 type SyncEntity = "note" | "folder" | "task";
@@ -45,8 +44,8 @@ async function enqueue(entityType: SyncEntity, entityID: string, opType: SyncOpT
       const mergedPayload = { ...existingPayload, ...payload };
       
       await db.execute(
-        `UPDATE sync_outbox SET payload_json = $1, created_at = $1, retry_count = 0, next_retry_at = NULL WHERE op_id = $2`,
-        [JSON.stringify(mergedPayload), row.op_id]
+        `UPDATE sync_outbox SET payload_json = $1, created_at = $2, retry_count = 0, next_retry_at = NULL WHERE op_id = $3`,
+        [JSON.stringify(mergedPayload), nowISO(), row.op_id]
       );
       return;
     }
