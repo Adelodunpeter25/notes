@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
 
 type EmptyStateProps = {
   icon?: ReactNode;
@@ -6,11 +7,26 @@ type EmptyStateProps = {
   description?: string;
   prompt?: string;
   action?: ReactNode;
+  variant?: "boxed" | "simple";
 };
 
-export function EmptyState({ icon, title, description, prompt, action }: EmptyStateProps) {
+export function EmptyState({ 
+  icon, 
+  title, 
+  description, 
+  prompt, 
+  action,
+  variant = "boxed"
+}: EmptyStateProps) {
+  const isBoxed = variant === "boxed";
+
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface/40 p-6 text-center">
+    <div className={cn(
+      "flex flex-col items-center justify-center gap-3 text-center",
+      isBoxed 
+        ? "min-h-52 rounded-xl border border-dashed border-border bg-surface/40 p-6" 
+        : "py-12 px-4"
+    )}>
       {icon ? (
         <div className="flex size-10 items-center justify-center rounded-full border border-border bg-background/70 text-accent">
           {icon}

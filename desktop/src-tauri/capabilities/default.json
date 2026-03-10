@@ -18,6 +18,7 @@
     "shell:allow-open",
     "sql:default",
     "fs:default",
-    "os:default"
+    "os:default",
+    "sql:allow-execute"
   ]
 }

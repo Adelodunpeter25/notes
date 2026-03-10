@@ -74,6 +74,7 @@ export function TasksList({
         <div className="max-w-2xl mx-auto">
           {tasks.length === 0 ? (
             <EmptyState
+              variant="simple"
               title="All caught up!"
               description="You don't have any pending tasks. Create one to get started."
             />
