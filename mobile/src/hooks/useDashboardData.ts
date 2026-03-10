@@ -100,11 +100,12 @@ export function useDashboardData() {
     }
   };
 
-  const createTask = async (payload: { title: string; description?: string }) => {
+  const createTask = async (payload: { title: string; description?: string; dueDate?: string }) => {
     return createTaskMutation.mutateAsync({
       title: payload.title,
       description: payload.description ?? "",
       isCompleted: false,
+      dueDate: payload.dueDate,
     });
   };
 
@@ -115,7 +116,7 @@ export function useDashboardData() {
     });
   };
 
-  const updateTask = async (taskId: string, payload: { title?: string; description?: string }) => {
+  const updateTask = async (taskId: string, payload: { title?: string; description?: string; dueDate?: string }) => {
     return updateTaskMutation.mutateAsync({ taskId, payload });
   };
 

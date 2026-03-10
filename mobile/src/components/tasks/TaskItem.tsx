@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, Pressable, TouchableOpacity } from "react-native";
-import { Circle, CheckCircle2, Trash2 } from "lucide-react-native";
+import { Circle, CheckCircle2, Trash2, Calendar as CalendarIcon } from "lucide-react-native";
 import { Swipeable } from "react-native-gesture-handler";
+import { forwardRef } from "react";
 import type { Task } from "@shared/tasks";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatDate";
@@ -13,7 +14,7 @@ type TaskItemProps = {
   onPress: (task: Task) => void;
 };
 
-export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
+export const TaskItem = forwardRef<Swipeable, TaskItemProps>(({ task, onToggle, onDelete, onPress }, ref) => {
   const renderRightActions = () => (
     <View className="w-20 bg-danger items-center justify-center">
       <Pressable onPress={() => onDelete(task)}>
@@ -23,13 +24,24 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
   );
 
   return (
-    <Swipeable renderRightActions={renderRightActions} friction={2} rightThreshold={40} overshootRight={false}>
+    <Swipeable
+      ref={ref}
+      renderRightActions={renderRightActions}
+      onSwipeableOpen={(direction) => {
+        if (direction === "right") {
+          onDelete(task);
+        }
+      }}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+    >
       <TouchableOpacity
         onPress={() => onPress(task)}
         activeOpacity={0.7}
         className={cn(
-          "flex-row items-center px-4 py-4 bg-surface border-b border-border/50",
-          task.isCompleted && "opacity-60"
+          "mx-3 my-1.5 flex-row items-center rounded-2xl border border-border/40 bg-surfaceSecondary/40 px-4 py-4 shadow-sm",
+          task.isCompleted && "opacity-60 bg-surface"
         )}
       >
         <Pressable
@@ -53,25 +65,33 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
           >
             {task.title || "Untitled Task"}
           </Text>
-          {(task.description || task.dueDate) && (
-            <View className="mt-1 flex-row items-center">
-              {task.description ? (
-                <Text
-                  className="text-[13px] text-textMuted flex-1"
-                  numberOfLines={1}
-                >
-                  {task.description}
+            <View className="mt-1.5 flex-row items-center justify-between">
+              <View className="flex-1 flex-row items-center mr-2">
+                {task.description ? (
+                  <Text
+                    className="text-[13px] text-textMuted flex-1"
+                    numberOfLines={1}
+                  >
+                    {task.description}
+                  </Text>
+                ) : null}
+              </View>
+              <View className="items-end">
+                {task.dueDate && (
+                  <View className="flex-row items-center bg-accent/10 px-1.5 py-0.5 rounded-md mb-1">
+                    <CalendarIcon size={10} color="#eab308" className="mr-1" />
+                    <Text className="text-[10px] text-accent font-semibold">
+                      {formatDate(task.dueDate)}
+                    </Text>
+                  </View>
+                )}
+                <Text className="text-[10px] text-textMuted/40">
+                  {formatDate(task.createdAt)}
                 </Text>
-              ) : null}
-              {task.dueDate && (
-                <Text className="ml-2 text-[12px] text-accent/80 font-medium">
-                  {formatDate(task.dueDate)}
-                </Text>
-              )}
+              </View>
             </View>
-          )}
         </View>
       </TouchableOpacity>
     </Swipeable>
   );
-}
+});

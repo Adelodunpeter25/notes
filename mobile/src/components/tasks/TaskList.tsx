@@ -2,7 +2,9 @@ import React from "react";
 import { FlatList, View, Text } from "react-native";
 import { TaskItem } from "./TaskItem";
 import type { Task } from "@shared/tasks";
-import { Skeleton } from "@/components/common";
+import { Skeleton, ConfirmDialog } from "@/components/common";
+import { useState, useRef } from "react";
+import type { Swipeable } from "react-native-gesture-handler";
 
 type TaskListProps = {
   tasks: Task[];
@@ -21,10 +23,19 @@ export function TaskList({
   refreshing,
   onRefresh,
   onToggleTask,
-  onDeleteTask,
+  onDeleteTask: propOnDeleteTask,
   onSelectTask,
   emptyText = "All tasks completed! Enjoy your day.",
 }: TaskListProps) {
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
+
+  const handleConfirmDelete = async () => {
+    if (taskToDelete) {
+      await propOnDeleteTask(taskToDelete);
+      setTaskToDelete(null);
+    }
+  };
   if (isLoading) {
     return (
       <View className="px-4 pt-2">
@@ -44,20 +55,39 @@ export function TaskList({
   }
 
   return (
-    <FlatList
-      data={tasks}
-      keyExtractor={(item) => item.id}
+    <>
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id}
       refreshing={refreshing}
       onRefresh={onRefresh}
       renderItem={({ item }) => (
         <TaskItem
+          ref={(ref) => { swipeableRefs.current[item.id] = ref; }}
           task={item}
           onToggle={onToggleTask}
-          onDelete={onDeleteTask}
+          onDelete={(task) => {
+             setTaskToDelete(task);
+          }}
           onPress={onSelectTask}
         />
       )}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
     />
+    <ConfirmDialog
+      visible={!!taskToDelete}
+      title="Delete Task"
+      description="Are you sure you want to delete this task?"
+      confirmLabel="Delete"
+      destructive
+      onConfirm={handleConfirmDelete}
+      onCancel={() => {
+        if (taskToDelete) {
+          swipeableRefs.current[taskToDelete.id]?.close();
+        }
+        setTaskToDelete(null);
+      }}
+    />
+    </>
   );
 }

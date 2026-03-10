@@ -83,7 +83,7 @@ export function NoteList({
           const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
           const preview = deriveNotePreviewFromHtml(item.content || "");
           const folderName = folders.find((f) => f.id === item.folderId)?.name;
-          const subtitleText = folderName ? `${dateStr} · ${folderName} · ${preview}`.trim() : `${dateStr} ${preview}`.trim();
+          const subtitleText = folderName ? `${dateStr} · ${folderName} · ${preview}`.trim() : `${dateStr} · ${preview}`.trim();
 
           return (
             <Swipeable

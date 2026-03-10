@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Modal, Pressable, Text, TouchableWithoutFeedback, View, KeyboardAvoidingView, Platform, TextInput } from "react-native";
 import { X } from "lucide-react-native";
-import { Button } from "@/components/common";
+import { Button, DatePicker } from "@/components/common";
 import type { Task, CreateTaskPayload } from "@shared/tasks";
+import { cn } from "@/utils/cn";
 
 type TaskModalProps = {
   visible: boolean;
@@ -21,14 +22,17 @@ export function TaskModal({
 }: TaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState<Date | null>(null);
 
   useEffect(() => {
     if (initialTask) {
       setTitle(initialTask.title);
       setDescription(initialTask.description);
+      setDueDate(initialTask.dueDate ? new Date(initialTask.dueDate) : null);
     } else {
       setTitle("");
       setDescription("");
+      setDueDate(null);
     }
   }, [initialTask, visible]);
 
@@ -38,6 +42,7 @@ export function TaskModal({
       title: title.trim(),
       description: description.trim(),
       isCompleted: initialTask?.isCompleted ?? false,
+      dueDate: dueDate?.toISOString(),
     });
   };
 
@@ -75,7 +80,14 @@ export function TaskModal({
                 placeholder="Add description (optional)"
                 placeholderTextColor="#6f6f6f"
                 multiline
-                className="text-[15px] text-textMuted mb-8 min-h-[60px] max-h-[120px] py-2"
+                className="text-[15px] text-textMuted mb-4 min-h-[60px] max-h-[120px] py-2"
+              />
+
+              <DatePicker
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder="Set a deadline"
+                className="mb-8"
               />
 
               <Button

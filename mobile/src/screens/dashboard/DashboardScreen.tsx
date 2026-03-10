@@ -213,7 +213,7 @@ export function DashboardScreen() {
             ? dashboard.isCreatingTask
             : dashboard.isCreatingNote
         }
-        className="absolute bottom-28 right-8 h-[65px] w-[65px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-28 right-8 h-[64px] w-[64px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         {activeTab === "folders" ? (
           <Plus size={32} color="#000000" />
@@ -319,6 +319,7 @@ export function DashboardScreen() {
             await dashboard.updateTask(editingTask.id, {
               title: payload.title,
               description: payload.description,
+              dueDate: payload.dueDate,
             });
           } else {
             await dashboard.createTask(payload);
