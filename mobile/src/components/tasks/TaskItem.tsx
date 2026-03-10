@@ -17,7 +17,7 @@ type TaskItemProps = {
 export const TaskItem = forwardRef<Swipeable, TaskItemProps>(({ task, onToggle, onDelete, onPress }, ref) => {
   const renderRightActions = () => (
     <View className="w-20 bg-danger items-center justify-center">
-      <Pressable onPress={() => onDelete(task)}>
+      <Pressable onPress={() => onDelete(task)} hitSlop={12}>
         <Trash2 size={24} color="#ffffff" />
       </Pressable>
     </View>
@@ -46,6 +46,7 @@ export const TaskItem = forwardRef<Swipeable, TaskItemProps>(({ task, onToggle, 
       >
         <Pressable
           onPress={() => onToggle(task)}
+          hitSlop={16}
           className="mr-4 h-6 w-6 items-center justify-center"
         >
           {task.isCompleted ? (
