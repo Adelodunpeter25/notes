@@ -28,8 +28,7 @@ export default function App() {
       }
 
       if (Platform.OS === "android") {
-        NavigationBar.setBackgroundColorAsync("#252525");
-        NavigationBar.setButtonStyleAsync("light");
+        void NavigationBar.setButtonStyleAsync("light");
       }
     }
 
