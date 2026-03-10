@@ -50,7 +50,7 @@ export function DatePicker({ value, onChange, label, placeholder = "Set a date",
                 onPress={() => setShow(true)}
                 className="flex-row items-center bg-surfaceSecondary/50 rounded-xl px-4 py-3 border border-border/30"
             >
-                <Calendar size={18} color="#eab308" className="mr-3" />
+                <Calendar size={18} color="#eab308" className="mr-4" />
                 <Text className={cn("text-[15px]", value ? "text-text font-medium" : "text-textMuted")}>
                     {value ? value.toLocaleDateString() : placeholder}
                 </Text>

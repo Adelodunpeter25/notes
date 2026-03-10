@@ -56,40 +56,37 @@ export const TaskItem = forwardRef<Swipeable, TaskItemProps>(({ task, onToggle, 
         </Pressable>
 
         <View className="flex-1">
-          <Text
-            className={cn(
-              "text-[16px] font-medium text-text",
-              task.isCompleted && "line-through text-textMuted"
-            )}
-            numberOfLines={1}
-          >
-            {task.title || "Untitled Task"}
-          </Text>
-            <View className="mt-1.5 flex-row items-center justify-between">
-              <View className="flex-1 flex-row items-center mr-2">
-                {task.description ? (
-                  <Text
-                    className="text-[13px] text-textMuted flex-1"
-                    numberOfLines={1}
-                  >
-                    {task.description}
-                  </Text>
-                ) : null}
-              </View>
-              <View className="items-end">
-                {task.dueDate && (
-                  <View className="flex-row items-center bg-accent/10 px-1.5 py-0.5 rounded-md mb-1">
-                    <CalendarIcon size={10} color="#eab308" className="mr-1" />
-                    <Text className="text-[10px] text-accent font-semibold">
-                      {formatDate(task.dueDate)}
-                    </Text>
-                  </View>
-                )}
-                <Text className="text-[10px] text-textMuted/40">
-                  {formatDate(task.createdAt)}
+          <View className="flex-row items-center justify-between">
+            <Text
+              className={cn(
+                "text-[16px] font-medium text-text flex-1 mr-2",
+                task.isCompleted && "line-through text-textMuted"
+              )}
+              numberOfLines={1}
+            >
+              {task.title || "Untitled Task"}
+            </Text>
+            {task.dueDate && (
+              <View className="bg-accent/10 px-1.5 py-0.5 rounded-md">
+                <Text className="text-[10px] text-accent font-semibold">
+                  {formatDate(task.dueDate)}
                 </Text>
               </View>
-            </View>
+            )}
+          </View>
+
+          {task.description ? (
+            <Text
+              className="mt-0.5 text-[13px] text-textMuted"
+              numberOfLines={1}
+            >
+              {task.description}
+            </Text>
+          ) : null}
+
+          <Text className="mt-1 text-[10px] text-textMuted/30">
+            {formatDate(task.createdAt)}
+          </Text>
         </View>
       </TouchableOpacity>
     </Swipeable>
