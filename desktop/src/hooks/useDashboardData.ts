@@ -251,7 +251,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
     createFolder,
     renameFolder,
     deleteFolder,
-    createTask: (title: string) => createTaskMutation.mutateAsync({ title, description: "", isCompleted: false }),
+    createTask: (payload: any) => createTaskMutation.mutateAsync(payload),
     updateTask: (taskId: string, payload: any) => updateTaskMutation.mutateAsync({ taskId, payload }),
     deleteTask: (taskId: string) => deleteTaskMutation.mutateAsync(taskId),
     toggleTask: (task: any) => updateTaskMutation.mutateAsync({ taskId: task.id, payload: { isCompleted: !task.isCompleted } }),

@@ -1,6 +1,8 @@
-import type { MouseEvent } from "react";
+import { type MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { RefreshCw } from "lucide-react";
 import { useUiStore } from "@/stores";
+import { useSync } from "@/hooks";
 import { cn } from "@/utils/cn";
 
 const isDesktop =
@@ -9,6 +11,7 @@ const isDesktop =
 export function Titlebar() {
   const activeView = useUiStore((state) => state.activeView);
   const setActiveView = useUiStore((state) => state.setActiveView);
+  const { syncNow, isSyncing } = useSync();
 
   async function handleStartDrag(event: MouseEvent<HTMLElement>) {
     if (!isDesktop || event.button !== 0) {
@@ -31,16 +34,19 @@ export function Titlebar() {
     <header
       data-tauri-drag-region
       onMouseDown={handleStartDrag}
-      className="drag-region flex h-[32px] select-none items-center justify-center border-b border-border bg-[#2b2b2b] px-4"
+      className="drag-region flex h-[36px] select-none items-center justify-between border-b border-border bg-[#2c2c2c] px-4"
     >
+      {/* Platform Controls Spacer (macOS traffic lights) */}
+      <div className="w-[80px]" />
+
       <div className="flex h-full items-center gap-1" data-no-drag="true">
         <button
           onClick={() => setActiveView("notes")}
           className={cn(
-            "flex h-full items-center px-4 text-[12px] font-medium transition-colors",
+            "flex h-full items-center px-4 text-[12px] font-bold tracking-tight transition-all",
             activeView === "notes"
-              ? "bg-white/5 text-text border-b-2 border-accent"
-              : "text-muted hover:text-text hover:bg-white/5"
+              ? "bg-white/5 text-text border-b-2 border-[#c19b1f]"
+              : "text-muted hover:text-text"
           )}
         >
           Notes
@@ -48,13 +54,27 @@ export function Titlebar() {
         <button
           onClick={() => setActiveView("tasks")}
           className={cn(
-            "flex h-full items-center px-4 text-[12px] font-medium transition-colors",
+            "flex h-full items-center px-4 text-[12px] font-bold tracking-tight transition-all",
             activeView === "tasks"
-              ? "bg-white/5 text-text border-b-2 border-accent"
-              : "text-muted hover:text-text hover:bg-white/5"
+              ? "bg-white/5 text-text border-b-2 border-[#c19b1f]"
+              : "text-muted hover:text-text"
           )}
         >
           Tasks
+        </button>
+      </div>
+
+      <div className="flex items-center" data-no-drag="true">
+        <button
+          onClick={() => syncNow()}
+          disabled={isSyncing}
+          className={cn(
+            "flex size-7 items-center justify-center rounded-md text-muted transition-all hover:bg-white/10 hover:text-text",
+            isSyncing && "animate-spin text-accent"
+          )}
+          title="Sync Now"
+        >
+          <RefreshCw size={14} />
         </button>
       </div>
     </header>

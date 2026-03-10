@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { CheckCircle2, Circle, Trash2, Plus, Calendar } from "lucide-react";
-import type { Task } from "@shared/tasks";
+import { CheckCircle2, Circle, Trash2, Plus, Calendar, Clock } from "lucide-react";
+import type { Task, CreateTaskPayload } from "@shared/tasks";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatDate";
-import { Skeleton, ConfirmDialog, EmptyState } from "@/components/common";
+import { Skeleton, ConfirmDialog, EmptyState, Button } from "@/components/common";
+import { TaskModal } from "./TaskModal";
 
 type TasksListProps = {
   tasks: Task[];
   isLoading?: boolean;
   onToggleTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
-  onCreateTask: (title: string) => void;
+  onCreateTask: (payload: CreateTaskPayload) => void;
   onUpdateTask: (taskId: string, payload: any) => void;
 };
 
@@ -20,16 +21,29 @@ export function TasksList({
   onToggleTask,
   onDeleteTask: propOnDeleteTask,
   onCreateTask,
+  onUpdateTask,
 }: TasksListProps) {
-  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const handleCreateTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTaskTitle.trim()) {
-      onCreateTask(newTaskTitle.trim());
-      setNewTaskTitle("");
+  const handleCreateNew = () => {
+    setEditingTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveTask = (payload: CreateTaskPayload) => {
+    if (editingTask) {
+      onUpdateTask(editingTask.id, payload);
+    } else {
+      onCreateTask(payload);
     }
+    setIsModalOpen(false);
   };
 
   const handleConfirmDelete = () => {
@@ -42,36 +56,28 @@ export function TasksList({
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2 p-6">
-        <Skeleton className="h-16 w-full rounded-xl bg-white/5" />
-        <Skeleton className="h-16 w-full rounded-xl bg-white/5" />
-        <Skeleton className="h-16 w-full rounded-xl bg-white/5" />
+        <Skeleton className="h-20 w-full rounded-xl bg-white/5" />
+        <Skeleton className="h-20 w-full rounded-xl bg-white/5" />
+        <Skeleton className="h-20 w-full rounded-xl bg-white/5" />
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col bg-background relative overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-6 pt-10">
-        <form onSubmit={handleCreateTask} className="mb-8 relative group max-w-2xl mx-auto">
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="Add a new task..."
-            className="w-full rounded-xl border border-border/50 bg-white/5 px-4 py-3.5 pl-11 text-sm outline-none transition-all focus:border-accent/50 focus:bg-white/10"
-          />
-          <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
-          {newTaskTitle.trim() && (
-            <button
-              type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-background transition-transform active:scale-95"
-            >
-              Add
-            </button>
-          )}
-        </form>
+      <div className="flex items-center justify-between px-8 py-6 sticky top-0 z-10 bg-background/80 backdrop-blur-md">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Tasks</h1>
+          <p className="text-sm text-muted mt-1">You have {tasks.filter(t => !t.isCompleted).length} tasks remaining</p>
+        </div>
+        <Button onClick={handleCreateNew} className="rounded-full px-6 gap-2">
+          <Plus size={18} />
+          <span>Add Task</span>
+        </Button>
+      </div>
 
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-1 overflow-y-auto px-8 pb-12">
+        <div className="max-w-3xl mx-auto w-full">
           {tasks.length === 0 ? (
             <EmptyState
               variant="simple"
@@ -83,42 +89,70 @@ export function TasksList({
               {tasks.map((task) => (
                 <div
                   key={task.id}
+                  onClick={() => handleEditTask(task)}
                   className={cn(
-                    "group flex items-center gap-4 rounded-xl border border-border/40 bg-white/5 p-4 transition-all hover:bg-white/10",
-                    task.isCompleted && "opacity-60 grayscale-[0.5]"
+                    "group flex items-start gap-4 rounded-2xl border border-border/40 bg-[#252525]/40 p-5 transition-all hover:bg-[#252525]/80 hover:border-border cursor-pointer",
+                    task.isCompleted && "opacity-60 grayscale-[0.3]"
                   )}
                 >
                   <button
-                    onClick={() => onToggleTask(task)}
-                    className="flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleTask(task);
+                    }}
+                    className="mt-0.5 flex h-7 w-7 items-center justify-center transition-transform active:scale-90"
                   >
                     {task.isCompleted ? (
-                      <CheckCircle2 size={24} className="text-accent" />
+                      <CheckCircle2 size={26} className="text-accent" />
                     ) : (
-                      <Circle size={24} className="text-muted group-hover:text-accent/50" />
+                      <Circle size={26} className="text-[#555] group-hover:text-accent/50" />
                     )}
                   </button>
 
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={cn(
-                        "text-sm font-medium text-text transition-all truncate",
-                        task.isCompleted && "line-through text-muted"
-                      )}
-                    >
-                      {task.title}
-                    </p>
-                    {task.dueDate && (
-                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-accent/80 font-medium">
-                        <Calendar size={12} />
-                        <span>{formatDate(task.dueDate)}</span>
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <p
+                        className={cn(
+                          "text-[16px] font-semibold text-text truncate leading-tight",
+                          task.isCompleted && "line-through text-muted font-medium"
+                        )}
+                      >
+                        {task.title}
+                      </p>
+                    </div>
+                    
+                    {task.description ? (
+                      <p className="mt-1.5 text-sm text-muted line-clamp-2 leading-relaxed">
+                        {task.description}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted/60">
+                        <Clock size={12} />
+                        <span>Created {formatDate(task.createdAt)}</span>
                       </div>
-                    )}
+
+                      {task.dueDate && (
+                        <div className={cn(
+                          "flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full",
+                          new Date(task.dueDate) < new Date() && !task.isCompleted
+                            ? "bg-danger/10 text-danger"
+                            : "bg-accent/10 text-accent"
+                        )}>
+                          <Calendar size={12} />
+                          <span>Expires {formatDate(task.dueDate)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <button
-                    onClick={() => setTaskToDelete(task.id)}
-                    className="rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/20 hover:text-danger group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTaskToDelete(task.id);
+                    }}
+                    className="mt-0.5 rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/20 hover:text-danger group-hover:opacity-100"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -128,6 +162,13 @@ export function TasksList({
           )}
         </div>
       </div>
+
+      <TaskModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        initialTask={editingTask}
+      />
 
       <ConfirmDialog
         open={taskToDelete !== null}
