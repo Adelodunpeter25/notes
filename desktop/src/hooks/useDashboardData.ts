@@ -7,13 +7,16 @@ import { useFoldersQuery, useCreateFolderMutation, useRenameFolderMutation, useD
 import { syncPatchedNoteInCache, useNotesQuery } from "./useNotes";
 import { useNotesActions } from "./useNotesActions";
 import { isEmptyDraftNote } from "@/utils/noteContent";
+import { useTasksQuery, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation } from "./useTasks";
 
 type DashboardSelectionState = {
+  activeView: "notes" | "tasks";
   selectedFolderId: string | null;
   selectedNoteId: string | undefined;
   searchQuery: string;
   isSearchExpanded: boolean;
   manualClearCount: number;
+  setActiveView: (view: "notes" | "tasks") => void;
   setSelectedFolderId: (folderId: string | null) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
 };
@@ -32,6 +35,14 @@ export function useDashboardData(selection: DashboardSelectionState) {
     ...(debouncedSearchQuery.trim() ? { q: debouncedSearchQuery.trim() } : {}),
   });
   const notesActions = useNotesActions();
+  
+  const tasksQuery = useTasksQuery({
+    q: debouncedSearchQuery.trim(),
+  });
+  const createTaskMutation = useCreateTaskMutation();
+  const updateTaskMutation = useUpdateTaskMutation();
+  const deleteTaskMutation = useDeleteTaskMutation();
+
   const pendingCreatedNoteIdRef = useRef<string | null>(null);
   const suppressAutoSelectRef = useRef(false);
   const createdDraftNoteIdsRef = useRef<Set<string>>(new Set());
@@ -45,6 +56,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
 
   const folders = foldersQuery.data ?? [];
   const notes = notesQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
 
   const selectedFolderName = useMemo(
     () => folders.find((folder) => folder.id === selection.selectedFolderId)?.name,
@@ -119,7 +131,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
     }
 
     previousSelectedNoteIdRef.current = nextSelectedId;
-  }, [selection.selectedNoteId]);
+  }, [selection.selectedNoteId, notesActions]);
 
   useEffect(() => {
     const isSearchActive = debouncedSearchQuery.trim().length > 0;
@@ -151,10 +163,10 @@ export function useDashboardData(selection: DashboardSelectionState) {
       return;
     }
 
-    if (notes.length > 0) {
+    if (notes.length > 0 && selection.activeView === "notes") {
       selection.setSelectedNoteId(notes[0].id);
     }
-  }, [notes, selection.selectedNoteId, selection.setSelectedNoteId, notesQuery.isSuccess, notesQuery.isFetching, debouncedSearchQuery]);
+  }, [notes, selection.selectedNoteId, selection.setSelectedNoteId, notesQuery.isSuccess, notesQuery.isFetching, debouncedSearchQuery, selection.activeView]);
 
   useEffect(() => {
     return () => {
@@ -221,10 +233,12 @@ export function useDashboardData(selection: DashboardSelectionState) {
   return {
     folders,
     notes,
+    tasks,
     selectedFolderName,
     selectedNote,
     isFoldersLoading: foldersQuery.isLoading,
     isNotesLoading: notesQuery.isLoading || notesActions.isCreating,
+    isTasksLoading: tasksQuery.isLoading,
     isSaving: notesActions.isSaving,
     isDeleting: notesActions.isDeleting,
     editingFolderId,
@@ -237,5 +251,9 @@ export function useDashboardData(selection: DashboardSelectionState) {
     createFolder,
     renameFolder,
     deleteFolder,
+    createTask: (title: string) => createTaskMutation.mutateAsync({ title, description: "", isCompleted: false }),
+    updateTask: (taskId: string, payload: any) => updateTaskMutation.mutateAsync({ taskId, payload }),
+    deleteTask: (taskId: string) => deleteTaskMutation.mutateAsync(taskId),
+    toggleTask: (task: any) => updateTaskMutation.mutateAsync({ taskId: task.id, payload: { isCompleted: !task.isCompleted } }),
   };
 }

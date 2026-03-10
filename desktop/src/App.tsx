@@ -35,7 +35,7 @@ function App() {
   return (
     <HashRouter>
       <div className="flex bg-background text-text h-screen w-full flex-col overflow-hidden">
-        <Titlebar title="Notes" />
+        <Titlebar />
         <Routes>
           <Route
             path="/"

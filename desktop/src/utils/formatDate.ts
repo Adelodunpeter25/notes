@@ -33,3 +33,13 @@ export function formatNoteDateTime(value?: string): string {
 
   return format(parsed, "d MMMM yyyy 'at' h:mm a");
 }
+
+export function formatDate(value?: string | number | Date): string {
+  if (!value) return "";
+  const date = typeof value === "string" ? parseISO(value) : new Date(value);
+  if (isNaN(date.getTime())) return "";
+  
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "MMM d, yyyy");
+}

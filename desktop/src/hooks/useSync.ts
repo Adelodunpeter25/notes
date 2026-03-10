@@ -32,6 +32,7 @@ export function useSync(options?: { auto?: boolean }) {
         setLastSyncedAt(new Date().toISOString());
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
         await queryClient.invalidateQueries({ queryKey: ["folders"] });
+        await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       } finally {
         setIsSyncing(false);
         activeSync = null;
