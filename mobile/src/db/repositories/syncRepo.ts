@@ -123,11 +123,41 @@ export async function enqueueFolderDelete(folderID: string) {
 }
 
 export async function enqueueTaskUpsert(taskID: string, payload: UpdateTaskPayload) {
-  return enqueueOp("task", taskID, "upsert", payload);
+  return enqueueOp("task", taskID, "upsert", normalizeTaskPayload(payload));
 }
 
 export async function enqueueTaskDelete(taskID: string) {
   return enqueueOp("task", taskID, "delete", {});
+}
+
+function normalizeTaskPayload(payload: UpdateTaskPayload): UpdateTaskPayload {
+  const normalized: UpdateTaskPayload & { title?: unknown } = { ...payload };
+
+  if (normalized.title && typeof normalized.title === "object") {
+    const candidate = normalized.title as {
+      title?: string;
+      description?: string;
+      isCompleted?: boolean;
+      dueDate?: string;
+    };
+
+    if (typeof candidate.title === "string") {
+      normalized.title = candidate.title;
+      if (normalized.description === undefined && typeof candidate.description === "string") {
+        normalized.description = candidate.description;
+      }
+      if (normalized.isCompleted === undefined && typeof candidate.isCompleted === "boolean") {
+        normalized.isCompleted = candidate.isCompleted;
+      }
+      if (normalized.dueDate === undefined && typeof candidate.dueDate === "string") {
+        normalized.dueDate = candidate.dueDate;
+      }
+    } else {
+      delete normalized.title;
+    }
+  }
+
+  return normalized;
 }
 
 async function listPendingOps(limit = 100) {

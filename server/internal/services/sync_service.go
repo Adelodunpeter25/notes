@@ -346,7 +346,13 @@ func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation,
 
 	var req schemas.UpdateTaskRequest
 	if err := json.Unmarshal(payloadJSON, &req); err != nil {
-		return "", fmt.Errorf("task unmarshal error: %v (payload: %s)", err, string(payloadJSON))
+		fixed, fixErr := normalizeTaskPayload(payloadJSON)
+		if fixErr != nil {
+			return "", fmt.Errorf("task unmarshal error: %v (payload: %s)", err, string(payloadJSON))
+		}
+		if err := json.Unmarshal(fixed, &req); err != nil {
+			return "", fmt.Errorf("task unmarshal error: %v (payload: %s)", err, string(payloadJSON))
+		}
 	}
 
 	if strings.HasPrefix(op.EntityID, "local") {
@@ -380,6 +386,43 @@ func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation,
 		return "", err
 	}
 	return resp.ID, nil
+}
+
+func normalizeTaskPayload(payload []byte) ([]byte, error) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		return nil, err
+	}
+
+	titleValue, hasTitle := raw["title"]
+	titleObj, isObj := titleValue.(map[string]interface{})
+	if !hasTitle || !isObj {
+		return payload, nil
+	}
+
+	candidateTitle, ok := titleObj["title"].(string)
+	if !ok {
+		return payload, nil
+	}
+
+	raw["title"] = candidateTitle
+	if _, ok := raw["description"].(string); !ok {
+		if desc, ok := titleObj["description"].(string); ok {
+			raw["description"] = desc
+		}
+	}
+	if _, ok := raw["isCompleted"].(bool); !ok {
+		if val, ok := titleObj["isCompleted"].(bool); ok {
+			raw["isCompleted"] = val
+		}
+	}
+	if _, ok := raw["dueDate"].(string); !ok {
+		if val, ok := titleObj["dueDate"].(string); ok {
+			raw["dueDate"] = val
+		}
+	}
+
+	return json.Marshal(raw)
 }
 
 func (s *GormSyncService) recordEvent(userID, entityType, entityID string, opType schemas.SyncOpType) (int64, error) {
