@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 
 import { useKeyboardShortcutsStore } from "@/stores";
+import { useUiStore } from "@/stores/uiStore";
 
 export function useKeyboardShortcuts() {
   const triggerNewNote = useKeyboardShortcutsStore((state) => state.triggerNewNote);
   const triggerNewFolder = useKeyboardShortcutsStore((state) => state.triggerNewFolder);
+  const setActiveView = useUiStore((state) => state.setActiveView);
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
@@ -17,10 +19,30 @@ export function useKeyboardShortcuts() {
         hasMetaOrCtrl &&
         event.shiftKey &&
         event.key.toLowerCase() === "n";
+      const isNotesViewShortcut =
+        hasMetaOrCtrl &&
+        !event.shiftKey &&
+        event.key === "1";
+      const isTasksViewShortcut =
+        hasMetaOrCtrl &&
+        !event.shiftKey &&
+        event.key === "2";
 
       if (isNewFolderShortcut) {
         event.preventDefault();
         triggerNewFolder();
+        return;
+      }
+
+      if (isNotesViewShortcut) {
+        event.preventDefault();
+        setActiveView("notes");
+        return;
+      }
+
+      if (isTasksViewShortcut) {
+        event.preventDefault();
+        setActiveView("tasks");
         return;
       }
 
@@ -36,5 +58,5 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener("keydown", handleKeydown);
     };
-  }, [triggerNewFolder, triggerNewNote]);
+  }, [setActiveView, triggerNewFolder, triggerNewNote]);
 }
