@@ -37,6 +37,34 @@ function generateID() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+const LAST_SYNC_KEY = "lastSyncCursor";
+
+async function getStoredLastSyncCursor(): Promise<string | null> {
+  const db = await getLocalDatabase();
+  try {
+    const row = await db.getFirstAsync<{ value: string | null }>(
+      `SELECT value FROM sync_state_kv WHERE key = ? LIMIT 1`,
+      LAST_SYNC_KEY,
+    );
+    return row?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function setStoredLastSyncCursor(value: string) {
+  const db = await getLocalDatabase();
+  await db.runAsync(
+    `
+      INSERT INTO sync_state_kv (key, value)
+      VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `,
+    LAST_SYNC_KEY,
+    value,
+  );
+}
+
 async function enqueueOp(entityType: SyncEntity, entityID: string, opType: SyncOpType, payload: Record<string, any>) {
   const db = await getLocalDatabase();
 
@@ -139,11 +167,17 @@ async function bumpRetries(opIDs: string[]) {
   }
 }
 
-async function markAllDirtyCleared() {
-    const db = await getLocalDatabase();
-    await db.runAsync(`UPDATE notes SET dirty = 0`);
-    await db.runAsync(`UPDATE folders SET dirty = 0`);
-    await db.runAsync(`UPDATE tasks SET dirty = 0`);
+async function markDirtyCleared(entityType: SyncEntity, entityID: string) {
+  const db = await getLocalDatabase();
+  if (entityType === "note") {
+    await db.runAsync(`UPDATE notes SET dirty = 0 WHERE id = ?`, entityID);
+    return;
+  }
+  if (entityType === "folder") {
+    await db.runAsync(`UPDATE folders SET dirty = 0 WHERE id = ?`, entityID);
+    return;
+  }
+  await db.runAsync(`UPDATE tasks SET dirty = 0 WHERE id = ?`, entityID);
 }
 
 async function applyIDMappings(idMappings: { localId: string; serverId: string }[]) {
@@ -159,8 +193,11 @@ async function applyIDMappings(idMappings: { localId: string; serverId: string }
 export async function runSyncCycle(lastSyncAt: string | null): Promise<string> {
   const ops = await listPendingOps();
   
+  const storedLastSyncCursor = await getStoredLastSyncCursor();
+  const effectiveLastSyncCursor = storedLastSyncCursor ?? lastSyncAt ?? null;
+
   const syncRequest: SyncRequest = {
-    lastSyncAt: lastSyncAt || undefined,
+    lastCursor: effectiveLastSyncCursor || undefined,
     ops: ops.map(op => ({
         id: op.op_id,
         type: op.op_type,
@@ -185,11 +222,66 @@ export async function runSyncCycle(lastSyncAt: string | null): Promise<string> {
           await removeProcessedOps(response.processedOpIds);
       }
 
-      await markAllDirtyCleared();
+      const mapping = new Map<string, string>();
+      for (const item of response.idMappings) {
+        mapping.set(item.localId, item.serverId);
+      }
+
+      const processed = new Set(response.processedOpIds);
+      for (const op of ops) {
+        if (!processed.has(op.op_id)) {
+          continue;
+        }
+
+        const mappedEntityID = mapping.get(op.entity_id) ?? op.entity_id;
+        await markDirtyCleared(op.entity_type, mappedEntityID);
+      }
+
+      if (response.deleted.length > 0) {
+        await applyRemoteDeletes(response.deleted);
+      }
+
+      await setStoredLastSyncCursor(response.nextCursor);
       return response.serverTime;
   } catch (error) {
       console.error("Mobile sync cycle failed:", error);
       await bumpRetries(ops.map(o => o.op_id));
       throw error;
+  }
+}
+
+async function applyRemoteDeletes(deleted: SyncResponse["deleted"]) {
+  const db = await getLocalDatabase();
+  const now = new Date().toISOString();
+
+  for (const item of deleted) {
+    if (item.entityType === "note") {
+      await db.runAsync(
+        `UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 0 WHERE id = ?`,
+        now,
+        now,
+        item.entityId,
+      );
+      continue;
+    }
+    if (item.entityType === "folder") {
+      await db.runAsync(
+        `UPDATE folders SET deleted_at = ?, updated_at = ?, dirty = 0 WHERE id = ?`,
+        now,
+        now,
+        item.entityId,
+      );
+      await db.runAsync(
+        `UPDATE notes SET folder_id = NULL WHERE folder_id = ? AND dirty = 0`,
+        item.entityId,
+      );
+      continue;
+    }
+    await db.runAsync(
+      `UPDATE tasks SET deleted_at = ?, updated_at = ?, dirty = 0 WHERE id = ?`,
+      now,
+      now,
+      item.entityId,
+    );
   }
 }

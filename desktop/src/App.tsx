@@ -30,12 +30,12 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
-  useSync({ auto: true });
+  const { syncNow, isSyncing } = useSync({ auto: true });
 
   return (
     <HashRouter>
       <div className="flex bg-background text-text h-screen w-full flex-col overflow-hidden">
-        <Titlebar />
+        <Titlebar syncNow={syncNow} isSyncing={isSyncing} />
         <Routes>
           <Route
             path="/"

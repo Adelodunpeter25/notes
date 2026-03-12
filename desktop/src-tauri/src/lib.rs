@@ -63,6 +63,18 @@ pub fn run() {
             ",
             kind: MigrationKind::Up,
         }
+        ,
+        Migration {
+            version: 2,
+            description: "sync state table",
+            sql: "
+                CREATE TABLE IF NOT EXISTS sync_state (
+                  key TEXT PRIMARY KEY NOT NULL,
+                  value TEXT
+                );
+            ",
+            kind: MigrationKind::Up,
+        }
     ];
 
     tauri::Builder::default()

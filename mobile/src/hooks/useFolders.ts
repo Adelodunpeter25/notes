@@ -1,9 +1,6 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { CreateFolderPayload, Folder, RenameFolderPayload } from "@shared/folders";
-import type { Note } from "@shared/notes";
-import { apiClient } from "@/api/apiClient";
+import type { CreateFolderPayload, RenameFolderPayload } from "@shared/folders";
 import {
   createFolderLocal,
   enqueueFolderDelete,
@@ -12,8 +9,6 @@ import {
   listNotesLocal,
   markFolderDeletedLocal,
   renameFolderLocal,
-  upsertFoldersLocal,
-  upsertFolderNotesLocal,
 } from "@/db";
 
 const folderKeys = {
@@ -23,7 +18,6 @@ const folderKeys = {
 };
 
 export function useFoldersQuery() {
-  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: folderKeys.list(),
     queryFn: () => listFoldersLocal(),
@@ -33,7 +27,6 @@ export function useFoldersQuery() {
 }
 
 export function useFolderNotesQuery(folderId: string | undefined) {
-  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: folderKeys.notes(folderId || ""),
     queryFn: () => listNotesLocal({ folderId }),

@@ -123,6 +123,11 @@ async function initialize(db: SQLite.SQLiteDatabase) {
       last_full_sync_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS sync_state_kv (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT
+    );
+
     INSERT INTO notes_fts(notes_fts) VALUES('rebuild');
   `);
 }

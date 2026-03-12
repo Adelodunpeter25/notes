@@ -28,7 +28,7 @@ export function useSync(options?: { auto?: boolean }) {
     const pending = (async () => {
       setIsSyncing(true);
       try {
-        const nextSyncAt = await runSyncCycle(lastSyncedAt);
+        const nextSyncAt = await runSyncCycle();
         setLastSyncedAt(nextSyncAt);
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
         await queryClient.invalidateQueries({ queryKey: ["folders"] });
@@ -68,4 +68,3 @@ export function useSync(options?: { auto?: boolean }) {
     syncNow,
   };
 }
-

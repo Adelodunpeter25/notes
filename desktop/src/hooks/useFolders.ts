@@ -1,9 +1,6 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { CreateFolderPayload, Folder, RenameFolderPayload } from "@shared/folders";
-import type { Note } from "@shared/notes";
-import { apiClient } from "@/services";
+import type { CreateFolderPayload, RenameFolderPayload } from "@shared/folders";
 import {
   createFolderLocal,
   enqueueFolderDelete,
@@ -12,8 +9,6 @@ import {
   listNotesLocal,
   markFolderDeletedLocal,
   renameFolderLocal,
-  upsertFoldersLocal,
-  upsertFolderNotesLocal,
 } from "@/db";
 
 const folderKeys = {
@@ -23,65 +18,21 @@ const folderKeys = {
 };
 
 export function useFoldersQuery() {
-  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: folderKeys.list(),
     queryFn: () => listFoldersLocal(),
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    async function syncFromServer() {
-      try {
-        const remoteFolders = await apiClient.get<Folder[]>("/folders/");
-        await upsertFoldersLocal(remoteFolders);
-        if (!cancelled) {
-          queryClient.invalidateQueries({ queryKey: folderKeys.list() });
-        }
-      } catch {
-        // offline
-      }
-    }
-
-    void syncFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [queryClient]);
-
   return query;
 }
 
 export function useFolderNotesQuery(folderId: string | undefined) {
-  const queryClient = useQueryClient();
   const activeFolderId = folderId ?? "";
   const query = useQuery({
     queryKey: folderKeys.notes(activeFolderId),
     queryFn: () => listNotesLocal({ folderId }),
     enabled: Boolean(folderId),
   });
-
-  useEffect(() => {
-    if (!activeFolderId) return;
-    let cancelled = false;
-
-    async function syncFromServer() {
-      try {
-        const remoteNotes = await apiClient.get<Note[]>(`/folders/${activeFolderId}/notes`);
-        await upsertFolderNotesLocal(remoteNotes);
-        if (!cancelled) {
-          queryClient.invalidateQueries({ queryKey: folderKeys.notes(activeFolderId) });
-        }
-      } catch {
-        // offline
-      }
-    }
-
-    void syncFromServer();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeFolderId, queryClient]);
 
   return query;
 }

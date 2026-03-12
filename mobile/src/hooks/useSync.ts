@@ -31,7 +31,7 @@ export function useSync(options?: { auto?: boolean }) {
     const pending = (async () => {
       setIsSyncing(true);
       try {
-        const nextSyncAt = await runSyncCycle(lastSyncedAt);
+        const nextSyncAt = await runSyncCycle(null);
         setLastSyncedAt(nextSyncAt);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["notes"] }),

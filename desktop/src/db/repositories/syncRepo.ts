@@ -28,6 +28,36 @@ function generateID() {
   return `op_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const LAST_SYNC_KEY = "lastSyncCursor";
+
+async function getStoredLastSyncCursor(): Promise<string | null> {
+  const db = await getLocalDatabase();
+  try {
+    const rows = await db.select<Array<{ value: string | null }>>(
+      `SELECT value FROM sync_state WHERE key = $1 LIMIT 1`,
+      [LAST_SYNC_KEY],
+    );
+    if (!rows.length) {
+      return null;
+    }
+    return rows[0].value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function setStoredLastSyncCursor(value: string) {
+  const db = await getLocalDatabase();
+  await db.execute(
+    `
+      INSERT INTO sync_state (key, value)
+      VALUES ($1, $2)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `,
+    [LAST_SYNC_KEY, value],
+  );
+}
+
 async function enqueue(entityType: SyncEntity, entityID: string, opType: SyncOpType, payload: any) {
   const db = await getLocalDatabase();
   
@@ -123,31 +153,51 @@ async function bumpRetries(opIDs: string[]) {
   }
 }
 
-async function markAllDirtyCleared() {
-    const db = await getLocalDatabase();
-    await db.execute(`UPDATE notes SET dirty = 0`);
-    await db.execute(`UPDATE folders SET dirty = 0`);
-    await db.execute(`UPDATE tasks SET dirty = 0`);
+async function markDirtyCleared(entityType: SyncEntity, entityID: string) {
+  const db = await getLocalDatabase();
+  if (entityType === "note") {
+    await db.execute(`UPDATE notes SET dirty = 0 WHERE id = $1`, [entityID]);
+    return;
+  }
+  if (entityType === "folder") {
+    await db.execute(`UPDATE folders SET dirty = 0 WHERE id = $1`, [entityID]);
+    return;
+  }
+  await db.execute(`UPDATE tasks SET dirty = 0 WHERE id = $1`, [entityID]);
 }
 
 async function applyIDMappings(idMappings: { localId: string; serverId: string }[]) {
-    // We don't know the entity type from the mapping alone here if we don't return it
-    // But we can check prefixes or just try all
-    for (const mapping of idMappings) {
-        if (mapping.localId.startsWith("local_")) {
-            // Try as note, folder, task
-            await replaceLocalNoteID(mapping.localId, mapping.serverId);
-            await replaceLocalFolderID(mapping.localId, mapping.serverId);
-            await replaceLocalTaskID(mapping.localId, mapping.serverId);
-        }
+  const db = await getLocalDatabase();
+
+  for (const mapping of idMappings) {
+    if (!mapping.localId.startsWith("local_")) {
+      continue;
     }
+
+    const [noteMatch, folderMatch, taskMatch] = await Promise.all([
+      db.select<Array<{ id: string }>>(`SELECT id FROM notes WHERE id = $1 LIMIT 1`, [mapping.localId]),
+      db.select<Array<{ id: string }>>(`SELECT id FROM folders WHERE id = $1 LIMIT 1`, [mapping.localId]),
+      db.select<Array<{ id: string }>>(`SELECT id FROM tasks WHERE id = $1 LIMIT 1`, [mapping.localId]),
+    ]);
+
+    if (noteMatch.length) {
+      await replaceLocalNoteID(mapping.localId, mapping.serverId);
+    }
+    if (folderMatch.length) {
+      await replaceLocalFolderID(mapping.localId, mapping.serverId);
+    }
+    if (taskMatch.length) {
+      await replaceLocalTaskID(mapping.localId, mapping.serverId);
+    }
+  }
 }
 
-export async function runSyncCycle(lastSyncAt: string | null): Promise<string> {
+export async function runSyncCycle(): Promise<string> {
   const ops = await listPendingOps();
+  const lastCursor = await getStoredLastSyncCursor();
   
   const syncRequest: SyncRequest = {
-    lastSyncAt: lastSyncAt || undefined,
+    lastCursor: lastCursor || undefined,
     ops: ops.map(op => ({
         id: op.op_id,
         type: op.op_type,
@@ -175,12 +225,61 @@ export async function runSyncCycle(lastSyncAt: string | null): Promise<string> {
           await removeProcessedOps(response.processedOpIds);
       }
 
-      await markAllDirtyCleared();
+      const mapping = new Map<string, string>();
+      for (const item of response.idMappings) {
+        mapping.set(item.localId, item.serverId);
+      }
+
+      const processed = new Set(response.processedOpIds);
+      for (const op of ops) {
+        if (!processed.has(op.op_id)) {
+          continue;
+        }
+
+        const mappedEntityID = mapping.get(op.entity_id) ?? op.entity_id;
+        await markDirtyCleared(op.entity_type, mappedEntityID);
+      }
+
+      if (response.deleted.length > 0) {
+        await applyRemoteDeletes(response.deleted);
+      }
+
+      await setStoredLastSyncCursor(response.nextCursor);
 
       return response.serverTime;
   } catch (error) {
       console.error("Sync cycle failed:", error);
       await bumpRetries(ops.map(o => o.op_id));
       throw error;
+  }
+}
+
+async function applyRemoteDeletes(deleted: SyncResponse["deleted"]) {
+  const db = await getLocalDatabase();
+  const now = new Date().toISOString();
+
+  for (const item of deleted) {
+    if (item.entityType === "note") {
+      await db.execute(
+        `UPDATE notes SET deleted_at = $1, updated_at = $2, dirty = 0 WHERE id = $3`,
+        [now, now, item.entityId],
+      );
+      continue;
+    }
+    if (item.entityType === "folder") {
+      await db.execute(
+        `UPDATE folders SET deleted_at = $1, updated_at = $2, dirty = 0 WHERE id = $3`,
+        [now, now, item.entityId],
+      );
+      await db.execute(
+        `UPDATE notes SET folder_id = NULL WHERE folder_id = $1 AND dirty = 0`,
+        [item.entityId],
+      );
+      continue;
+    }
+    await db.execute(
+      `UPDATE tasks SET deleted_at = $1, updated_at = $2, dirty = 0 WHERE id = $3`,
+      [now, now, item.entityId],
+    );
   }
 }

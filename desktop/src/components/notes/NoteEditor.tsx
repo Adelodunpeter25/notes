@@ -3,7 +3,7 @@ import { NotebookText } from "lucide-react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 
 import type { Note } from "@shared/notes";
-import { useDebounce, useNoteRealtime } from "@/hooks";
+import { useDebounce } from "@/hooks";
 import { formatNoteDateTime } from "@/utils/formatDate";
 import { deriveNoteTitleFromHtml } from "@/utils/noteContent";
 import { Toolbar } from "./Toolbar";
@@ -25,7 +25,6 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
 
     const debouncedContent = useDebounce(content, 80);
     const debouncedIsPinned = useDebounce(isPinned, 80);
-    const { isReady: isRealtimeReady, sendPatch: sendRealtimePatch } = useNoteRealtime(note?.id);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
     const isSavingRef = useRef(false);
@@ -114,37 +113,6 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         const payload = { title: derivedTitle || "Untitled", content: debouncedContent, isPinned: debouncedIsPinned };
         onLocalSave?.(noteId, payload);
 
-        if (isRealtimeReady) {
-            void sendRealtimePatch(payload)
-                .catch((error: unknown) => {
-                    const message = error instanceof Error ? error.message : "";
-                    const shouldFallbackToHTTP =
-                        message.includes("socket not ready") ||
-                        message.includes("websocket") ||
-                        message.includes("socket closed");
-
-                    if (shouldFallbackToHTTP) {
-                        return Promise.resolve(onSave(noteId, payload));
-                    }
-
-                    return Promise.reject(error);
-                })
-                .then(() => {
-                    if (cancelled || activeNoteIdRef.current !== noteId || revision < appliedRevisionRef.current) {
-                        return;
-                    }
-
-                    appliedRevisionRef.current = revision;
-                    initialValues.current = payload;
-                })
-                .finally(() => {
-                    isSavingRef.current = false;
-                });
-            return () => {
-                cancelled = true;
-            };
-        }
-
         void Promise.resolve(
             onSave(noteId, payload),
         ).then(() => {
@@ -160,7 +128,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         return () => {
             cancelled = true;
         };
-    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, isRealtimeReady, note?.id, onLocalSave, onSave, sendRealtimePatch]);
+    }, [derivedTitle, debouncedContent, debouncedIsPinned, hasDebouncedChanges, note?.id, onLocalSave, onSave]);
 
     const noteDateLabel = formatNoteDateTime(note?.updatedAt || note?.createdAt);
 

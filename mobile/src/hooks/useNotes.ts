@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -7,7 +6,6 @@ import type {
   Note,
   UpdateNotePayload,
 } from "@shared/notes";
-import { apiClient } from "@/api/apiClient";
 import {
   createNoteLocal,
   enqueueNoteDelete,
@@ -15,27 +13,12 @@ import {
   listNotesLocal,
   markNoteDeletedLocal,
   updateNoteLocal,
-  upsertNotesLocal,
 } from "@/db";
 
 const notesKeys = {
   all: ["notes"] as const,
   list: (params?: ListNotesParams) => [...notesKeys.all, "list", params] as const,
 };
-
-function notesQuery(params?: ListNotesParams): string {
-  const query = new URLSearchParams();
-
-  if (params?.folderId) {
-    query.set("folderId", params.folderId);
-  }
-  if (params?.q) {
-    query.set("q", params.q);
-  }
-
-  const suffix = query.toString();
-  return suffix ? `/notes/?${suffix}` : "/notes/";
-}
 
 export function useNotesQuery(params?: ListNotesParams) {
   const query = useQuery({

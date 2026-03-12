@@ -2,11 +2,13 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"notes/server/internal/models"
 	"notes/server/internal/schemas"
 	"strings"
 	"time"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -22,6 +24,11 @@ type GormSyncService struct {
 	taskService   TaskService
 }
 
+const (
+	syncEventUpsert = "upsert"
+	syncEventDelete = "delete"
+)
+
 func NewGormSyncService(db *gorm.DB, noteService NoteService, folderService FolderService, taskService TaskService) *GormSyncService {
 	return &GormSyncService{
 		db:            db,
@@ -35,10 +42,11 @@ func (s *GormSyncService) Sync(userID string, req schemas.SyncRequest) (schemas.
 	processedOpIDs := make([]string, 0)
 	idMappings := make([]schemas.IDMapping, 0)
 	serverTime := time.Now()
+	localIDMap := make(map[string]string)
 
 	// 1. Process outbound operations from client
 	for _, op := range req.Ops {
-		newID, err := s.processOperation(userID, op)
+		newID, _, err := s.processOperation(userID, op, localIDMap)
 		if err == nil {
 			processedOpIDs = append(processedOpIDs, op.ID)
 			if newID != "" && newID != op.EntityID {
@@ -46,6 +54,7 @@ func (s *GormSyncService) Sync(userID string, req schemas.SyncRequest) (schemas.
 					LocalID:  op.EntityID,
 					ServerID: newID,
 				})
+				localIDMap[op.EntityID] = newID
 			}
 		} else {
 			// If entity not found, still count as processed to clear it from client outbox
@@ -56,20 +65,46 @@ func (s *GormSyncService) Sync(userID string, req schemas.SyncRequest) (schemas.
 		}
 	}
 
-	// 2. Fetch changes since lastSyncAt
+	// 2. Fetch changes since cursor (or full snapshot if no cursor)
 	var notes []models.Note
 	var folders []models.Folder
 	var tasks []models.Task
+	var deleted []schemas.SyncTombstone
 
-	lastSync := time.Time{}
-	if req.LastSyncAt != nil {
-		lastSync = *req.LastSyncAt
+	cursor := parseCursor(req.LastCursor)
+	if cursor > 0 {
+		noteIDs, folderIDs, taskIDs, tombstones, err := s.collectChangesSinceCursor(userID, cursor)
+		if err != nil {
+			return schemas.SyncResponse{}, err
+		}
+		deleted = tombstones
+
+		if len(noteIDs) > 0 {
+			if err := s.db.Where("user_id = ? AND id IN ?", userID, noteIDs).Find(&notes).Error; err != nil {
+				return schemas.SyncResponse{}, err
+			}
+		}
+		if len(folderIDs) > 0 {
+			if err := s.db.Where("user_id = ? AND id IN ?", userID, folderIDs).Find(&folders).Error; err != nil {
+				return schemas.SyncResponse{}, err
+			}
+		}
+		if len(taskIDs) > 0 {
+			if err := s.db.Where("user_id = ? AND id IN ?", userID, taskIDs).Find(&tasks).Error; err != nil {
+				return schemas.SyncResponse{}, err
+			}
+		}
+	} else {
+		if err := s.db.Where("user_id = ?", userID).Find(&notes).Error; err != nil {
+			return schemas.SyncResponse{}, err
+		}
+		if err := s.db.Where("user_id = ?", userID).Find(&folders).Error; err != nil {
+			return schemas.SyncResponse{}, err
+		}
+		if err := s.db.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
+			return schemas.SyncResponse{}, err
+		}
 	}
-
-	// Fetch changed entities
-	s.db.Where("user_id = ? AND updated_at > ?", userID, lastSync).Find(&notes)
-	s.db.Where("user_id = ? AND updated_at > ?", userID, lastSync).Find(&folders)
-	s.db.Where("user_id = ? AND updated_at > ?", userID, lastSync).Find(&tasks)
 
 	// Map to responses
 	noteResps := make([]schemas.NoteResponse, 0, len(notes))
@@ -87,35 +122,133 @@ func (s *GormSyncService) Sync(userID string, req schemas.SyncRequest) (schemas.
 		taskResps = append(taskResps, mapTaskResponse(t))
 	}
 
+	nextCursor, err := s.maxEventID(userID)
+	if err != nil {
+		return schemas.SyncResponse{}, err
+	}
+
 	return schemas.SyncResponse{
 		ServerTime:     serverTime,
+		NextCursor:     fmt.Sprintf("%d", nextCursor),
 		Notes:          noteResps,
 		Folders:        folderResps,
 		Tasks:          taskResps,
+		Deleted:        deleted,
 		ProcessedOpIDs: processedOpIDs,
 		IDMappings:     idMappings,
 	}, nil
 }
 
-func (s *GormSyncService) processOperation(userID string, op schemas.SyncOperation) (string, error) {
+func (s *GormSyncService) processOperation(userID string, op schemas.SyncOperation, localIDMap map[string]string) (string, int64, error) {
+	if strings.TrimSpace(op.ID) != "" {
+		existing, err := s.findProcessedOp(userID, op.ID)
+		if err != nil {
+			return "", 0, err
+		}
+		if existing != nil {
+			return existing.EntityID, 0, nil
+		}
+	}
+
 	payloadJSON, err := json.Marshal(op.Payload)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
 	switch op.EntityType {
 	case schemas.SyncEntityNote:
-		return s.processNoteOp(userID, op, payloadJSON)
+		entityID, err := s.processNoteOp(userID, op, payloadJSON, localIDMap)
+		if err != nil {
+			return "", 0, err
+		}
+		eventEntityID := entityID
+		if op.Type == schemas.SyncOpDelete && eventEntityID == "" {
+			eventEntityID = op.EntityID
+		}
+		eventID, err := s.recordEvent(userID, string(op.EntityType), eventEntityID, op.Type)
+		if err != nil {
+			return "", 0, err
+		}
+		return entityID, eventID, s.recordProcessedOp(userID, op, entityID)
 	case schemas.SyncEntityFolder:
-		return s.processFolderOp(userID, op, payloadJSON)
+		entityID, err := s.processFolderOp(userID, op, payloadJSON)
+		if err != nil {
+			return "", 0, err
+		}
+		eventEntityID := entityID
+		if op.Type == schemas.SyncOpDelete && eventEntityID == "" {
+			eventEntityID = op.EntityID
+		}
+		eventID, err := s.recordEvent(userID, string(op.EntityType), eventEntityID, op.Type)
+		if err != nil {
+			return "", 0, err
+		}
+		return entityID, eventID, s.recordProcessedOp(userID, op, entityID)
 	case schemas.SyncEntityTask:
-		return s.processTaskOp(userID, op, payloadJSON)
+		entityID, err := s.processTaskOp(userID, op, payloadJSON)
+		if err != nil {
+			return "", 0, err
+		}
+		eventEntityID := entityID
+		if op.Type == schemas.SyncOpDelete && eventEntityID == "" {
+			eventEntityID = op.EntityID
+		}
+		eventID, err := s.recordEvent(userID, string(op.EntityType), eventEntityID, op.Type)
+		if err != nil {
+			return "", 0, err
+		}
+		return entityID, eventID, s.recordProcessedOp(userID, op, entityID)
 	default:
-		return "", fmt.Errorf("unknown entity type: %s", op.EntityType)
+		return "", 0, fmt.Errorf("unknown entity type: %s", op.EntityType)
 	}
 }
 
-func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation, payloadJSON []byte) (string, error) {
+func (s *GormSyncService) findProcessedOp(userID, opID string) (*models.SyncOp, error) {
+	var record models.SyncOp
+	err := s.db.Where("user_id = ? AND op_id = ?", userID, opID).First(&record).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (s *GormSyncService) recordProcessedOp(userID string, op schemas.SyncOperation, entityID string) error {
+	if strings.TrimSpace(op.ID) == "" {
+		return nil
+	}
+
+	if entityID == "" {
+		entityID = op.EntityID
+	}
+
+	record := models.SyncOp{
+		UserID:     userID,
+		OpID:       op.ID,
+		EntityType: string(op.EntityType),
+		EntityID:   entityID,
+		Status:     "processed",
+	}
+
+	if err := s.db.Create(&record).Error; err != nil {
+		if isUniqueViolation(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isUniqueViolation(err error) bool {
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "duplicate key") ||
+		strings.Contains(message, "unique constraint") ||
+		strings.Contains(message, "unique violation")
+}
+
+func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation, payloadJSON []byte, localIDMap map[string]string) (string, error) {
 	if op.Type == schemas.SyncOpDelete {
 		err := s.noteService.Delete(userID, op.EntityID)
 		if err != nil && strings.Contains(err.Error(), "not found") {
@@ -127,6 +260,14 @@ func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation,
 	var req schemas.UpdateNoteRequest
 	if err := json.Unmarshal(payloadJSON, &req); err != nil {
 		return "", fmt.Errorf("note unmarshal error: %v (payload: %s)", err, string(payloadJSON))
+	}
+	if req.FolderID != nil {
+		folderID := strings.TrimSpace(*req.FolderID)
+		if strings.HasPrefix(folderID, "local_") {
+			if mapped, ok := localIDMap[folderID]; ok {
+				req.FolderID = &mapped
+			}
+		}
 	}
 
 	if strings.HasPrefix(op.EntityID, "local") {
@@ -239,4 +380,102 @@ func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation,
 		return "", err
 	}
 	return resp.ID, nil
+}
+
+func (s *GormSyncService) recordEvent(userID, entityType, entityID string, opType schemas.SyncOpType) (int64, error) {
+	if entityID == "" {
+		return 0, nil
+	}
+
+	eventType := syncEventUpsert
+	if opType == schemas.SyncOpDelete {
+		eventType = syncEventDelete
+	}
+
+	event := models.SyncEvent{
+		UserID:     userID,
+		EntityType: entityType,
+		EntityID:   entityID,
+		EventType:  eventType,
+	}
+
+	if err := s.db.Create(&event).Error; err != nil {
+		return 0, err
+	}
+	return event.ID, nil
+}
+
+func (s *GormSyncService) collectChangesSinceCursor(userID string, cursor int64) ([]string, []string, []string, []schemas.SyncTombstone, error) {
+	var events []models.SyncEvent
+	if err := s.db.Where("user_id = ? AND id > ?", userID, cursor).Order("id ASC").Find(&events).Error; err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	type latestEvent struct {
+		eventType string
+		entityID  string
+	}
+
+	latestByEntity := make(map[string]latestEvent)
+	for _, event := range events {
+		key := event.EntityType + ":" + event.EntityID
+		latestByEntity[key] = latestEvent{eventType: event.EventType, entityID: event.EntityID}
+	}
+
+	noteIDs := make([]string, 0)
+	folderIDs := make([]string, 0)
+	taskIDs := make([]string, 0)
+	deleted := make([]schemas.SyncTombstone, 0)
+
+	for key, current := range latestByEntity {
+		parts := strings.SplitN(key, ":", 2)
+		entityType := parts[0]
+		entityID := current.entityID
+
+		if current.eventType == syncEventDelete {
+			deleted = append(deleted, schemas.SyncTombstone{
+				EntityType: schemas.SyncEntityType(entityType),
+				EntityID:   entityID,
+			})
+			continue
+		}
+
+		switch entityType {
+		case string(schemas.SyncEntityNote):
+			noteIDs = append(noteIDs, entityID)
+		case string(schemas.SyncEntityFolder):
+			folderIDs = append(folderIDs, entityID)
+		case string(schemas.SyncEntityTask):
+			taskIDs = append(taskIDs, entityID)
+		}
+	}
+
+	return noteIDs, folderIDs, taskIDs, deleted, nil
+}
+
+func (s *GormSyncService) maxEventID(userID string) (int64, error) {
+	var maxID int64
+	err := s.db.Model(&models.SyncEvent{}).
+		Select("COALESCE(MAX(id), 0)").
+		Where("user_id = ?", userID).
+		Scan(&maxID).Error
+	if err != nil {
+		return 0, err
+	}
+	return maxID, nil
+}
+
+func parseCursor(cursor *string) int64 {
+	if cursor == nil {
+		return 0
+	}
+	trimmed := strings.TrimSpace(*cursor)
+	if trimmed == "" {
+		return 0
+	}
+	value, err := strconv.ParseInt(trimmed, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return value
 }

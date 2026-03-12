@@ -2,16 +2,19 @@ import { type MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { RefreshCw } from "lucide-react";
 import { useUiStore } from "@/stores";
-import { useSync } from "@/hooks";
 import { cn } from "@/utils/cn";
 
 const isDesktop =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-export function Titlebar() {
+type TitlebarProps = {
+  syncNow?: () => Promise<void> | void;
+  isSyncing?: boolean;
+};
+
+export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
   const activeView = useUiStore((state) => state.activeView);
   const setActiveView = useUiStore((state) => state.setActiveView);
-  const { syncNow, isSyncing } = useSync();
 
   async function handleStartDrag(event: MouseEvent<HTMLElement>) {
     if (!isDesktop || event.button !== 0) {
@@ -66,7 +69,7 @@ export function Titlebar() {
 
       <div className="flex items-center" data-no-drag="true">
         <button
-          onClick={() => syncNow()}
+          onClick={() => syncNow?.()}
           disabled={isSyncing}
           className={cn(
             "flex size-7 items-center justify-center rounded-md text-muted transition-all hover:bg-white/10 hover:text-text",

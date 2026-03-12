@@ -26,7 +26,8 @@ type SyncOperation struct {
 }
 
 type SyncRequest struct {
-	LastSyncAt *time.Time      `json:"lastSyncAt"`
+	LastSyncAt *time.Time      `json:"lastSyncAt,omitempty"`
+	LastCursor *string         `json:"lastCursor,omitempty"`
 	Ops        []SyncOperation `json:"ops"`
 }
 
@@ -37,9 +38,16 @@ type IDMapping struct {
 
 type SyncResponse struct {
 	ServerTime     time.Time        `json:"serverTime"`
+	NextCursor     string           `json:"nextCursor"`
 	Notes          []NoteResponse   `json:"notes"`
 	Folders        []FolderResponse `json:"folders"`
 	Tasks          []TaskResponse   `json:"tasks"`
+	Deleted        []SyncTombstone  `json:"deleted"`
 	ProcessedOpIDs []string         `json:"processedOpIds"`
 	IDMappings     []IDMapping      `json:"idMappings"`
+}
+
+type SyncTombstone struct {
+	EntityType SyncEntityType `json:"entityType"`
+	EntityID   string         `json:"entityId"`
 }
