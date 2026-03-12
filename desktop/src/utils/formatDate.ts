@@ -41,5 +41,5 @@ export function formatDate(value?: string | number | Date): string {
   
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "MMM d, yyyy");
+  return format(date, "dd-MM-yyyy");
 }

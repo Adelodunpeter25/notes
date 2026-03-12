@@ -18,7 +18,7 @@ export function formatNoteDate(value?: string): string {
         return "Yesterday";
     }
 
-    return format(parsed, "MMM d, yyyy");
+    return format(parsed, "dd-MM-yyyy");
 }
 
 export function formatNoteDateTime(value?: string): string {
