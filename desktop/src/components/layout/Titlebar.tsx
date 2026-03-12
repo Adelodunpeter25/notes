@@ -48,7 +48,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
           className={cn(
             "flex h-6 items-center rounded-lg border px-5 text-[12px] font-bold tracking-tight transition-all",
             activeView === "notes"
-              ? "text-text border-border"
+              ? "bg-accent text-black border-accent"
               : "text-muted border-border/60 hover:text-text hover:border-border"
           )}
         >
@@ -59,7 +59,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
           className={cn(
             "flex h-6 items-center rounded-lg border px-5 text-[12px] font-bold tracking-tight transition-all",
             activeView === "tasks"
-              ? "text-text border-border"
+              ? "bg-accent text-black border-accent"
               : "text-muted border-border/60 hover:text-text hover:border-border"
           )}
         >
