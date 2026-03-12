@@ -2,12 +2,12 @@ import { Text, View, Alert, Animated, Easing, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search, PenLine, Plus, WifiOff, RefreshCw } from "lucide-react-native";
+import { Search, PenLine, Plus, WifiOff, RefreshCw, Calendar, List } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
-import { TaskList, TaskModal } from "@/components/tasks";
+import { TaskList, TaskModal, CalendarView } from "@/components/tasks";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData, useSync } from "@/hooks";
@@ -21,6 +21,7 @@ type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
   const [activeTab, setActiveTab] = useState<"notes" | "folders" | "tasks">("notes");
+  const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const dashboard = useDashboardData();
   const { syncNow, isSyncing } = useSync({ auto: false });
   const netInfo = useNetInfo();
@@ -34,6 +35,7 @@ export function DashboardScreen() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedDateTasks, setSelectedDateTasks] = useState<{ date: Date; tasks: Task[] } | null>(null);
   const spinAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -141,6 +143,18 @@ export function DashboardScreen() {
           )}
         </View>
         <View className="flex-row items-center">
+          {activeTab === "tasks" && (
+            <Pressable
+              onPress={() => setTaskView(taskView === "list" ? "calendar" : "list")}
+              className="rounded-md p-1.5"
+            >
+              {taskView === "list" ? (
+                <Calendar size={18} color="#eab308" />
+              ) : (
+                <List size={18} color="#eab308" />
+              )}
+            </Pressable>
+          )}
           <Pressable onPress={() => navigation.navigate("Search")} className="rounded-md p-1.5">
             <Search size={18} color="#eab308" />
           </Pressable>
@@ -182,24 +196,33 @@ export function DashboardScreen() {
           </View>
         ) : activeTab === "tasks" ? (
           <View className="flex-1">
-            <TaskList
-              tasks={dashboard.tasks}
-              isLoading={dashboard.isTasksLoading}
-              refreshing={dashboard.isTasksRefreshing}
-              onRefresh={() => {
-                void dashboard.refetchTasks();
-              }}
-              onToggleTask={(task) => {
-                void dashboard.toggleTask(task);
-              }}
-              onDeleteTask={(task) => {
-                void dashboard.deleteTask(task.id);
-              }}
-              onSelectTask={(task) => {
-                setEditingTask(task);
-                setIsTaskModalOpen(true);
-              }}
-            />
+            {taskView === "list" ? (
+              <TaskList
+                tasks={dashboard.tasks}
+                isLoading={dashboard.isTasksLoading}
+                refreshing={dashboard.isTasksRefreshing}
+                onRefresh={() => {
+                  void dashboard.refetchTasks();
+                }}
+                onToggleTask={(task) => {
+                  void dashboard.toggleTask(task);
+                }}
+                onDeleteTask={(task) => {
+                  void dashboard.deleteTask(task.id);
+                }}
+                onSelectTask={(task) => {
+                  setEditingTask(task);
+                  setIsTaskModalOpen(true);
+                }}
+              />
+            ) : (
+              <CalendarView
+                tasks={dashboard.tasks}
+                onSelectDate={(date, tasks) => {
+                  setSelectedDateTasks({ date, tasks });
+                }}
+              />
+            )}
           </View>
         ) : (
           <View className="flex-1">
@@ -358,6 +381,23 @@ export function DashboardScreen() {
           setIsTaskModalOpen(false);
           setEditingTask(null);
         }}
+      />
+
+      <ContextMenu
+        visible={!!selectedDateTasks}
+        anchor={{ x: 0, y: 0 }}
+        title={selectedDateTasks ? `${selectedDateTasks.tasks.length} task${selectedDateTasks.tasks.length !== 1 ? "s" : ""}` : ""}
+        items={
+          selectedDateTasks?.tasks.map((task) => ({
+            label: task.title,
+            onPress: () => {
+              setEditingTask(task);
+              setIsTaskModalOpen(true);
+              setSelectedDateTasks(null);
+            },
+          })) || []
+        }
+        onClose={() => setSelectedDateTasks(null)}
       />
     </ScreenContainer>
   );
