@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { CheckCircle2, Circle, Trash2, Plus, Calendar, Clock } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Plus, Calendar, Clock, Columns2 } from "lucide-react";
 import type { Task, CreateTaskPayload } from "@shared/tasks";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatDate";
 import { Skeleton, EmptyState, Button } from "@/components/common";
 import { TaskModal } from "./TaskModal";
+import { KanbanBoard } from "./KanbanBoard";
 
 type TasksListProps = {
   tasks: Task[];
@@ -25,6 +26,7 @@ export function TasksList({
 }: TasksListProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isKanban, setIsKanban] = useState(false);
 
   const handleCreateNew = () => {
     setEditingTask(null);
@@ -62,22 +64,40 @@ export function TasksList({
           <h1 className="text-2xl font-bold text-text">Tasks</h1>
           <p className="text-sm text-muted mt-1">You have {tasks.filter(t => !t.isCompleted).length} tasks remaining</p>
         </div>
-        <Button onClick={handleCreateNew} className="rounded-full px-6 gap-2">
-          <Plus size={18} />
-          <span>Add Task</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsKanban((value) => !value)}
+            variant="secondary"
+            className="rounded-full px-4 gap-2"
+          >
+            <Columns2 size={16} />
+            <span>{isKanban ? "List" : "Kanban"}</span>
+          </Button>
+          <Button onClick={handleCreateNew} className="rounded-full px-6 gap-2">
+            <Plus size={18} />
+            <span>Add Task</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 pb-12">
-        <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
+        <div className="max-w-5xl mx-auto w-full">
           {tasks.length === 0 ? (
             <EmptyState
               variant="simple"
               title="All caught up!"
               description="You don't have any pending tasks. Create one to get started."
             />
+          ) : isKanban ? (
+            <KanbanBoard
+              tasks={tasks}
+              onToggleTask={onToggleTask}
+              onDeleteTask={propOnDeleteTask}
+              onEditTask={handleEditTask}
+              onUpdateTask={(taskId, payload) => onUpdateTask(taskId, payload)}
+            />
           ) : (
-            <div className="space-y-3 w-full max-w-4xl">
+            <div className="space-y-3">
               {tasks.map((task) => (
                 <div
                   key={task.id}
