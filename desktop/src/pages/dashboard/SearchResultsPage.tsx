@@ -1,7 +1,6 @@
 import { Search } from "lucide-react";
 import type { Note } from "@shared/notes";
 import { formatNoteDate } from "@/utils/formatDate";
-import { EditorPreview } from "@/components/editor";
 
 type SearchResultsPageProps = {
     notes: Note[];
@@ -16,6 +15,32 @@ export function SearchResultsPage({
     selectedNoteId,
     onSelectNote,
 }: SearchResultsPageProps) {
+    const normalizedQuery = searchQuery.trim();
+
+    function highlightText(text: string): React.ReactNode {
+        if (!normalizedQuery) {
+            return text;
+        }
+        const escaped = normalizedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+        return parts.map((part, index) =>
+            part.toLowerCase() === normalizedQuery.toLowerCase() ? (
+                <span key={index} className="text-accent bg-accent/20">
+                    {part}
+                </span>
+            ) : (
+                <span key={index}>{part}</span>
+            ),
+        );
+    }
+
+    function previewFromHtml(html: string): string {
+        if (!html) return "";
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const text = (doc.body.textContent || "").replace(/\u00a0/g, " ").trim();
+        return text;
+    }
+
     return (
         <div className="flex h-full flex-col bg-background animate-in fade-in duration-200">
             <div className="flex items-center px-4 py-3 border-b border-border/50 shrink-0 h-[48px]">
@@ -45,6 +70,7 @@ export function SearchResultsPage({
                             const active = selectedNoteId === note.id;
                             const title = note.title?.trim() || "Untitled";
                             const displayDate = formatNoteDate(note.updatedAt || note.createdAt);
+                            const preview = previewFromHtml(note.content || "");
 
                             return (
                                 <button
@@ -56,11 +82,13 @@ export function SearchResultsPage({
                                     ].join(" ")}
                                 >
                                     <span className="text-sm font-bold text-text truncate w-full">
-                                        {title}
+                                        {highlightText(title)}
                                     </span>
                                     <div className="flex items-center text-xs text-muted w-full truncate gap-2 font-medium">
                                         <span className="shrink-0">{displayDate}</span>
-                                        <EditorPreview content={note.content} />
+                                        <span className="truncate">
+                                            {highlightText(preview)}
+                                        </span>
                                     </div>
                                 </button>
                             );

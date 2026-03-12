@@ -5,16 +5,25 @@ import { useNavigation } from "@react-navigation/native";
 import { ScreenContainer } from "@/components/layout";
 import { SearchResults } from "@/components/search";
 import { useDebounce, useNotesQuery, useSearch, useFoldersQuery } from "@/hooks";
+import { useEffect, useRef } from "react";
 
 export function SearchScreen() {
   const navigation = useNavigation();
   const { searchQuery, handleSearchChange, closeSearch } = useSearch();
   const debouncedQuery = useDebounce(searchQuery, 250);
+  const inputRef = useRef<TextInput>(null);
 
   const resultsQuery = useNotesQuery({
     q: debouncedQuery.trim() || undefined,
   });
   const foldersQuery = useFoldersQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <ScreenContainer>
@@ -23,6 +32,7 @@ export function SearchScreen() {
           <View className="mr-3 flex-1 flex-row items-center rounded-xl border border-border bg-surfaceSecondary px-3">
             <Search size={16} color="#a0a0a0" />
             <TextInput
+              ref={inputRef}
               value={searchQuery}
               onChangeText={handleSearchChange}
               placeholder="Search notes"
