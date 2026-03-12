@@ -37,6 +37,9 @@ export function useSync(options?: { auto?: boolean }) {
           queryClient.invalidateQueries({ queryKey: ["notes"] }),
           queryClient.invalidateQueries({ queryKey: ["folders"] }),
           queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+          queryClient.refetchQueries({ queryKey: ["notes"] }),
+          queryClient.refetchQueries({ queryKey: ["folders"] }),
+          queryClient.refetchQueries({ queryKey: ["tasks"] }),
         ]);
       } catch (error) {
         console.error("Sync failed:", error);
