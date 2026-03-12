@@ -143,6 +143,7 @@ export function Editor({
             cssText:
               "html, body { overflow-x: hidden !important; max-width: 100% !important; } " +
               "* { max-width: 100% !important; box-sizing: border-box !important; } " +
+              "p { margin: 4px 0 !important; } " +
               "p, div, span, li { max-width: 100% !important; overflow-wrap: anywhere !important; word-break: break-word !important; } " +
               "pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: anywhere !important; } " +
               "a { color: #eab308 !important; text-decoration: underline; white-space: normal !important; overflow-wrap: anywhere !important; word-break: break-all !important; } " +
