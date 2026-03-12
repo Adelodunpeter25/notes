@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Task } from "@shared/tasks";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/utils/cn";
@@ -29,7 +29,12 @@ export function KanbanBoard({
   onUpdateTask,
 }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const draggingTask = useMemo(
+    () => (draggingId ? tasks.find((task) => task.id === draggingId) ?? null : null),
+    [draggingId, tasks],
+  );
 
   const byStatus = {
     todo: tasks.filter((task) => !task.isCompleted),
@@ -42,7 +47,7 @@ export function KanbanBoard({
     }
 
     function handlePointerMove(event: PointerEvent) {
-      dragPositionRef.current = { x: event.clientX, y: event.clientY };
+      setDragPosition({ x: event.clientX, y: event.clientY });
     }
 
     function handlePointerUp(event: PointerEvent) {
@@ -51,6 +56,7 @@ export function KanbanBoard({
       const columnId = column?.dataset.kanbanColumn as Column["id"] | undefined;
       if (!columnId) {
         setDraggingId(null);
+        setDragPosition(null);
         return;
       }
 
@@ -61,6 +67,7 @@ export function KanbanBoard({
       }
 
       setDraggingId(null);
+      setDragPosition(null);
     }
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -73,7 +80,7 @@ export function KanbanBoard({
   }, [draggingId, onUpdateTask, tasks]);
 
   return (
-    <div className="grid grid-cols-2 gap-6 min-h-[420px]">
+    <div className="grid grid-cols-2 gap-6 min-h-[420px] relative">
       {columns.map((column) => (
         <div
           key={column.id}
@@ -96,8 +103,13 @@ export function KanbanBoard({
                 tabIndex={0}
                 onPointerDown={(event) => {
                   event.preventDefault();
+                  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+                  setDragOffset({
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top,
+                  });
                   setDraggingId(task.id);
-                  dragPositionRef.current = { x: event.clientX, y: event.clientY };
+                  setDragPosition({ x: event.clientX, y: event.clientY });
                 }}
                 onClick={() => onEditTask(task)}
                 className={cn(
@@ -134,6 +146,25 @@ export function KanbanBoard({
           </div>
         </div>
       ))}
+
+      {draggingTask && dragPosition ? (
+        <div
+          className="pointer-events-none fixed z-50 w-[320px] rounded-lg border border-border/60 bg-[#2a2a2a]/95 px-4 py-3 shadow-lg"
+          style={{
+            left: dragPosition.x - dragOffset.x,
+            top: dragPosition.y - dragOffset.y,
+          }}
+        >
+          <p className="text-[14px] font-semibold text-text truncate leading-tight">
+            {draggingTask.title}
+          </p>
+          {draggingTask.description ? (
+            <p className="mt-1 text-xs text-muted line-clamp-2">
+              {draggingTask.description}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
