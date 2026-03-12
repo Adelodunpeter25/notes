@@ -77,7 +77,7 @@ export function TasksList({
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 pb-12">
-        <div className="max-w-4xl mx-auto w-full">
+        <div className="max-w-4xl mx-auto w-full flex flex-col items-center">
           {tasks.length === 0 ? (
             <EmptyState
               variant="simple"
@@ -85,13 +85,13 @@ export function TasksList({
               description="You don't have any pending tasks. Create one to get started."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 w-full max-w-4xl">
               {tasks.map((task) => (
                 <div
                   key={task.id}
                   onClick={() => handleEditTask(task)}
                   className={cn(
-                    "group flex items-start gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/80 hover:border-border cursor-pointer",
+                    "group flex items-start gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/55 hover:border-border/70 cursor-pointer",
                     task.isCompleted && "opacity-60 grayscale-[0.3]"
                   )}
                 >
