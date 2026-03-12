@@ -38,5 +38,5 @@ export function isEmptyDraftNote(note: Pick<Note, "title" | "content" | "isPinne
   const normalizedTitle = (note.title || "").trim();
   const hasContent = hasMeaningfulHtmlContent(note.content || "");
 
-  return !note.isPinned && !hasContent && normalizedTitle === "";
+  return !note.isPinned && !hasContent && (normalizedTitle === "" || normalizedTitle === "Untitled");
 }

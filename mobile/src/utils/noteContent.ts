@@ -49,5 +49,5 @@ export function hasMeaningfulHtmlContent(content: string): boolean {
 export function isEmptyDraftNote(note: { title?: string; content?: string; isPinned?: boolean }): boolean {
   const normalizedTitle = (note.title || "").trim();
   const hasContent = hasMeaningfulHtmlContent(note.content || "");
-  return !note.isPinned && !hasContent && normalizedTitle === "";
+  return !note.isPinned && !hasContent && (normalizedTitle === "" || normalizedTitle === "Untitled");
 }
