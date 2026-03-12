@@ -34,7 +34,9 @@ export function KanbanBoard({
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>, targetCompleted: boolean) {
     event.preventDefault();
-    const taskId = event.dataTransfer.getData("text/plain");
+    const taskId =
+      event.dataTransfer.getData("text/plain") ||
+      event.dataTransfer.getData("application/x-task-id");
     if (!taskId) return;
     const task = tasks.find((item) => item.id === taskId);
     if (!task || task.isCompleted === targetCompleted) {
@@ -63,8 +65,13 @@ export function KanbanBoard({
                 key={task.id}
                 draggable
                 onDragStart={(event) => {
+                  event.stopPropagation();
                   event.dataTransfer.setData("text/plain", task.id);
+                  event.dataTransfer.setData("application/x-task-id", task.id);
                   event.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={(event) => {
+                  event.preventDefault();
                 }}
                 onClick={() => onEditTask(task)}
                 className={cn(
