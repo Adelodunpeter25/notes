@@ -10,6 +10,7 @@ import (
 	"time"
 	"strconv"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -295,6 +296,13 @@ func (s *GormSyncService) processNoteOp(userID string, op schemas.SyncOperation,
 
 	resp, err := s.noteService.Update(userID, op.EntityID, req)
 	if err != nil && strings.Contains(err.Error(), "not found") {
+		if shouldFallbackCreate(op.EntityID) {
+			created, createErr := s.createNoteWithID(userID, op.EntityID, req)
+			if createErr != nil {
+				return "", createErr
+			}
+			return created.ID, nil
+		}
 		return "", nil
 	}
 	if err != nil {
@@ -327,6 +335,13 @@ func (s *GormSyncService) processFolderOp(userID string, op schemas.SyncOperatio
 
 	resp, err := s.folderService.Update(userID, op.EntityID, req)
 	if err != nil && strings.Contains(err.Error(), "not found") {
+		if shouldFallbackCreate(op.EntityID) {
+			created, createErr := s.createFolderWithID(userID, op.EntityID, req)
+			if createErr != nil {
+				return "", createErr
+			}
+			return created.ID, nil
+		}
 		return "", nil
 	}
 	if err != nil {
@@ -380,6 +395,13 @@ func (s *GormSyncService) processTaskOp(userID string, op schemas.SyncOperation,
 
 	resp, err := s.taskService.Update(userID, op.EntityID, req)
 	if err != nil && strings.Contains(err.Error(), "not found") {
+		if shouldFallbackCreate(op.EntityID) {
+			created, createErr := s.createTaskWithID(userID, op.EntityID, req)
+			if createErr != nil {
+				return "", createErr
+			}
+			return created.ID, nil
+		}
 		return "", nil
 	}
 	if err != nil {
@@ -521,4 +543,91 @@ func parseCursor(cursor *string) int64 {
 		return 0
 	}
 	return value
+}
+
+func shouldFallbackCreate(entityID string) bool {
+	if strings.HasPrefix(entityID, "local_") {
+		return false
+	}
+	_, err := uuid.Parse(entityID)
+	return err == nil
+}
+
+func (s *GormSyncService) createNoteWithID(userID, noteID string, req schemas.UpdateNoteRequest) (*models.Note, error) {
+	title := ""
+	if req.Title != nil {
+		title = strings.TrimSpace(*req.Title)
+	}
+	if title == "" {
+		title = "Untitled"
+	}
+	content := ""
+	if req.Content != nil {
+		content = *req.Content
+	}
+	isPinned := false
+	if req.IsPinned != nil {
+		isPinned = *req.IsPinned
+	}
+
+	note := models.Note{
+		ID:       noteID,
+		UserID:   userID,
+		FolderID: req.FolderID,
+		Title:    title,
+		Content:  content,
+		IsPinned: isPinned,
+	}
+	if err := s.db.Create(&note).Error; err != nil {
+		return nil, err
+	}
+	return &note, nil
+}
+
+func (s *GormSyncService) createFolderWithID(userID, folderID string, req schemas.UpdateFolderRequest) (*models.Folder, error) {
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = "Untitled"
+	}
+
+	folder := models.Folder{
+		ID:     folderID,
+		UserID: userID,
+		Name:   name,
+	}
+	if err := s.db.Create(&folder).Error; err != nil {
+		return nil, err
+	}
+	return &folder, nil
+}
+
+func (s *GormSyncService) createTaskWithID(userID, taskID string, req schemas.UpdateTaskRequest) (*models.Task, error) {
+	title := ""
+	if req.Title != nil {
+		title = strings.TrimSpace(*req.Title)
+	}
+	if title == "" {
+		title = "Untitled"
+	}
+	description := ""
+	if req.Description != nil {
+		description = *req.Description
+	}
+	isCompleted := false
+	if req.IsCompleted != nil {
+		isCompleted = *req.IsCompleted
+	}
+
+	task := models.Task{
+		ID:          taskID,
+		UserID:      userID,
+		Title:       title,
+		Description: description,
+		IsCompleted: isCompleted,
+		DueDate:     req.DueDate,
+	}
+	if err := s.db.Create(&task).Error; err != nil {
+		return nil, err
+	}
+	return &task, nil
 }
