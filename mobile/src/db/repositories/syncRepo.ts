@@ -178,6 +178,101 @@ async function listPendingOps(limit = 100) {
   );
 }
 
+async function ensureOutboxForDirtyEntities() {
+  const db = await getLocalDatabase();
+
+  const dirtyNotes = await db.getAllAsync<{
+    id: string;
+    folder_id: string | null;
+    title: string;
+    content: string;
+    is_pinned: number;
+    deleted_at: string | null;
+  }>(
+    `
+      SELECT id, folder_id, title, content, is_pinned, deleted_at
+      FROM notes
+      WHERE dirty = 1
+    `,
+  );
+
+  for (const note of dirtyNotes) {
+    await db.runAsync(
+      `DELETE FROM sync_outbox WHERE entity_type = 'note' AND entity_id = ?`,
+      note.id,
+    );
+
+    if (note.deleted_at) {
+      await enqueueOp("note", note.id, "delete", {});
+    } else {
+      await enqueueOp("note", note.id, "upsert", {
+        title: note.title,
+        content: note.content,
+        isPinned: Boolean(note.is_pinned),
+        ...(note.folder_id ? { folderId: note.folder_id } : {}),
+      });
+    }
+  }
+
+  const dirtyFolders = await db.getAllAsync<{
+    id: string;
+    name: string;
+    deleted_at: string | null;
+  }>(
+    `
+      SELECT id, name, deleted_at
+      FROM folders
+      WHERE dirty = 1
+    `,
+  );
+
+  for (const folder of dirtyFolders) {
+    await db.runAsync(
+      `DELETE FROM sync_outbox WHERE entity_type = 'folder' AND entity_id = ?`,
+      folder.id,
+    );
+
+    if (folder.deleted_at) {
+      await enqueueOp("folder", folder.id, "delete", {});
+    } else {
+      await enqueueOp("folder", folder.id, "upsert", { name: folder.name });
+    }
+  }
+
+  const dirtyTasks = await db.getAllAsync<{
+    id: string;
+    title: string;
+    description: string;
+    is_completed: number;
+    due_date: string | null;
+    deleted_at: string | null;
+  }>(
+    `
+      SELECT id, title, description, is_completed, due_date, deleted_at
+      FROM tasks
+      WHERE dirty = 1
+    `,
+  );
+
+  for (const task of dirtyTasks) {
+    await db.runAsync(
+      `DELETE FROM sync_outbox WHERE entity_type = 'task' AND entity_id = ?`,
+      task.id,
+    );
+
+    if (task.deleted_at) {
+      await enqueueOp("task", task.id, "delete", {});
+    } else {
+      await enqueueOp("task", task.id, "upsert", {
+        title: task.title,
+        description: task.description,
+        isCompleted: Boolean(task.is_completed),
+        dueDate: task.due_date ?? undefined,
+      });
+    }
+  }
+}
+
 async function removeProcessedOps(opIDs: string[]) {
   if (opIDs.length === 0) return;
   const db = await getLocalDatabase();
@@ -221,6 +316,7 @@ async function applyIDMappings(idMappings: { localId: string; serverId: string }
 }
 
 export async function runSyncCycle(lastSyncAt: string | null): Promise<string> {
+  await ensureOutboxForDirtyEntities();
   const ops = await listPendingOps();
   
   const storedLastSyncCursor = await getStoredLastSyncCursor();
