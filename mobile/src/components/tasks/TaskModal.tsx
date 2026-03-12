@@ -49,59 +49,62 @@ export function TaskModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
-        <View className="flex-1 justify-end bg-black/40">
-          <TouchableWithoutFeedback>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              className="bg-surface rounded-t-3xl border-t border-border/50 p-6 pt-4"
-            >
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-xl font-bold text-text">
-                  {initialTask ? "Edit Task" : "New Task"}
-                </Text>
-                <Pressable onPress={onCancel} className="p-1">
-                  <X size={20} color="#a0a0a0" />
-                </Pressable>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
+        >
+          <View className="flex-1 justify-end bg-black/40">
+            <TouchableWithoutFeedback>
+              <View className="bg-surface rounded-t-3xl border-t border-border/50 p-6 pt-4">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-xl font-bold text-text">
+                    {initialTask ? "Edit Task" : "New Task"}
+                  </Text>
+                  <Pressable onPress={onCancel} className="p-1">
+                    <X size={20} color="#a0a0a0" />
+                  </Pressable>
+                </View>
+
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="What needs to be done?"
+                  placeholderTextColor="#6f6f6f"
+                  autoFocus
+                  className="text-[17px] text-text font-medium mb-4 py-2"
+                  returnKeyType="next"
+                />
+
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Add description (optional)"
+                  placeholderTextColor="#6f6f6f"
+                  multiline
+                  className="text-[15px] text-textMuted mb-4 min-h-[60px] max-h-[120px] py-2"
+                />
+
+                <DatePicker
+                  value={dueDate}
+                  onChange={setDueDate}
+                  placeholder="Set a deadline"
+                  className="mb-8"
+                />
+
+                <Button
+                  title={initialTask ? "Update Task" : "Create Task"}
+                  onPress={handleSave}
+                  disabled={!title.trim() || loading}
+                  loading={loading}
+                  className="rounded-xl py-3.5"
+                  textClassName="text-[17px]"
+                />
+                <View style={{ height: Platform.OS === "ios" ? 40 : 20 }} />
               </View>
-
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="What needs to be done?"
-                placeholderTextColor="#6f6f6f"
-                autoFocus
-                className="text-[17px] text-text font-medium mb-4 py-2"
-                returnKeyType="next"
-              />
-
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Add description (optional)"
-                placeholderTextColor="#6f6f6f"
-                multiline
-                className="text-[15px] text-textMuted mb-4 min-h-[60px] max-h-[120px] py-2"
-              />
-
-              <DatePicker
-                value={dueDate}
-                onChange={setDueDate}
-                placeholder="Set a deadline"
-                className="mb-8"
-              />
-
-              <Button
-                title={initialTask ? "Update Task" : "Create Task"}
-                onPress={handleSave}
-                disabled={!title.trim() || loading}
-                loading={loading}
-                className="rounded-xl py-3.5"
-                textClassName="text-[17px]"
-              />
-              <View style={{ height: Platform.OS === "ios" ? 40 : 20 }} />
-            </KeyboardAvoidingView>
-          </TouchableWithoutFeedback>
-        </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
     </Modal>
   );
