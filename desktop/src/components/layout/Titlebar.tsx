@@ -37,7 +37,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
     <header
       data-tauri-drag-region
       onMouseDown={handleStartDrag}
-      className="drag-region flex h-[36px] select-none items-center justify-between border-b border-border bg-[#2c2c2c] px-4"
+      className="drag-region flex h-[34px] select-none items-center justify-between border-b border-border bg-[#2c2c2c] px-4"
     >
       {/* Platform Controls Spacer (macOS traffic lights) */}
       <div className="w-[80px]" />
@@ -46,7 +46,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
         <button
           onClick={() => setActiveView("notes")}
           className={cn(
-            "flex h-7 items-center rounded-full border px-4 text-[12px] font-bold tracking-tight transition-all",
+            "flex h-6 items-center rounded-2xl border px-3 text-[12px] font-bold tracking-tight transition-all",
             activeView === "notes"
               ? "bg-white/10 text-text border-[#c19b1f]"
               : "text-muted border-border/60 hover:text-text hover:border-border"
@@ -57,7 +57,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
         <button
           onClick={() => setActiveView("tasks")}
           className={cn(
-            "flex h-7 items-center rounded-full border px-4 text-[12px] font-bold tracking-tight transition-all",
+            "flex h-6 items-center rounded-2xl border px-3 text-[12px] font-bold tracking-tight transition-all",
             activeView === "tasks"
               ? "bg-white/10 text-text border-[#c19b1f]"
               : "text-muted border-border/60 hover:text-text hover:border-border"
