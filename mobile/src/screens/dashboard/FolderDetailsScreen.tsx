@@ -1,7 +1,7 @@
 import { Text, View, Alert } from "react-native";
 import { Pressable } from "react-native";
 import { useState } from "react";
-import { ChevronLeft, Plus } from "lucide-react-native";
+import { ChevronLeft, Plus, PenLine } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
@@ -132,6 +132,16 @@ export function FolderDetailsScreen() {
           }}
         />
       </View>
+
+      <Pressable
+        onPress={() => {
+          void handleCreateNote();
+        }}
+        disabled={createNoteMutation.isPending}
+        className="absolute bottom-8 right-8 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+      >
+        <PenLine size={30} color="#000000" />
+      </Pressable>
 
       <NoteContextMenu
         visible={!!menuNote}
