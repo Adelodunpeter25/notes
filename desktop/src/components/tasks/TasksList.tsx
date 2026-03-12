@@ -3,7 +3,7 @@ import { CheckCircle2, Circle, Trash2, Plus, Calendar, Clock } from "lucide-reac
 import type { Task, CreateTaskPayload } from "@shared/tasks";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatDate";
-import { Skeleton, ConfirmDialog, EmptyState, Button } from "@/components/common";
+import { Skeleton, EmptyState, Button } from "@/components/common";
 import { TaskModal } from "./TaskModal";
 
 type TasksListProps = {
@@ -23,7 +23,6 @@ export function TasksList({
   onCreateTask,
   onUpdateTask,
 }: TasksListProps) {
-  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -44,13 +43,6 @@ export function TasksList({
       onCreateTask(payload);
     }
     setIsModalOpen(false);
-  };
-
-  const handleConfirmDelete = () => {
-    if (taskToDelete) {
-      propOnDeleteTask(taskToDelete);
-      setTaskToDelete(null);
-    }
   };
 
   if (isLoading) {
@@ -150,7 +142,7 @@ export function TasksList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setTaskToDelete(task.id);
+                      propOnDeleteTask(task.id);
                     }}
                     className="mt-0.5 rounded-md p-2 text-muted opacity-0 transition-all hover:bg-danger/20 hover:text-danger group-hover:opacity-100"
                   >
@@ -170,15 +162,6 @@ export function TasksList({
         initialTask={editingTask}
       />
 
-      <ConfirmDialog
-        open={taskToDelete !== null}
-        title="Delete Task?"
-        description="This action cannot be undone."
-        confirmLabel="Delete"
-        destructive
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setTaskToDelete(null)}
-      />
     </div>
   );
 }
