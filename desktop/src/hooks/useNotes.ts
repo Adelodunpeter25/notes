@@ -172,6 +172,7 @@ export function useUpdateNoteMutation() {
       syncPatchedNoteInCache(queryClient, variables.noteId, note, note.updatedAt ?? new Date().toISOString());
       if (variables.payload.folderId !== undefined) {
         queryClient.invalidateQueries({ queryKey: notesKeys.all });
+        queryClient.refetchQueries({ queryKey: notesKeys.all });
       }
       queryClient.invalidateQueries({ queryKey: ["folders"] });
     },

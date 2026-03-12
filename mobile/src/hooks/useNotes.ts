@@ -84,9 +84,11 @@ export function useUpdateNoteMutation() {
 
       if (variables.payload.folderId !== undefined) {
         queryClient.invalidateQueries({ queryKey: ["folders"] });
+        queryClient.refetchQueries({ queryKey: notesKeys.all });
       }
 
       queryClient.invalidateQueries({ queryKey: notesKeys.all });
+      queryClient.refetchQueries({ queryKey: notesKeys.all });
       queryClient.invalidateQueries({ queryKey: ["folders", "notes"] });
     },
   });
