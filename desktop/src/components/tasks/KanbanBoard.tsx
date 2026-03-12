@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { Task } from "@shared/tasks";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/utils/cn";
@@ -27,32 +28,60 @@ export function KanbanBoard({
   onEditTask,
   onUpdateTask,
 }: KanbanBoardProps) {
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
+
   const byStatus = {
     todo: tasks.filter((task) => !task.isCompleted),
     done: tasks.filter((task) => task.isCompleted),
   };
 
-  function handleDrop(event: React.DragEvent<HTMLDivElement>, targetCompleted: boolean) {
-    event.preventDefault();
-    const taskId =
-      event.dataTransfer.getData("text/plain") ||
-      event.dataTransfer.getData("application/x-task-id");
-    if (!taskId) return;
-    const task = tasks.find((item) => item.id === taskId);
-    if (!task || task.isCompleted === targetCompleted) {
+  useEffect(() => {
+    if (!draggingId) {
       return;
     }
-    onUpdateTask(task.id, { isCompleted: targetCompleted });
-  }
+
+    function handlePointerMove(event: PointerEvent) {
+      dragPositionRef.current = { x: event.clientX, y: event.clientY };
+    }
+
+    function handlePointerUp(event: PointerEvent) {
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const column = target?.closest<HTMLElement>("[data-kanban-column]");
+      const columnId = column?.dataset.kanbanColumn as Column["id"] | undefined;
+      if (!columnId) {
+        setDraggingId(null);
+        return;
+      }
+
+      const targetCompleted = columnId === "done";
+      const task = tasks.find((item) => item.id === draggingId);
+      if (task && task.isCompleted !== targetCompleted) {
+        onUpdateTask(task.id, { isCompleted: targetCompleted });
+      }
+
+      setDraggingId(null);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggingId, onUpdateTask, tasks]);
 
   return (
-    <div className="grid grid-cols-2 gap-6 min-h-[520px]">
+    <div className="grid grid-cols-2 gap-6 min-h-[420px]">
       {columns.map((column) => (
         <div
           key={column.id}
-          className="flex h-full flex-col gap-3 rounded-xl border border-border/40 bg-[#1f1f1f]/50 p-4"
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => handleDrop(event, column.isCompleted)}
+          data-kanban-column={column.id}
+          className={cn(
+            "flex h-full flex-col gap-3 rounded-xl border border-border/40 bg-[#1f1f1f]/50 p-4 transition-colors",
+            draggingId && "border-border/70 bg-[#232323]/60"
+          )}
         >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-text">{column.title}</h2>
@@ -63,20 +92,18 @@ export function KanbanBoard({
             {byStatus[column.id].map((task) => (
               <div
                 key={task.id}
-                draggable
-                onDragStart={(event) => {
-                  event.stopPropagation();
-                  event.dataTransfer.setData("text/plain", task.id);
-                  event.dataTransfer.setData("application/x-task-id", task.id);
-                  event.dataTransfer.effectAllowed = "move";
-                }}
-                onDragEnd={(event) => {
+                role="button"
+                tabIndex={0}
+                onPointerDown={(event) => {
                   event.preventDefault();
+                  setDraggingId(task.id);
+                  dragPositionRef.current = { x: event.clientX, y: event.clientY };
                 }}
                 onClick={() => onEditTask(task)}
                 className={cn(
                   "group flex items-start gap-3 rounded-lg border border-border/40 bg-[#252525]/60 px-4 py-3 transition-all hover:bg-[#252525]/70 hover:border-border/70 cursor-pointer",
-                  task.isCompleted && "opacity-70"
+                  task.isCompleted && "opacity-70",
+                  draggingId === task.id && "opacity-60 border-border/80"
                 )}
               >
                 <div className="flex-1 min-w-0">
