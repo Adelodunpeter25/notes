@@ -31,6 +31,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const hasUserEditedRef = useRef(false);
     const saveRevisionRef = useRef(0);
     const appliedRevisionRef = useRef(0);
+    const skipSaveRef = useRef(false);
 
     const derivedTitle = useMemo(() => deriveNoteTitleFromHtml(debouncedContent), [debouncedContent]);
 
@@ -43,6 +44,7 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
         }
 
         activeNoteIdRef.current = nextNoteId;
+        skipSaveRef.current = true;
         setContent(note?.content ?? "");
         setIsPinned(note?.isPinned ?? false);
         initialValues.current = {
@@ -106,6 +108,10 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
 
     useEffect(() => {
         const noteId = note?.id;
+        if (skipSaveRef.current) {
+            skipSaveRef.current = false;
+            return;
+        }
         if (!hasDebouncedChanges || !noteId || isSavingRef.current) return;
         let cancelled = false;
         isSavingRef.current = true;
