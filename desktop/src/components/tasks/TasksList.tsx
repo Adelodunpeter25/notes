@@ -77,7 +77,7 @@ export function TasksList({
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 pb-12">
-        <div className="max-w-3xl mx-auto w-full">
+        <div className="max-w-4xl mx-auto w-full">
           {tasks.length === 0 ? (
             <EmptyState
               variant="simple"
@@ -91,7 +91,7 @@ export function TasksList({
                   key={task.id}
                   onClick={() => handleEditTask(task)}
                   className={cn(
-                    "group flex items-start gap-4 rounded-2xl border border-border/40 bg-[#252525]/40 p-5 transition-all hover:bg-[#252525]/80 hover:border-border cursor-pointer",
+                    "group flex items-start gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/80 hover:border-border cursor-pointer",
                     task.isCompleted && "opacity-60 grayscale-[0.3]"
                   )}
                 >
@@ -100,12 +100,12 @@ export function TasksList({
                       e.stopPropagation();
                       onToggleTask(task);
                     }}
-                    className="mt-0.5 flex h-7 w-7 items-center justify-center transition-transform active:scale-90"
+                    className="mt-0.5 flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
                   >
                     {task.isCompleted ? (
-                      <CheckCircle2 size={26} className="text-accent" />
+                      <CheckCircle2 size={22} className="text-accent" />
                     ) : (
-                      <Circle size={26} className="text-[#555] group-hover:text-accent/50" />
+                      <Circle size={22} className="text-[#555] group-hover:text-accent/50" />
                     )}
                   </button>
 
@@ -152,7 +152,7 @@ export function TasksList({
                       e.stopPropagation();
                       setTaskToDelete(task.id);
                     }}
-                    className="mt-0.5 rounded-lg p-2 text-muted opacity-0 transition-all hover:bg-danger/20 hover:text-danger group-hover:opacity-100"
+                    className="mt-0.5 rounded-md p-2 text-muted opacity-0 transition-all hover:bg-danger/20 hover:text-danger group-hover:opacity-100"
                   >
                     <Trash2 size={18} />
                   </button>
