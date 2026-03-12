@@ -42,14 +42,14 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
       {/* Platform Controls Spacer (macOS traffic lights) */}
       <div className="w-[80px]" />
 
-      <div className="flex h-full items-center gap-1" data-no-drag="true">
+      <div className="flex items-center gap-2" data-no-drag="true">
         <button
           onClick={() => setActiveView("notes")}
           className={cn(
-            "flex h-full items-center px-4 text-[12px] font-bold tracking-tight transition-all",
+            "flex h-7 items-center rounded-full border px-4 text-[12px] font-bold tracking-tight transition-all",
             activeView === "notes"
-              ? "bg-white/5 text-text border-b-2 border-[#c19b1f]"
-              : "text-muted hover:text-text"
+              ? "bg-white/10 text-text border-[#c19b1f]"
+              : "text-muted border-border/60 hover:text-text hover:border-border"
           )}
         >
           Notes
@@ -57,10 +57,10 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
         <button
           onClick={() => setActiveView("tasks")}
           className={cn(
-            "flex h-full items-center px-4 text-[12px] font-bold tracking-tight transition-all",
+            "flex h-7 items-center rounded-full border px-4 text-[12px] font-bold tracking-tight transition-all",
             activeView === "tasks"
-              ? "bg-white/5 text-text border-b-2 border-[#c19b1f]"
-              : "text-muted hover:text-text"
+              ? "bg-white/10 text-text border-[#c19b1f]"
+              : "text-muted border-border/60 hover:text-text hover:border-border"
           )}
         >
           Tasks
