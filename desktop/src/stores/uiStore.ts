@@ -9,6 +9,7 @@ type UiState = {
   manualClearCount: number;
   isSidebarCollapsed: boolean;
   isSearchExpanded: boolean;
+  tasksView: "list" | "kanban";
   setActiveView: (view: "notes" | "tasks") => void;
   setSelectedFolderId: (folderId: string | null) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
@@ -16,6 +17,7 @@ type UiState = {
   setIsSearchExpanded: (value: boolean) => void;
   clearSelectedNote: () => void;
   toggleSidebarCollapsed: () => void;
+  setTasksView: (view: "list" | "kanban") => void;
 };
 
 export const useUiStore = create<UiState>()(
@@ -28,6 +30,7 @@ export const useUiStore = create<UiState>()(
       isSearchExpanded: false,
       manualClearCount: 0,
       isSidebarCollapsed: false,
+      tasksView: "list",
       setActiveView: (view) => {
         set({ activeView: view, selectedNoteId: undefined });
       },
@@ -56,6 +59,9 @@ export const useUiStore = create<UiState>()(
       toggleSidebarCollapsed: () => {
         set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed }));
       },
+      setTasksView: (view) => {
+        set({ tasksView: view });
+      },
     }),
     {
       name: "notes-ui-state",
@@ -63,8 +69,8 @@ export const useUiStore = create<UiState>()(
         selectedFolderId: state.selectedFolderId,
         selectedNoteId: state.selectedNoteId,
         isSidebarCollapsed: state.isSidebarCollapsed,
+        tasksView: state.tasksView,
       }),
     }
   )
 );
-

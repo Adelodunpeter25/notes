@@ -6,6 +6,7 @@ import { formatDate } from "@/utils/formatDate";
 import { Skeleton, EmptyState, Button } from "@/components/common";
 import { TaskModal } from "./TaskModal";
 import { KanbanBoard } from "./KanbanBoard";
+import { useUiStore } from "@/stores/uiStore";
 
 type TasksListProps = {
   tasks: Task[];
@@ -26,7 +27,9 @@ export function TasksList({
 }: TasksListProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isKanban, setIsKanban] = useState(false);
+  const tasksView = useUiStore((state) => state.tasksView);
+  const setTasksView = useUiStore((state) => state.setTasksView);
+  const isKanban = tasksView === "kanban";
 
   const handleCreateNew = () => {
     setEditingTask(null);
@@ -66,7 +69,7 @@ export function TasksList({
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => setIsKanban((value) => !value)}
+            onClick={() => setTasksView(isKanban ? "list" : "kanban")}
             variant="secondary"
             className="rounded-full px-4 gap-2"
           >
@@ -91,7 +94,6 @@ export function TasksList({
           ) : isKanban ? (
             <KanbanBoard
               tasks={tasks}
-              onToggleTask={onToggleTask}
               onDeleteTask={propOnDeleteTask}
               onEditTask={handleEditTask}
               onUpdateTask={(taskId, payload) => onUpdateTask(taskId, payload)}
@@ -103,7 +105,7 @@ export function TasksList({
                   key={task.id}
                   onClick={() => handleEditTask(task)}
                   className={cn(
-                    "group flex items-center gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/55 hover:border-border/70 cursor-pointer",
+                    "group flex items-center gap-3 rounded-lg border border-border/40 bg-[#252525]/40 px-3 py-2 transition-all hover:bg-[#252525]/55 hover:border-border/70 cursor-pointer",
                     task.isCompleted && "opacity-60 grayscale-[0.3]"
                   )}
                 >
@@ -112,12 +114,12 @@ export function TasksList({
                       e.stopPropagation();
                       onToggleTask(task);
                     }}
-                    className="flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
+                    className="flex h-5 w-5 items-center justify-center transition-transform active:scale-90"
                   >
                     {task.isCompleted ? (
-                      <CheckCircle2 size={22} className="text-accent" />
+                      <CheckCircle2 size={18} className="text-accent" />
                     ) : (
-                      <Circle size={22} className="text-[#555] group-hover:text-accent/50" />
+                      <Circle size={18} className="text-[#555] group-hover:text-accent/50" />
                     )}
                   </button>
 
@@ -125,7 +127,7 @@ export function TasksList({
                     <div className="flex items-center justify-between gap-4">
                       <p
                         className={cn(
-                          "text-[16px] font-semibold text-text truncate leading-tight",
+                          "text-[14px] font-semibold text-text truncate leading-tight",
                           task.isCompleted && "line-through text-muted font-medium"
                         )}
                       >
@@ -134,12 +136,12 @@ export function TasksList({
                     </div>
                     
                     {task.description ? (
-                      <p className="mt-1.5 text-sm text-muted line-clamp-2 leading-relaxed">
+                      <p className="mt-1 text-[13px] text-muted line-clamp-2 leading-relaxed">
                         {task.description}
                       </p>
                     ) : null}
 
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted/60">
                         <Clock size={12} />
                         <span>Created {formatDate(task.createdAt)}</span>

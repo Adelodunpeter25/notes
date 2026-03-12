@@ -1,11 +1,10 @@
 import type { Task } from "@shared/tasks";
-import { CheckCircle2, Circle, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { formatDate } from "@/utils/formatDate";
 
 type KanbanBoardProps = {
   tasks: Task[];
-  onToggleTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onEditTask: (task: Task) => void;
   onUpdateTask: (taskId: string, payload: { isCompleted: boolean }) => void;
@@ -24,7 +23,6 @@ const columns: Column[] = [
 
 export function KanbanBoard({
   tasks,
-  onToggleTask,
   onDeleteTask,
   onEditTask,
   onUpdateTask,
@@ -46,11 +44,11 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className="grid grid-cols-2 gap-6 min-h-[520px]">
       {columns.map((column) => (
         <div
           key={column.id}
-          className="flex flex-col gap-3 rounded-xl border border-border/40 bg-[#1f1f1f]/50 p-4"
+          className="flex h-full flex-col gap-3 rounded-xl border border-border/40 bg-[#1f1f1f]/50 p-4"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => handleDrop(event, column.isCompleted)}
         >
@@ -70,24 +68,10 @@ export function KanbanBoard({
                 }}
                 onClick={() => onEditTask(task)}
                 className={cn(
-                  "group flex items-center gap-3 rounded-lg border border-border/40 bg-[#252525]/60 px-4 py-3 transition-all hover:bg-[#252525]/70 hover:border-border/70 cursor-pointer",
+                  "group flex items-start gap-3 rounded-lg border border-border/40 bg-[#252525]/60 px-4 py-3 transition-all hover:bg-[#252525]/70 hover:border-border/70 cursor-pointer",
                   task.isCompleted && "opacity-70"
                 )}
               >
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggleTask(task);
-                  }}
-                  className="flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
-                >
-                  {task.isCompleted ? (
-                    <CheckCircle2 size={20} className="text-accent" />
-                  ) : (
-                    <Circle size={20} className="text-[#555] group-hover:text-accent/50" />
-                  )}
-                </button>
-
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-semibold text-text truncate leading-tight">
                     {task.title}
