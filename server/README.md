@@ -1,6 +1,6 @@
-# Server
+# Backend
 
-Go backend API using Chi with a modular `internal` layout.
+Go backend API for auth and sync.
 
 ## Run
 
