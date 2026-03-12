@@ -58,10 +58,6 @@ export function NoteEditorScreen() {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    void notesQuery.refetch();
-  }, [noteId]);
-
-  useEffect(() => {
     // Only set content if we switched to a different note
     if (note && note.id !== prevNoteId.current) {
       const initialContent = note.content || "";

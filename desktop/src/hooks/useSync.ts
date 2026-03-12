@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { runSyncCycle } from "@/db";
 import { useAuthStore } from "@/stores";
 
-const SYNC_INTERVAL_MS = 30_000;
+const SYNC_INTERVAL_MS = 15_000;
 let activeSync: Promise<void> | null = null;
 
 export function useSync(options?: { auto?: boolean }) {
