@@ -23,8 +23,8 @@ export function NoteEditor({ note, onSave, onLocalSave, onClearSelection, search
     const editorRef = useRef<TiptapEditor | null>(null);
     const contentContainerRef = useRef<HTMLDivElement | null>(null);
 
-    const debouncedContent = useDebounce(content, 80);
-    const debouncedIsPinned = useDebounce(isPinned, 80);
+    const debouncedContent = useDebounce(content, 50);
+    const debouncedIsPinned = useDebounce(isPinned, 50);
     const initialValues = useRef({ title: "", content: "", isPinned: false });
     const activeNoteIdRef = useRef<string | null>(null);
     const isSavingRef = useRef(false);
