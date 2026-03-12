@@ -60,6 +60,10 @@
   @apply text-muted/50 pointer-events-none h-0;
 }
 
+.ProseMirror p {
+  @apply my-2;
+}
+
 .ProseMirror ul {
   @apply list-disc pl-6 my-2;
 }
