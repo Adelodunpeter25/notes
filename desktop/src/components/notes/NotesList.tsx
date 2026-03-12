@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from "react";
-import { FileText, PanelLeft, Pin, SquarePen } from "lucide-react";
+import { FileText, PanelLeft, Pin, SquarePen, Folder } from "lucide-react";
 
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
@@ -152,6 +152,11 @@ export function NotesList({
                 const active = selectedNoteId === note.id;
                 const title = note.title?.trim() || "Untitled";
                 const displayDate = formatNoteDate(note.updatedAt || note.createdAt);
+                const isAllNotesView = (selectedFolderName || "All Notes") === "All Notes";
+                const folderName =
+                  isAllNotesView && note.folderId
+                    ? folders.find((folder) => folder.id === note.folderId)?.name
+                    : null;
 
                 return (
                   <button
@@ -177,6 +182,12 @@ export function NotesList({
                       {title}
                     </span>
                     <div className="flex items-center text-xs text-muted w-full truncate gap-2 font-medium">
+                      {folderName ? (
+                        <span className="flex items-center gap-1 text-accent shrink-0">
+                          <Folder size={12} />
+                          <span className="truncate max-w-[140px]">{folderName}</span>
+                        </span>
+                      ) : null}
                       <span className="shrink-0">{displayDate}</span>
                       <EditorPreview content={note.content} />
                     </div>
