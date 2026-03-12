@@ -1,5 +1,5 @@
 import { FlatList, Text, View, Pressable } from "react-native";
-import { Pin, Trash2 } from "lucide-react-native";
+import { Pin, Trash2, Folder as FolderIcon } from "lucide-react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useState, useRef } from "react";
 
@@ -83,7 +83,9 @@ export function NoteList({
           const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
           const preview = deriveNotePreviewFromHtml(item.content || "");
           const folderName = folders.find((f) => f.id === item.folderId)?.name;
-          const subtitleText = folderName ? `${dateStr} · ${folderName} · ${preview}`.trim() : `${dateStr} · ${preview}`.trim();
+          const subtitleText = folderName
+            ? `${dateStr} · ${preview}`.trim()
+            : `${dateStr} · ${preview}`.trim();
 
           return (
             <Swipeable
@@ -100,7 +102,19 @@ export function NoteList({
             >
               <ListItem
                 title={title}
-                subtitle={subtitleText}
+                subtitle={
+                  folderName ? (
+                    <View className="flex-row items-center">
+                      <Text className="text-[13px] text-textMuted">{subtitleText}</Text>
+                      <View className="flex-row items-center ml-2">
+                        <FolderIcon size={12} color="#eab308" />
+                        <Text className="ml-1 text-[13px] text-accent">{folderName}</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    subtitleText
+                  )
+                }
                 titleClassName="text-[16px]"
                 subtitleClassName="text-[13px]"
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
