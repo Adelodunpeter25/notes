@@ -44,7 +44,7 @@ export function NoteEditorScreen() {
   );
 
   const [content, setContent] = useState("");
-  const debouncedContent = useDebounce(content, 250);
+  const debouncedContent = useDebounce(content, 100);
   const prevNoteId = useRef<string | null>(null);
   const hasInitializedContent = useRef(false);
   const hasUserEdited = useRef(false);
