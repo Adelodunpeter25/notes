@@ -33,6 +33,16 @@ export function TaskModal({
     }
   }, [initialTask, open]);
 
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape" && open) {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   const handleSave = () => {
     if (!title.trim()) return;
     onSave({
