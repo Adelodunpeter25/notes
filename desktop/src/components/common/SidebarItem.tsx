@@ -66,7 +66,7 @@ export function SidebarItem({
               if (e.key === "Enter") onEditSubmit?.();
               if (e.key === "Escape") onEditCancel?.();
             }}
-            className="w-full bg-black/20 text-white px-1.5 py-0.5 rounded border border-accent outline-none text-[13px]"
+            className="w-full bg-black/20 text-white px-1.5 py-0.5 rounded border border-blue-500 outline-none text-[13px] focus:border-blue-400"
           />
         </div>
       ) : (
