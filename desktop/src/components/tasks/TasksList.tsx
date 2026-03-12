@@ -91,7 +91,7 @@ export function TasksList({
                   key={task.id}
                   onClick={() => handleEditTask(task)}
                   className={cn(
-                    "group flex items-start gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/55 hover:border-border/70 cursor-pointer",
+                    "group flex items-center gap-4 rounded-lg border border-border/40 bg-[#252525]/40 px-4 py-3 transition-all hover:bg-[#252525]/55 hover:border-border/70 cursor-pointer",
                     task.isCompleted && "opacity-60 grayscale-[0.3]"
                   )}
                 >
@@ -100,7 +100,7 @@ export function TasksList({
                       e.stopPropagation();
                       onToggleTask(task);
                     }}
-                    className="mt-0.5 flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
+                    className="flex h-6 w-6 items-center justify-center transition-transform active:scale-90"
                   >
                     {task.isCompleted ? (
                       <CheckCircle2 size={22} className="text-accent" />
