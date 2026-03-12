@@ -1,6 +1,5 @@
-import { Text, View, Alert } from "react-native";
-import { Pressable } from "react-native";
-import { useState } from "react";
+import { Text, View, Alert, Animated, Easing, Pressable } from "react-native";
+import { useEffect, useRef, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { Search, PenLine, Plus, WifiOff, RefreshCw } from "lucide-react-native";
@@ -35,6 +34,36 @@ export function DashboardScreen() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isSyncing) {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+      spinAnim.setValue(0);
+    };
+  }, [isSyncing, spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   const handleCreateNote = async () => {
     try {
@@ -120,9 +149,11 @@ export function DashboardScreen() {
               void syncNow();
             }}
             disabled={isSyncing}
-            className="ml-1 rounded-md p-1.5"
+            className="ml-1 rounded-full border border-border/60 p-1.5"
           >
-            <RefreshCw size={18} color={isSyncing ? "#a0a0a0" : "#eab308"} />
+            <Animated.View style={{ transform: [{ rotate: isSyncing ? spin : "0deg" }] }}>
+              <RefreshCw size={18} color={isSyncing ? "#a0a0a0" : "#eab308"} />
+            </Animated.View>
           </Pressable>
         </View>
       </View>
