@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { useDebounce } from "./useDebounce";
 import {
@@ -48,6 +48,7 @@ export function useDashboardData() {
   const createTaskMutation = useCreateTaskMutation();
   const updateTaskMutation = useUpdateTaskMutation();
   const deleteTaskMutation = useDeleteTaskMutation();
+  const renameFolderTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const selectedNote = useMemo(
     () => (notesQuery.data as Note[])?.find((note: Note) => note.id === selectedNoteId),
@@ -90,7 +91,22 @@ export function useDashboardData() {
   };
 
   const renameFolder = async (folderId: string, name: string) => {
-    return renameFolderMutation.mutateAsync({ folderId, payload: { name } });
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const existingTimer = renameFolderTimersRef.current.get(folderId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const timer = setTimeout(() => {
+      void renameFolderMutation.mutateAsync({ folderId, payload: { name: trimmed } });
+      renameFolderTimersRef.current.delete(folderId);
+    }, 300);
+
+    renameFolderTimersRef.current.set(folderId, timer);
   };
 
   const deleteFolder = async (folderId: string) => {

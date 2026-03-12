@@ -48,6 +48,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
   const createdDraftNoteIdsRef = useRef<Set<string>>(new Set());
   const draftCreatedAtRef = useRef<Map<string, number>>(new Map());
   const draftCleanupTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const renameFolderTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const notesByIdRef = useRef<Map<string, Note>>(new Map());
   const previousSelectedNoteIdRef = useRef<string | undefined>(selection.selectedNoteId);
   const selectedNoteIdRef = useRef<string | undefined>(selection.selectedNoteId);
@@ -205,9 +206,23 @@ export function useDashboardData(selection: DashboardSelectionState) {
   }
 
   async function renameFolder(folderId: string, newName: string) {
-    if (newName.trim()) {
-      await renameFolderMutation.mutateAsync({ folderId, payload: { name: newName.trim() } });
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      setEditingFolderId(null);
+      return;
     }
+
+    const existingTimer = renameFolderTimersRef.current.get(folderId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const timer = setTimeout(() => {
+      void renameFolderMutation.mutateAsync({ folderId, payload: { name: trimmedName } });
+      renameFolderTimersRef.current.delete(folderId);
+    }, 300);
+
+    renameFolderTimersRef.current.set(folderId, timer);
     setEditingFolderId(null);
   }
 
