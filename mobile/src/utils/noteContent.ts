@@ -39,7 +39,7 @@ export function deriveNoteTitleFromHtml(content: string): string {
 export function deriveNotePreviewFromHtml(content: string): string {
   const lines = toLines(content);
   const previewSource = lines.slice(1).join(" ").trim() || lines[0] || "";
-  return previewSource;
+  return previewSource.length > 100 ? `${previewSource.slice(0, 100)}…` : previewSource;
 }
 
 export function hasMeaningfulHtmlContent(content: string): boolean {
