@@ -33,9 +33,6 @@ export function useSync(options?: { auto?: boolean }) {
         await queryClient.invalidateQueries({ queryKey: ["notes"] });
         await queryClient.invalidateQueries({ queryKey: ["folders"] });
         await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        await queryClient.refetchQueries({ queryKey: ["notes"] });
-        await queryClient.refetchQueries({ queryKey: ["folders"] });
-        await queryClient.refetchQueries({ queryKey: ["tasks"] });
       } finally {
         setIsSyncing(false);
         activeSync = null;
