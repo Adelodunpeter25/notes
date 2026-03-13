@@ -13,7 +13,7 @@ onlineManager.setEventListener((setOnline) => {
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+            staleTime: 0, // Always consider data stale so invalidation triggers refetch
             gcTime: 1000 * 60 * 60 * 24 * 7, // 1 week
             retry: 1,
             refetchOnWindowFocus: Platform.OS === 'web',

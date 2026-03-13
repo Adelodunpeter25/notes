@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { Search, PenLine, Plus, WifiOff, RefreshCw, Calendar, List } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
@@ -17,6 +18,8 @@ import type { Folder } from "@shared/folders";
 import type { Task } from "@shared/tasks";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
+
+const ACTIVE_TAB_KEY = "@notes/activeTab";
 
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
@@ -37,6 +40,31 @@ export function DashboardScreen() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedDateTasks, setSelectedDateTasks] = useState<{ date: Date; tasks: Task[] } | null>(null);
   const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    async function loadActiveTab() {
+      try {
+        const saved = await AsyncStorage.getItem(ACTIVE_TAB_KEY);
+        if (saved && (saved === "notes" || saved === "folders" || saved === "tasks")) {
+          setActiveTab(saved);
+        }
+      } catch (error) {
+        console.error("Failed to load active tab:", error);
+      }
+    }
+    void loadActiveTab();
+  }, []);
+
+  useEffect(() => {
+    async function saveActiveTab() {
+      try {
+        await AsyncStorage.setItem(ACTIVE_TAB_KEY, activeTab);
+      } catch (error) {
+        console.error("Failed to save active tab:", error);
+      }
+    }
+    void saveActiveTab();
+  }, [activeTab]);
 
   useEffect(() => {
     if (!isSyncing) {
