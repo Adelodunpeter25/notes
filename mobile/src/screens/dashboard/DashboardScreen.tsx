@@ -298,11 +298,11 @@ export function DashboardScreen() {
         className="absolute bottom-28 right-8 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         {activeTab === "folders" ? (
-          <Plus size={32} color="#000000" />
+          <Plus size={26} color="#000000" />
         ) : activeTab === "tasks" ? (
-          <Plus size={32} color="#000000" />
+          <Plus size={26} color="#000000" />
         ) : (
-          <PenLine size={30} color="#000000" />
+          <PenLine size={24} color="#000000" />
         )}
       </Pressable>
 
