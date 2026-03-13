@@ -83,7 +83,6 @@ export function NoteList({
           const dateStr = formatNoteDate(item.updatedAt || item.createdAt);
           const preview = deriveNotePreviewFromHtml(item.content || "");
           const folderName = folders.find((f) => f.id === item.folderId)?.name;
-          const subtitleText = `${dateStr} · ${preview}`.trim();
 
           return (
             <Swipeable
@@ -101,17 +100,19 @@ export function NoteList({
               <ListItem
                 title={title}
                 subtitle={
-                  folderName ? (
-                    <View className="flex-row items-center">
-                      <Text className="text-[13px] text-textMuted">{subtitleText}</Text>
-                      <View className="flex-row items-center ml-2">
+                  <View className="flex-row items-center">
+                    <Text className="text-[13px] text-textMuted">{dateStr}</Text>
+                    {folderName && (
+                      <>
+                        <Text className="text-[13px] text-textMuted"> · </Text>
                         <FolderIcon size={12} color="#eab308" />
                         <Text className="ml-1 text-[13px] text-accent">{folderName}</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    subtitleText
-                  )
+                      </>
+                    )}
+                    {preview && (
+                      <Text className="text-[13px] text-textMuted"> · {preview}</Text>
+                    )}
+                  </View>
                 }
                 titleClassName="text-[16px]"
                 subtitleClassName="text-[13px]"
