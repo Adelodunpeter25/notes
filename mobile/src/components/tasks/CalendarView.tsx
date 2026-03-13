@@ -69,10 +69,18 @@ export function CalendarView({ tasks, onSelectDate }: CalendarViewProps) {
             {calendarDays.map((day, index) => {
               const dayTasks = getTasksForDate(day);
               const isCurrentMonth = isSameMonth(day, currentMonth);
-              const isCurrentDay = isToday(day);
-              const hasOverdue = dayTasks.some((t) => !t.isCompleted && new Date(t.dueDate!) < new Date());
-              const completedCount = dayTasks.filter((t) => t.isCompleted).length;
               const totalCount = dayTasks.length;
+              
+              let bgColor = "";
+              if (totalCount > 0) {
+                if (totalCount <= 3) {
+                  bgColor = "bg-green-500/20";
+                } else if (totalCount <= 7) {
+                  bgColor = "bg-accent/20";
+                } else {
+                  bgColor = "bg-danger/20";
+                }
+              }
 
               return (
                 <Pressable
@@ -84,33 +92,16 @@ export function CalendarView({ tasks, onSelectDate }: CalendarViewProps) {
                   }}
                   className="w-[14.28%] aspect-square p-1"
                 >
-                  <View
-                    className={`flex-1 items-center justify-center rounded-lg ${
-                      isCurrentDay ? "bg-accent/20 border border-accent" : ""
-                    }`}
-                  >
+                  <View className={`flex-1 items-center justify-center rounded-lg ${bgColor}`}>
                     <Text
                       className={`text-sm ${
-                        !isCurrentMonth
-                          ? "text-textMuted/40"
-                          : isCurrentDay
-                          ? "text-accent font-semibold"
-                          : "text-text"
+                        !isCurrentMonth ? "text-textMuted/40" : "text-text"
                       }`}
                     >
                       {format(day, "d")}
                     </Text>
                     {totalCount > 0 && (
-                      <View className="mt-0.5 flex-row items-center">
-                        <View
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            hasOverdue ? "bg-danger" : completedCount === totalCount ? "bg-success" : "bg-accent"
-                          }`}
-                        />
-                        {totalCount > 1 && (
-                          <Text className="ml-0.5 text-[9px] text-textMuted">{totalCount}</Text>
-                        )}
-                      </View>
+                      <Text className="mt-0.5 text-[10px] font-semibold text-text">{totalCount}</Text>
                     )}
                   </View>
                 </Pressable>
