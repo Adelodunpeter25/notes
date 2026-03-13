@@ -84,7 +84,7 @@ export function NoteList({
           const preview = deriveNotePreviewFromHtml(item.content || "");
           const folderName = folders.find((f) => f.id === item.folderId)?.name;
           const subtitleText = folderName
-            ? `${dateStr} · ${preview}`.trim()
+            ? `${dateStr} · ${folderName} · ${preview}`.trim()
             : `${dateStr} · ${preview}`.trim();
 
           return (
@@ -102,19 +102,7 @@ export function NoteList({
             >
               <ListItem
                 title={title}
-                subtitle={
-                  folderName ? (
-                    <View className="flex-row items-center">
-                      <Text className="text-[13px] text-textMuted">{subtitleText}</Text>
-                      <View className="flex-row items-center ml-2">
-                        <FolderIcon size={12} color="#eab308" />
-                        <Text className="ml-1 text-[13px] text-accent">{folderName}</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    subtitleText
-                  )
-                }
+                subtitle={subtitleText}
                 titleClassName="text-[16px]"
                 subtitleClassName="text-[13px]"
                 icon={item.isPinned ? <Pin size={16} color="#eab308" /> : undefined}
