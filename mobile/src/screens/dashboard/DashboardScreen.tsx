@@ -272,7 +272,7 @@ export function DashboardScreen() {
             ? dashboard.isCreatingTask
             : dashboard.isCreatingNote
         }
-        className="absolute bottom-24 right-8 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-28 right-8 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         {activeTab === "folders" ? (
           <Plus size={26} color="#000000" />
