@@ -100,17 +100,19 @@ export function NoteList({
               <ListItem
                 title={title}
                 subtitle={
-                  <View className="flex-row items-center">
-                    <Text className="text-[13px] text-textMuted">{dateStr}</Text>
+                  <View className="flex-row items-center pr-2 w-full">
+                    <Text className="text-[13px] text-textMuted shrink-0">{dateStr}</Text>
                     {folderName && (
                       <>
-                        <Text className="text-[13px] text-textMuted"> · </Text>
-                        <FolderIcon size={12} color="#eab308" />
-                        <Text className="ml-1 text-[13px] text-accent">{folderName}</Text>
+                        <Text className="text-[13px] text-textMuted shrink-0"> · </Text>
+                        <FolderIcon size={12} color="#eab308" className="shrink-0" />
+                        <Text className="ml-1 text-[13px] text-accent shrink-0">{folderName}</Text>
                       </>
                     )}
                     {preview && (
-                      <Text className="text-[13px] text-textMuted"> · {preview}</Text>
+                      <Text className="text-[13px] text-textMuted flex-1 ml-1" numberOfLines={1}>
+                        · {preview}
+                      </Text>
                     )}
                   </View>
                 }

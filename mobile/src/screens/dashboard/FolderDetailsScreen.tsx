@@ -138,7 +138,7 @@ export function FolderDetailsScreen() {
           void handleCreateNote();
         }}
         disabled={createNoteMutation.isPending}
-        className="absolute top-20 right-8 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-8 right-5 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         <PenLine size={24} color="#000000" />
       </Pressable>

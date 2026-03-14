@@ -70,9 +70,12 @@ export function RootNavigator() {
 
         if (existingToken) {
           if (active) {
-            useAuthStore.setState({ token: existingToken, user: null, isAuthenticated: false });
+            // Eagerly assume logged in and dismiss the splash loader so the app opens instantly.
+            setHasSession(true);
+            setIsBootstrappingAuth(false);
           }
 
+          // Then verify token in background. If it fails, they will eventually get logged out.
           try {
             const response = await apiClient.instance.get<AuthUser>("/auth/me", {
               headers: { Authorization: `Bearer ${existingToken}` },
@@ -81,7 +84,6 @@ export function RootNavigator() {
 
             if (active) {
               setAuth({ token: existingToken, user: response.data });
-              setHasSession(true);
             }
           } catch (error: any) {
             if (!active) {
@@ -91,21 +93,17 @@ export function RootNavigator() {
             if (error?.status === 401 || error?.response?.status === 401) {
               clearAuth();
               setHasSession(false);
-            } else {
-              setHasSession(true);
             }
           }
         } else if (active) {
           clearAuth();
           setHasSession(false);
+          setIsBootstrappingAuth(false);
         }
       } catch (err) {
         console.error("Bootstrap error:", err);
         if (active) {
           setHasSession(false);
-        }
-      } finally {
-        if (active) {
           setIsBootstrappingAuth(false);
         }
       }

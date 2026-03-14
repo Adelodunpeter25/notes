@@ -127,8 +127,6 @@ async function initialize(db: SQLite.SQLiteDatabase) {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT
     );
-
-    INSERT INTO notes_fts(notes_fts) VALUES('rebuild');
   `);
 }
 
