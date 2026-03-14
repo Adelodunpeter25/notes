@@ -107,9 +107,9 @@ export function FolderDetailsScreen() {
               void handleCreateNote();
             }}
             disabled={createNoteMutation.isPending}
-            className="rounded-md p-1.5"
+            className="rounded-md p-2"
           >
-            <Plus size={18} color="#eab308" />
+            <Plus size={22} color="#eab308" />
           </Pressable>
         </View>
       </View>
