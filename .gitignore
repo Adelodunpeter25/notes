@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rust
+target/
+
+# Tauri
+desktop/src-tauri/target/
+
+# Bun
+bun.lockb
+
+# Logs
+*.log

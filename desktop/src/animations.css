@@ -1,0 +1,27 @@
+.sidebar-content-transition {
+  transition: opacity 110ms ease-out, transform 110ms ease-out;
+}
+
+.sidebar-content-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sidebar-content-hidden {
+  opacity: 0;
+  transform: translateX(-8px);
+  pointer-events: none;
+}
+
+.sidebar-separator-transition {
+  transition: opacity 90ms ease-out;
+}
+
+.sidebar-separator-visible {
+  opacity: 1;
+}
+
+.sidebar-separator-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
