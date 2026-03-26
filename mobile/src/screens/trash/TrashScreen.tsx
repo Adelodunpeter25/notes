@@ -19,7 +19,7 @@ export function TrashScreen() {
   const { data: notes = [], isLoading, isRefetching, refetch } = useTrashQuery();
   const clearTrashMutation = useClearTrashMutation();
   const restoreNoteMutation = useRestoreNoteMutation();
-  const deletePermanentlyMutation = useDeleteNotePermanentlyMutation();
+  const deletePermanentlyMutation = usePermanentlyDeleteNoteMutation();
   const [confirmClear, setConfirmClear] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
