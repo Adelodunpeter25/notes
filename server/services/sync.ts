@@ -167,17 +167,18 @@ export async function sync(userId: string, req: SyncRequest): Promise<SyncRespon
   const cursor = req.cursor ? new Date(req.cursor) : null;
   const nextCursor = new Date().toISOString();
 
+  // If no cursor, fetch ALL data (initial sync). If cursor exists, fetch only changes since cursor.
   const [updatedNotes, updatedFolders, updatedTasks, deletedNotes, deletedTasks] = await Promise.all([
     cursor
-      ? db.query.notes.findMany({ where: and(eq(notes.userId, userId), gt(notes.updatedAt, cursor), isNotNull(notes.deletedAt) ? undefined : eq(notes.deletedAt, null as any)) })
-      : db.query.notes.findMany({ where: and(eq(notes.userId, userId)) }),
+      ? db.query.notes.findMany({ where: and(eq(notes.userId, userId), gt(notes.updatedAt, cursor)) })
+      : db.query.notes.findMany({ where: eq(notes.userId, userId) }),
     cursor
       ? db.query.folders.findMany({ where: and(eq(folders.userId, userId), gt(folders.updatedAt, cursor)) })
       : db.query.folders.findMany({ where: eq(folders.userId, userId) }),
     cursor
       ? db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), gt(tasks.updatedAt, cursor)) })
-      : db.query.tasks.findMany({ where: and(eq(tasks.userId, userId)) }),
-    // Tombstones: soft-deleted items updated since cursor
+      : db.query.tasks.findMany({ where: eq(tasks.userId, userId) }),
+    // Tombstones: soft-deleted items updated since cursor (only for incremental syncs)
     cursor
       ? db.query.notes.findMany({ where: and(eq(notes.userId, userId), gt(notes.updatedAt, cursor), isNotNull(notes.deletedAt)) })
       : [],
