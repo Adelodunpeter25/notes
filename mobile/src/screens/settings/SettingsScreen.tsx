@@ -5,6 +5,7 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { RefreshCw, LogOut } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
+import { BottomBar } from "@/components/layout";
 import { ConfirmDialog } from "@/components/common";
 import { useSync } from "@/hooks";
 import { useAuthStore } from "@/stores/authStore";
@@ -102,6 +103,14 @@ export function SettingsScreen() {
         confirmLabel="Log Out"
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutDialog(false)}
+      />
+
+      <BottomBar
+        activeTab="settings"
+        onChangeTab={(tab) => {
+          if (tab === "settings") return;
+          navigation.navigate("Dashboard");
+        }}
       />
     </ScreenContainer>
   );
