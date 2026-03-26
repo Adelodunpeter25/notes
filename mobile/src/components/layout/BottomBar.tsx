@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
-import { CheckSquare, Folder, NotebookPen, Trash2, Settings } from "lucide-react-native";
+import { CheckSquare, Folder, NotebookPen, Settings } from "lucide-react-native";
 
-type BottomTab = "notes" | "folders" | "tasks" | "trash" | "settings";
+type BottomTab = "notes" | "folders" | "tasks" | "settings";
 
 type BottomBarProps = {
   activeTab: BottomTab;
@@ -12,7 +12,6 @@ const TABS = [
   { key: "notes", label: "Notes", Icon: NotebookPen },
   { key: "folders", label: "Folders", Icon: Folder },
   { key: "tasks", label: "Tasks", Icon: CheckSquare },
-  { key: "trash", label: "Trash", Icon: Trash2 },
   { key: "settings", label: "Settings", Icon: Settings },
 ] as const;
 

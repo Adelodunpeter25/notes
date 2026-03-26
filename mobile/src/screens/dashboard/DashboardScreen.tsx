@@ -211,6 +211,7 @@ export function DashboardScreen() {
           <View className="flex-1">
             <FolderList
               folders={dashboard.folders}
+              trashCount={dashboard.trashedNotes?.length ?? 0}
               isLoading={dashboard.isFoldersLoading}
               refreshing={dashboard.isFoldersRefreshing}
               onRefresh={() => {
@@ -225,6 +226,9 @@ export function DashboardScreen() {
                   folderId: folder.id,
                   folderName: folder.name,
                 });
+              }}
+              onSelectTrash={() => {
+                navigation.navigate("Trash");
               }}
             />
           </View>
@@ -315,10 +319,6 @@ export function DashboardScreen() {
       <BottomBar
         activeTab={activeTab}
         onChangeTab={(tab) => {
-          if (tab === "trash") {
-            navigation.navigate("Trash");
-            return;
-          }
           if (tab === "settings") {
             navigation.navigate("Settings");
             return;

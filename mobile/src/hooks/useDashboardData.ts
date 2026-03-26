@@ -19,6 +19,7 @@ import {
   useTasksQuery,
   useUpdateTaskMutation,
 } from "./useTasks";
+import { useTrashQuery } from "./useTrash";
 import type { Task } from "@shared/tasks";
 import type { Note } from "@shared/notes";
 
@@ -34,6 +35,7 @@ export function useDashboardData() {
     folderId: selectedFolderId || undefined,
     q: debouncedSearchQuery || undefined,
   });
+  const trashQuery = useTrashQuery();
 
   const createNoteMutation = useCreateNoteMutation();
   const updateNoteMutation = useUpdateNoteMutation();
@@ -143,6 +145,7 @@ export function useDashboardData() {
   return {
     notes: notesQuery.data ?? [],
     folders: foldersQuery.data ?? [],
+    trashedNotes: trashQuery.data ?? [],
     selectedNote,
     selectedFolderId,
     selectedFolderName,
