@@ -68,7 +68,7 @@ export function useSync(_options?: { auto?: boolean }) {
       // Perform full sync with no cursor
       const response = await apiClient.post<SyncResponse>("/sync", { cursor: null, ops: [] });
 
-      await applyServerChanges(response);
+      await applyServerChangesForReset(response);
 
       await AsyncStorage.setItem(CURSOR_KEY, response.nextCursor);
       await queryClient.invalidateQueries();
@@ -136,5 +136,43 @@ async function applyServerChanges(response: SyncResponse) {
        WHERE excluded.updated_at > tasks.updated_at`,
       [task.id, task.userId ?? null, task.title, task.description, task.isCompleted ? 1 : 0, task.dueDate ?? null, task.createdAt ?? now, task.updatedAt ?? now],
     ).catch(() => {});
+  }
+}
+
+async function applyServerChangesForReset(response: SyncResponse) {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  // For reset, we don't need to handle tombstones since we cleared everything
+  // Just insert all data from server without timestamp checks
+
+  for (const note of response.notes as any[]) {
+    await db.runAsync(
+      `INSERT INTO notes (id, user_id, folder_id, title, content, is_pinned, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [note.id, note.userId ?? null, note.folderId ?? null, note.title, note.content, note.isPinned ? 1 : 0, note.createdAt ?? now, note.updatedAt ?? now],
+    ).catch((err) => {
+      console.error("Failed to insert note:", err);
+    });
+  }
+
+  for (const folder of response.folders as any[]) {
+    await db.runAsync(
+      `INSERT INTO folders (id, user_id, name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [folder.id, folder.userId ?? null, folder.name, folder.createdAt ?? now, folder.updatedAt ?? now],
+    ).catch((err) => {
+      console.error("Failed to insert folder:", err);
+    });
+  }
+
+  for (const task of response.tasks as any[]) {
+    await db.runAsync(
+      `INSERT INTO tasks (id, user_id, title, description, is_completed, due_date, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [task.id, task.userId ?? null, task.title, task.description, task.isCompleted ? 1 : 0, task.dueDate ?? null, task.createdAt ?? now, task.updatedAt ?? now],
+    ).catch((err) => {
+      console.error("Failed to insert task:", err);
+    });
   }
 }
