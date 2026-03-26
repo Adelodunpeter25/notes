@@ -36,7 +36,7 @@ export function SettingsScreen() {
 
   return (
     <ScreenContainer>
-      <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+      <View className="flex-row items-center justify-center border-b border-border px-4 py-3">
         <Text className="text-xl font-semibold text-text">Settings</Text>
       </View>
 

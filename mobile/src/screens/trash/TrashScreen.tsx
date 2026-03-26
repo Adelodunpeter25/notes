@@ -2,14 +2,15 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { ChevronLeft } from "lucide-react-native";
+import { useState } from "react";
 
 import { ScreenContainer } from "@/components/layout";
+import { BottomBar } from "@/components/layout";
 import { ConfirmDialog, Skeleton } from "@/components/common";
 import { useTrashQuery, useClearTrashMutation } from "@/hooks";
 import { deriveNoteTitleFromHtml } from "@shared-utils/noteContent";
 import { formatNoteDate } from "@shared-utils/formatDate";
 import type { AppStackParamList } from "@/navigation/types";
-import { useState } from "react";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Trash">;
 
@@ -73,6 +74,18 @@ export function TrashScreen() {
         destructive
         onConfirm={() => { clearTrashMutation.mutate(); setConfirmClear(false); }}
         onCancel={() => setConfirmClear(false)}
+      />
+
+      <BottomBar
+        activeTab="trash"
+        onChangeTab={(tab) => {
+          if (tab === "trash") return;
+          if (tab === "settings") {
+            navigation.navigate("Settings");
+            return;
+          }
+          navigation.navigate("Dashboard");
+        }}
       />
     </ScreenContainer>
   );
