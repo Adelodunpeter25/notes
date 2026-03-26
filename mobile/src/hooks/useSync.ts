@@ -56,7 +56,7 @@ export function useSync(_options?: { auto?: boolean }) {
     setIsSyncing(true);
 
     try {
-      // Clear the sync cursor to force full sync
+      // Clear the sync cursor
       await AsyncStorage.removeItem(CURSOR_KEY);
 
       // Clear local database
@@ -65,8 +65,8 @@ export function useSync(_options?: { auto?: boolean }) {
       await db.runAsync("DELETE FROM folders");
       await db.runAsync("DELETE FROM tasks");
 
-      // Perform full sync with no cursor
-      const response = await apiClient.post<SyncResponse>("/sync", { cursor: null, ops: [] });
+      // Use force sync endpoint — always returns ALL data
+      const response = await apiClient.post<SyncResponse>("/sync-force");
 
       await applyServerChangesForReset(response);
 

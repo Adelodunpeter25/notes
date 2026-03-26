@@ -1,7 +1,26 @@
-import { eq, gt, and, isNotNull } from 'drizzle-orm';
+import { eq, gt, and, isNull, isNotNull } from 'drizzle-orm';
 import { db } from '@db/index';
 import { notes, folders, tasks } from '@db/schema';
 import type { SyncRequest, SyncResponse, SyncOperation, SyncTombstone } from '@types/index';
+
+export async function syncForce(userId: string): Promise<SyncResponse> {
+  const nextCursor = new Date().toISOString();
+
+  const [allNotes, allFolders, allTasks] = await Promise.all([
+    db.query.notes.findMany({ where: and(eq(notes.userId, userId), isNull(notes.deletedAt)) }),
+    db.query.folders.findMany({ where: eq(folders.userId, userId) }),
+    db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), isNull(tasks.deletedAt)) }),
+  ]);
+
+  return {
+    nextCursor,
+    notes: allNotes,
+    folders: allFolders,
+    tasks: allTasks,
+    deleted: [],
+    processedOpIds: [],
+  };
+}
 
 const MAX_RETRIES = 3;
 

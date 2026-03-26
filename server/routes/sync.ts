@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { authMiddleware } from '@middleware/auth';
-import { sync } from '@services/sync';
+import { sync, syncForce } from '@services/sync';
 import type { SyncRequest } from '@types/index';
 
 export async function syncRoutes(fastify: FastifyInstance) {
@@ -21,6 +21,22 @@ export async function syncRoutes(fastify: FastifyInstance) {
       } catch (err: any) {
         fastify.log.error(err);
         return reply.status(500).send({ error: 'Sync failed', message: err.message });
+      }
+    }
+  );
+
+  fastify.post(
+    '/sync-force',
+    { preHandler: authMiddleware },
+    async (request, reply) => {
+      try {
+        const userId = (request as any).userId as string;
+        const result = await syncForce(userId);
+        fastify.log.info({ userId, notes: result.notes.length, folders: result.folders.length, tasks: result.tasks.length }, '[sync-force] full snapshot');
+        return reply.send(result);
+      } catch (err: any) {
+        fastify.log.error(err);
+        return reply.status(500).send({ error: 'Force sync failed', message: err.message });
       }
     }
   );
