@@ -11,4 +11,5 @@ export type AppStackParamList = {
   Editor: { noteId: string; note?: Note; isTrash?: boolean };
   Search: undefined;
   Trash: undefined;
+  Settings: undefined;
 };

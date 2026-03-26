@@ -7,6 +7,7 @@ import { DashboardScreen, FolderDetailsScreen } from "@/screens/dashboard";
 import { NoteEditorScreen } from "@/screens/editor";
 import { SearchScreen } from "@/screens/search";
 import { TrashScreen } from "@/screens/trash";
+import { SettingsScreen } from "@/screens/settings";
 import { useAuthStore } from "@/stores/authStore";
 import { colors } from "@/theme/colors";
 import { navigationTheme } from "@/theme/navigationTheme";
@@ -44,6 +45,7 @@ function MainNavigator() {
       <AppStack.Screen name="Editor" component={NoteEditorScreen} />
       <AppStack.Screen name="Search" component={SearchScreen} />
       <AppStack.Screen name="Trash" component={TrashScreen} />
+      <AppStack.Screen name="Settings" component={SettingsScreen} />
     </AppStack.Navigator>
   );
 }

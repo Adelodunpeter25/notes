@@ -319,6 +319,10 @@ export function DashboardScreen() {
             navigation.navigate("Trash");
             return;
           }
+          if (tab === "settings") {
+            navigation.navigate("Settings");
+            return;
+          }
           setActiveTab(tab);
         }}
       />

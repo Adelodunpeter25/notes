@@ -50,7 +50,38 @@ export function useSync(_options?: { auto?: boolean }) {
     }
   }, [queryClient]);
 
-  return { syncNow, isSyncing };
+  const resetAndSync = useCallback(async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    setIsSyncing(true);
+
+    try {
+      // Clear the sync cursor to force full sync
+      await AsyncStorage.removeItem(CURSOR_KEY);
+
+      // Clear local database
+      const db = getDb();
+      await db.runAsync("DELETE FROM notes");
+      await db.runAsync("DELETE FROM folders");
+      await db.runAsync("DELETE FROM tasks");
+
+      // Perform full sync with no cursor
+      const response = await apiClient.post<SyncResponse>("/sync", { cursor: null, ops: [] });
+
+      await applyServerChanges(response);
+
+      await AsyncStorage.setItem(CURSOR_KEY, response.nextCursor);
+      await queryClient.invalidateQueries();
+    } catch (err) {
+      console.error("[reset and sync] failed:", err);
+      throw err;
+    } finally {
+      syncingRef.current = false;
+      setIsSyncing(false);
+    }
+  }, [queryClient]);
+
+  return { syncNow, resetAndSync, isSyncing };
 }
 
 async function applyServerChanges(response: SyncResponse) {
