@@ -6,4 +6,5 @@ export * from "./useNotes";
 export * from "./useSearch";
 export * from "./useSync";
 export * from "./useTasks";
+export * from "./useToast";
 export * from "./useTrash";

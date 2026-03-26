@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Navigate, Route, Routes, HashRouter } from "react-router-dom";
 
 import { LoginPage, SignupPage } from "@/pages/auth";
 import { DashboardPage } from "@/pages/dashboard";
 import { Titlebar } from "@/components/layout";
 import { SearchModal } from "@/components/search";
+import { SettingsModal } from "@/components/common/SettingsModal";
 import { useKeyboardShortcuts, useWindowSizePersist, useSync } from "@/hooks";
 import { useAuthStore } from "@/stores";
 
@@ -31,13 +32,25 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
-  const { syncNow, isSyncing } = useSync();
+  const { syncNow, isSyncing, resetSyncCursor } = useSync();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <HashRouter>
       <div className="flex bg-background text-text h-screen w-full flex-col overflow-hidden">
-        <Titlebar syncNow={syncNow} isSyncing={isSyncing} />
+        <Titlebar
+          syncNow={syncNow}
+          isSyncing={isSyncing}
+          onSettingsOpen={() => setSettingsOpen(true)}
+        />
         <SearchModal />
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onResetSyncCursor={resetSyncCursor}
+          onSyncNow={syncNow}
+          isSyncing={isSyncing}
+        />
         <Routes>
           <Route
             path="/"
@@ -71,3 +84,4 @@ function App() {
 }
 
 export default App;
+

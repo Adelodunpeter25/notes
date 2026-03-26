@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { RefreshCw, LogOut } from "lucide-react-native";
+import { RefreshCw, LogOut, Clock } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { BottomBar } from "@/components/layout";
-import { ConfirmDialog } from "@/components/common";
-import { useSync } from "@/hooks";
+import { ConfirmDialog, ToastContainer } from "@/components/common";
+import { useSync, useToast } from "@/hooks";
 import { useAuthStore } from "@/stores/authStore";
 import type { AppStackParamList } from "@/navigation/types";
 
@@ -15,18 +15,29 @@ type Navigation = StackNavigationProp<AppStackParamList, "Settings">;
 
 export function SettingsScreen() {
   const navigation = useNavigation<Navigation>();
-  const { resetAndSync, isSyncing } = useSync();
+  const { resetAndSync, resetSyncCursor, syncNow, isSyncing, isResetting } = useSync();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { toasts, showToast, dismissToast } = useToast();
 
   const handleResetAndSync = async () => {
     setShowResetDialog(false);
     try {
       await resetAndSync();
-      Alert.alert("Success", "All data synced from server successfully.");
+      showToast("All data synced from server successfully.", "success");
     } catch (error) {
-      Alert.alert("Error", "Failed to sync data. Please try again.");
+      showToast("Failed to sync data. Please try again.", "error");
+    }
+  };
+
+  const handleResetSyncTime = async () => {
+    try {
+      await resetSyncCursor();
+      await syncNow();
+      showToast("Sync cursor cleared — full sync triggered.", "success");
+    } catch (error) {
+      showToast("Failed to reset sync time. Please try again.", "error");
     }
   };
 
@@ -47,10 +58,29 @@ export function SettingsScreen() {
           <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-textMuted">
             Sync
           </Text>
-          
+
+          <Pressable
+            onPress={handleResetSyncTime}
+            disabled={isSyncing}
+            className="mb-3 flex-row items-center justify-between rounded-xl border border-border bg-surfaceSecondary px-4 py-4"
+          >
+            <View className="flex-1 flex-row items-center">
+              <View className="mr-3 rounded-full bg-accent/20 p-2">
+                <Clock size={20} color="#f2c94c" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-text">Reset Last Sync Time</Text>
+                <Text className="mt-1 text-sm text-textMuted">
+                  Clear cursor so next sync pushes all data
+                </Text>
+              </View>
+            </View>
+            {isSyncing && <ActivityIndicator size="small" color="#f2c94c" />}
+          </Pressable>
+
           <Pressable
             onPress={() => setShowResetDialog(true)}
-            disabled={isSyncing}
+            disabled={isResetting || isSyncing}
             className="flex-row items-center justify-between rounded-xl border border-danger/30 bg-danger/10 px-4 py-4"
           >
             <View className="flex-1 flex-row items-center">
@@ -64,7 +94,7 @@ export function SettingsScreen() {
                 </Text>
               </View>
             </View>
-            {isSyncing && <ActivityIndicator size="small" color="#ff4444" />}
+            {isResetting && <ActivityIndicator size="small" color="#ff4444" />}
           </Pressable>
         </View>
 
@@ -73,7 +103,7 @@ export function SettingsScreen() {
           <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-textMuted">
             Account
           </Text>
-          
+
           <Pressable
             onPress={() => setShowLogoutDialog(true)}
             className="flex-row items-center rounded-xl border border-border bg-surfaceSecondary px-4 py-4"
@@ -104,6 +134,8 @@ export function SettingsScreen() {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutDialog(false)}
       />
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       <BottomBar
         activeTab="settings"

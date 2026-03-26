@@ -1,6 +1,6 @@
 import { type MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Settings } from "lucide-react";
 import { useUiStore } from "@/stores";
 import { cn } from "@shared-utils/cn";
 
@@ -10,9 +10,10 @@ const isDesktop =
 type TitlebarProps = {
   syncNow?: () => Promise<void> | void;
   isSyncing?: boolean;
+  onSettingsOpen?: () => void;
 };
 
-export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
+export function Titlebar({ syncNow, isSyncing = false, onSettingsOpen }: TitlebarProps) {
   const activeView = useUiStore((state) => state.activeView);
   const setActiveView = useUiStore((state) => state.setActiveView);
 
@@ -67,7 +68,7 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
         </button>
       </div>
 
-      <div className="flex items-center no-drag" data-no-drag="true">
+      <div className="flex items-center gap-1 no-drag" data-no-drag="true">
         <button
           onClick={() => syncNow?.()}
           disabled={isSyncing}
@@ -78,6 +79,13 @@ export function Titlebar({ syncNow, isSyncing = false }: TitlebarProps) {
           title="Sync Now"
         >
           <RefreshCw size={14} />
+        </button>
+        <button
+          onClick={() => onSettingsOpen?.()}
+          className="flex size-7 items-center justify-center rounded-md text-muted transition-all hover:bg-white/10 hover:text-text"
+          title="Settings"
+        >
+          <Settings size={14} />
         </button>
       </div>
     </header>

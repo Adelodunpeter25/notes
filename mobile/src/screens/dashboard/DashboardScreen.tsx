@@ -29,7 +29,7 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<"notes" | "folders" | "tasks" | "trash">("notes");
   const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const dashboard = useDashboardData();
-  const { syncNow, isSyncing } = useSync({ auto: false });
+  const { syncNow, isSyncing } = useSync({ auto: true });
   const netInfo = useNetInfo();
   const [menuNote, setMenuNote] = useState<Note | null>(null);
   const [menuFolder, setMenuFolder] = useState<Folder | null>(null);

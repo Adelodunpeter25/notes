@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -12,10 +12,12 @@ import { listTrash } from "@/db/repos/trashRepo";
 import type { SyncResponse } from "@shared/sync";
 
 const CURSOR_KEY = "notes_sync_cursor";
+const AUTO_SYNC_INTERVAL_MS = 15_000;
 
-export function useSync(_options?: { auto?: boolean }) {
+export function useSync(options?: { auto?: boolean }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const syncingRef = useRef(false);
 
   const syncNow = useCallback(async () => {
@@ -53,7 +55,7 @@ export function useSync(_options?: { auto?: boolean }) {
   const resetAndSync = useCallback(async () => {
     if (syncingRef.current) return;
     syncingRef.current = true;
-    setIsSyncing(true);
+    setIsResetting(true);
 
     try {
       // Clear the sync cursor
@@ -77,11 +79,24 @@ export function useSync(_options?: { auto?: boolean }) {
       throw err;
     } finally {
       syncingRef.current = false;
-      setIsSyncing(false);
+      setIsResetting(false);
     }
   }, [queryClient]);
 
-  return { syncNow, resetAndSync, isSyncing };
+  const resetSyncCursor = useCallback(async () => {
+    await AsyncStorage.removeItem(CURSOR_KEY);
+  }, []);
+
+  // Auto-sync: fire syncNow every 15 s when the option is enabled
+  useEffect(() => {
+    if (!options?.auto) return;
+    const id = setInterval(() => {
+      void syncNow();
+    }, AUTO_SYNC_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [options?.auto, syncNow]);
+
+  return { syncNow, resetAndSync, resetSyncCursor, isSyncing, isResetting };
 }
 
 async function applyServerChanges(response: SyncResponse) {

@@ -53,7 +53,11 @@ export function useSync(_options?: { auto?: boolean }) {
     }
   }, [queryClient]);
 
-  return { syncNow, isSyncing };
+  const resetSyncCursor = useCallback(() => {
+    localStorage.removeItem(CURSOR_KEY);
+  }, []);
+
+  return { syncNow, isSyncing, resetSyncCursor };
 }
 
 async function applyServerChanges(response: SyncResponse) {

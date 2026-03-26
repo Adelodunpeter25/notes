@@ -128,7 +128,7 @@ export function QuickNoteApp() {
         data-tauri-drag-region
         className="h-8 shrink-0 cursor-grab bg-surface rounded-t-xl flex items-center px-3 select-none border-b border-border"
       >
-        <span className="text-[11px] text-muted font-medium pointer-events-none">
+        <span className="text-[11px] text-muted font-medium pointer-events-none truncate">
           {note?.title && note.title !== "Quick Note" ? note.title : "Quick Note"}
         </span>
       </div>
