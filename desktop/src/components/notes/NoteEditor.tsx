@@ -49,9 +49,15 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     // Save on window close
     useEffect(() => {
         let unlisten: (() => void) | undefined;
+        let closing = false;
+
+        // Only register on the main window — quick-note handles its own close
+        if (getCurrentWindow().label !== 'main') return;
 
         getCurrentWindow().onCloseRequested(async (event) => {
+            if (closing) return;
             event.preventDefault();
+            closing = true;
             try {
                 const { content: c, isPinned: pin, noteId } = latestValuesRef.current;
                 if (noteId && hasUserEditedRef.current) {

@@ -14,11 +14,6 @@ export function getDb(): SQLite.SQLiteDatabase {
 
 export async function initDb(): Promise<void> {
   _db = await SQLite.openDatabaseAsync(DB_NAME);
-
-  // WAL mode for better concurrent read performance
   await _db.execAsync("PRAGMA journal_mode = WAL;");
-
-  for (const sql of MIGRATIONS) {
-    await _db.execAsync(sql);
-  }
+  await _db.execAsync(MIGRATIONS.join(";\n") + ";");
 }

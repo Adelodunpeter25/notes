@@ -11,12 +11,12 @@ onlineManager.setEventListener((setOnline) => {
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 0,
-            gcTime: 0,
+            staleTime: 1000 * 30,
+            gcTime: 1000 * 60 * 2,
             retry: 1,
             networkMode: "always",
-            refetchOnWindowFocus: Platform.OS === 'web',
-            refetchOnMount: "always",
+            refetchOnWindowFocus: false,
+            refetchOnMount: true,
             refetchOnReconnect: true,
         },
         mutations: {
