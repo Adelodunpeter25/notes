@@ -28,8 +28,8 @@ fn position_menu_bar_note(app: &tauri::AppHandle, icon_rect: tauri::Rect) {
         if let Ok(Some(monitor)) = win.current_monitor() {
             let scale = monitor.scale_factor();
 
-            let win_width: u32 = 360;
-            let win_height: u32 = 420;
+            let win_width: u32 = 420;
+            let win_height: u32 = 500;
 
             let icon_pos = icon_rect.position.to_physical::<i32>(scale);
             let icon_size = icon_rect.size.to_physical::<u32>(scale);
@@ -48,7 +48,7 @@ fn position_menu_bar_note(app: &tauri::AppHandle, icon_rect: tauri::Rect) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_fs::init())
@@ -116,6 +116,16 @@ pub fn run() {
                 });
             }
 
+            // Hide main window instead of closing (keeps tray icon alive)
+            let main_win = app.get_webview_window("main").unwrap();
+            let main_win_clone = main_win.clone();
+            main_win.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = main_win_clone.hide();
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -146,6 +156,21 @@ pub fn run() {
             get_scratch_pad,
             save_scratch_pad,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app, event| {
+        if let tauri::RunEvent::Reopen {
+            has_visible_windows,
+            ..
+        } = event
+        {
+            if !has_visible_windows {
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                }
+            }
+        }
+    });
 }
