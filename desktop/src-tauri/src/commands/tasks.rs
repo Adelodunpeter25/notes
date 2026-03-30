@@ -1,39 +1,41 @@
-use tauri::{AppHandle, command};
-use uuid::Uuid;
 use chrono::Utc;
 use rusqlite::params;
+use tauri::{command, AppHandle};
+use uuid::Uuid;
 
 use crate::db::DbState;
-use tauri::Manager;
 use crate::error::Result;
-use crate::models::{Task, CreateTaskPayload, UpdateTaskPayload};
+use crate::models::{CreateTaskPayload, Task, UpdateTaskPayload};
+use tauri::Manager;
 
 #[command]
 pub fn list_tasks(app: AppHandle, q: Option<String>) -> Result<Vec<Task>> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
-    let mut query = "SELECT id, user_id, title, description, is_completed, due_date, created_at, updated_at 
+
+    let mut query =
+        "SELECT id, user_id, title, description, is_completed, due_date, created_at, updated_at 
                      FROM tasks 
-                     WHERE deleted_at IS NULL".to_string();
-    
+                     WHERE deleted_at IS NULL"
+            .to_string();
+
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = vec![];
-    
+
     if let Some(search) = q {
         query.push_str(" AND (title LIKE ? OR description LIKE ?)");
         let search_pattern = format!("%{}%", search);
         params_vec.push(Box::new(search_pattern.clone()));
         params_vec.push(Box::new(search_pattern));
     }
-    
+
     query.push_str(" ORDER BY is_completed ASC, updated_at DESC");
-    
+
     let mut stmt = db.prepare(&query).map_err(|e| crate::error::AppError {
         message: format!("Failed to prepare statement: {}", e),
     })?;
-    
+
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
-    
+
     let tasks = stmt
         .query_map(params_refs.as_slice(), |row| {
             Ok(Task {
@@ -55,7 +57,7 @@ pub fn list_tasks(app: AppHandle, q: Option<String>) -> Result<Vec<Task>> {
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to collect results: {}", e),
         })?;
-    
+
     Ok(tasks)
 }
 
@@ -100,16 +102,13 @@ pub fn get_task(app: AppHandle, id: String) -> Result<Task> {
 }
 
 #[command]
-pub fn create_task(
-    app: AppHandle,
-    payload: CreateTaskPayload,
-) -> Result<Task> {
+pub fn create_task(app: AppHandle, payload: CreateTaskPayload) -> Result<Task> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
-    
+
     db.execute(
         "INSERT INTO tasks (id, title, description, is_completed, due_date, created_at, updated_at) 
          VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -126,64 +125,60 @@ pub fn create_task(
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to create task: {}", e),
     })?;
-    
+
     // Use the helper to avoid re-acquiring the mutex lock
     fetch_task_by_id(&db, &id)
 }
 
 #[command]
-pub fn update_task(
-    app: AppHandle,
-    id: String,
-    payload: UpdateTaskPayload,
-) -> Result<Task> {
+pub fn update_task(app: AppHandle, id: String, payload: UpdateTaskPayload) -> Result<Task> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let now = Utc::now().to_rfc3339();
     let mut updates = vec![];
     let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = vec![];
-    
+
     if let Some(title) = payload.title {
         updates.push("title = ?");
         params_vec.push(Box::new(title));
     }
-    
+
     if let Some(description) = payload.description {
         updates.push("description = ?");
         params_vec.push(Box::new(description));
     }
-    
+
     if let Some(is_completed) = payload.is_completed {
         updates.push("is_completed = ?");
         params_vec.push(Box::new(is_completed));
     }
-    
+
     if let Some(due_date) = payload.due_date {
         updates.push("due_date = ?");
         params_vec.push(Box::new(due_date));
     }
-    
+
     if updates.is_empty() {
         return fetch_task_by_id(&db, &id);
     }
-    
+
     updates.push("updated_at = ?");
     params_vec.push(Box::new(now));
     params_vec.push(Box::new(id.clone()));
-    
+
     let query = format!(
         "UPDATE tasks SET {} WHERE id = ? AND deleted_at IS NULL",
         updates.join(", ")
     );
-    
+
     let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
-    
+
     db.execute(&query, params_refs.as_slice())
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to update task: {}", e),
         })?;
-    
+
     // Use the helper to avoid re-acquiring the mutex lock
     fetch_task_by_id(&db, &id)
 }
@@ -192,9 +187,9 @@ pub fn update_task(
 pub fn toggle_task(app: AppHandle, id: String) -> Result<Task> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let now = Utc::now().to_rfc3339();
-    
+
     db.execute(
         "UPDATE tasks 
          SET is_completed = NOT is_completed, updated_at = ? 
@@ -204,7 +199,7 @@ pub fn toggle_task(app: AppHandle, id: String) -> Result<Task> {
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to toggle task: {}", e),
     })?;
-    
+
     // Use the helper to avoid re-acquiring the mutex lock
     fetch_task_by_id(&db, &id)
 }
@@ -213,9 +208,9 @@ pub fn toggle_task(app: AppHandle, id: String) -> Result<Task> {
 pub fn delete_task(app: AppHandle, id: String) -> Result<()> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let now = Utc::now().to_rfc3339();
-    
+
     db.execute(
         "UPDATE tasks SET deleted_at = ? WHERE id = ?",
         params![now, id],
@@ -223,7 +218,7 @@ pub fn delete_task(app: AppHandle, id: String) -> Result<()> {
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to delete task: {}", e),
     })?;
-    
+
     Ok(())
 }
 

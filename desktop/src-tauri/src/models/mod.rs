@@ -1,7 +1,7 @@
-pub mod note;
 pub mod folder;
+pub mod note;
 pub mod task;
 
-pub use note::{Note, CreateNotePayload, UpdateNotePayload};
-pub use folder::{Folder, CreateFolderPayload, RenameFolderPayload};
-pub use task::{Task, CreateTaskPayload, UpdateTaskPayload};
+pub use folder::{CreateFolderPayload, Folder, RenameFolderPayload};
+pub use note::{CreateNotePayload, Note, UpdateNotePayload};
+pub use task::{CreateTaskPayload, Task, UpdateTaskPayload};

@@ -12,13 +12,30 @@
   "app": {
     "windows": [
       {
-        "title": "notes",
+        "title": "Notes",
         "width": 900,
         "height": 650,
         "decorations": true,
         "hiddenTitle": true,
         "titleBarStyle": "Overlay",
         "transparent": false
+      },
+      {
+        "label": "menu-bar-note",
+        "title": "",
+        "url": "menu-bar-note.html",
+        "width": 360,
+        "height": 420,
+        "minWidth": 280,
+        "minHeight": 200,
+        "maxWidth": 500,
+        "maxHeight": 500,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visible": false,
+        "resizable": false,
+        "shadow": true,
+        "skipTaskbar": true
       },
       {
         "label": "quick-note",

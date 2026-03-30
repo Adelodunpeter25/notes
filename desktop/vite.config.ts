@@ -12,6 +12,7 @@ export default defineConfig(async () => ({
       input: {
         main: fileURLToPath(new URL("./index.html", import.meta.url)),
         "quick-note": fileURLToPath(new URL("./quick-note.html", import.meta.url)),
+        "menu-bar-note": fileURLToPath(new URL("./menu-bar-note.html", import.meta.url)),
       },
     },
   },

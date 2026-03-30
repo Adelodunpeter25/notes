@@ -1,5 +1,5 @@
-use tauri::{AppHandle, command, Manager};
 use rusqlite::params;
+use tauri::{command, AppHandle, Manager};
 
 use crate::db::DbState;
 use crate::error::Result;
@@ -9,7 +9,7 @@ use crate::models::Note;
 pub fn list_trash(app: AppHandle) -> Result<Vec<Note>> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let mut stmt = db
         .prepare("SELECT id, user_id, folder_id, title, content, is_pinned, created_at, updated_at, deleted_at 
                   FROM notes 
@@ -23,7 +23,7 @@ pub fn list_trash(app: AppHandle) -> Result<Vec<Note>> {
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to prepare statement: {}", e),
         })?;
-    
+
     let notes = stmt
         .query_map([], |row| {
             Ok(Note {
@@ -45,7 +45,7 @@ pub fn list_trash(app: AppHandle) -> Result<Vec<Note>> {
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to collect results: {}", e),
         })?;
-    
+
     Ok(notes)
 }
 
@@ -53,7 +53,7 @@ pub fn list_trash(app: AppHandle) -> Result<Vec<Note>> {
 pub fn restore_note(app: AppHandle, id: String) -> Result<Note> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     db.execute(
         "UPDATE notes SET deleted_at = NULL WHERE id = ?",
         params![id.clone()],
@@ -61,7 +61,7 @@ pub fn restore_note(app: AppHandle, id: String) -> Result<Note> {
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to restore note: {}", e),
     })?;
-    
+
     db.query_row(
         "SELECT id, user_id, folder_id, title, content, is_pinned, created_at, updated_at, deleted_at 
          FROM notes WHERE id = ?",
@@ -86,12 +86,12 @@ pub fn restore_note(app: AppHandle, id: String) -> Result<Note> {
 pub fn permanently_delete_note(app: AppHandle, id: String) -> Result<()> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     db.execute("DELETE FROM notes WHERE id = ?", params![id])
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to permanently delete note: {}", e),
         })?;
-    
+
     Ok(())
 }
 
@@ -99,11 +99,11 @@ pub fn permanently_delete_note(app: AppHandle, id: String) -> Result<()> {
 pub fn clear_trash(app: AppHandle) -> Result<()> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     db.execute("DELETE FROM notes WHERE deleted_at IS NOT NULL", [])
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to clear trash: {}", e),
         })?;
-    
+
     Ok(())
 }

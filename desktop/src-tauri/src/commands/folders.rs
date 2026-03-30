@@ -1,29 +1,31 @@
-use tauri::{AppHandle, command};
-use uuid::Uuid;
 use chrono::Utc;
 use rusqlite::params;
+use tauri::{command, AppHandle};
+use uuid::Uuid;
 
 use crate::db::DbState;
-use tauri::Manager;
 use crate::error::Result;
-use crate::models::{Folder, CreateFolderPayload, RenameFolderPayload};
+use crate::models::{CreateFolderPayload, Folder, RenameFolderPayload};
+use tauri::Manager;
 
 #[command]
 pub fn list_folders(app: AppHandle) -> Result<Vec<Folder>> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let mut stmt = db
-        .prepare("SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
+        .prepare(
+            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
                   COUNT(n.id) as notes_count
                   FROM folders f
                   LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
                   GROUP BY f.id
-                  ORDER BY f.updated_at DESC")
+                  ORDER BY f.updated_at DESC",
+        )
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to prepare statement: {}", e),
         })?;
-    
+
     let folders = stmt
         .query_map([], |row| {
             Ok(Folder {
@@ -42,7 +44,7 @@ pub fn list_folders(app: AppHandle) -> Result<Vec<Folder>> {
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to collect results: {}", e),
         })?;
-    
+
     Ok(folders)
 }
 
@@ -50,18 +52,20 @@ pub fn list_folders(app: AppHandle) -> Result<Vec<Folder>> {
 pub fn get_folder(app: AppHandle, id: String) -> Result<Folder> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let mut stmt = db
-        .prepare("SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
+        .prepare(
+            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
                   COUNT(n.id) as notes_count
                   FROM folders f
                   LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
                   WHERE f.id = ?
-                  GROUP BY f.id")
+                  GROUP BY f.id",
+        )
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to prepare statement: {}", e),
         })?;
-    
+
     let folder = stmt
         .query_row(params![id.clone()], |row| {
             Ok(Folder {
@@ -76,21 +80,18 @@ pub fn get_folder(app: AppHandle, id: String) -> Result<Folder> {
         .map_err(|_| crate::error::AppError {
             message: format!("Folder not found: {}", id),
         })?;
-    
+
     Ok(folder)
 }
 
 #[command]
-pub fn create_folder(
-    app: AppHandle,
-    payload: CreateFolderPayload,
-) -> Result<Folder> {
+pub fn create_folder(app: AppHandle, payload: CreateFolderPayload) -> Result<Folder> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
-    
+
     db.execute(
         "INSERT INTO folders (id, name, created_at, updated_at) 
          VALUES (?, ?, ?, ?)",
@@ -99,21 +100,17 @@ pub fn create_folder(
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to create folder: {}", e),
     })?;
-    
+
     get_folder(app.clone(), id)
 }
 
 #[command]
-pub fn rename_folder(
-    app: AppHandle,
-    id: String,
-    payload: RenameFolderPayload,
-) -> Result<Folder> {
+pub fn rename_folder(app: AppHandle, id: String, payload: RenameFolderPayload) -> Result<Folder> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     let now = Utc::now().to_rfc3339();
-    
+
     db.execute(
         "UPDATE folders SET name = ?, updated_at = ? WHERE id = ?",
         params![payload.name, now, id.clone()],
@@ -121,7 +118,7 @@ pub fn rename_folder(
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to rename folder: {}", e),
     })?;
-    
+
     get_folder(app.clone(), id)
 }
 
@@ -129,12 +126,12 @@ pub fn rename_folder(
 pub fn delete_folder(app: AppHandle, id: String) -> Result<()> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
-    
+
     db.execute("DELETE FROM folders WHERE id = ?", params![id])
         .map_err(|e| crate::error::AppError {
             message: format!("Failed to delete folder: {}", e),
         })?;
-    
+
     Ok(())
 }
 
@@ -157,7 +154,10 @@ pub fn upsert_folder(app: AppHandle, folder: crate::models::Folder) -> Result<()
             folder.created_at,
             folder.updated_at,
         ],
-    ).map_err(|e| crate::error::AppError { message: format!("upsert_folder failed: {}", e) })?;
+    )
+    .map_err(|e| crate::error::AppError {
+        message: format!("upsert_folder failed: {}", e),
+    })?;
 
     Ok(())
 }
