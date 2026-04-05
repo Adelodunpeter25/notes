@@ -49,7 +49,8 @@ export async function showNoteContextMenu({
           id: `move:${folder.id}`,
           text: folder.name,
           checked: folder.id === currentFolderId,
-          action: () => onMoveTo(folder.id),
+          // Clicking the current folder removes it; clicking another moves it
+          action: () => onMoveTo(folder.id === currentFolderId ? "" : folder.id),
         })),
   };
 
