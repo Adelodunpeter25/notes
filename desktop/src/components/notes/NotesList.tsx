@@ -52,11 +52,12 @@ export function NotesList({
       y: event.clientY,
       isPinned: note.isPinned,
       folders,
+      currentFolderId: note.folderId,
       onPinToggle: () => {
         void onUpdateNote(note.id, { isPinned: !note.isPinned });
       },
       onMoveTo: (folderId) => {
-        void onUpdateNote(note.id, { folderId });
+        void onUpdateNote(note.id, { folderId: folderId || null });
       },
       onOpenInQuickNote: () => {
         void invoke("open_in_quick_note", { noteId: note.id });

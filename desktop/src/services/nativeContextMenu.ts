@@ -9,6 +9,7 @@ type ShowNoteMenuOptions = {
   y: number;
   isPinned: boolean;
   folders: Folder[];
+  currentFolderId?: string | null;
   onPinToggle: () => void;
   onMoveTo: (folderId: string) => void;
   onOpenInQuickNote: () => void;
@@ -30,6 +31,7 @@ export async function showNoteContextMenu({
   y,
   isPinned,
   folders,
+  currentFolderId,
   onPinToggle,
   onMoveTo,
   onOpenInQuickNote,
@@ -39,16 +41,28 @@ export async function showNoteContextMenu({
     return;
   }
 
+  const availableFolders = folders.filter((f) => f.id !== currentFolderId);
+
+  const moveToItems = availableFolders.length === 0
+    ? [{ text: "No other folders", enabled: false }]
+    : availableFolders.map((folder) => ({
+        id: `move:${folder.id}`,
+        text: folder.name,
+        action: () => onMoveTo(folder.id),
+      }));
+
+  // If in a folder, add "Remove from folder" at the top of the submenu
+  if (currentFolderId) {
+    moveToItems.unshift({
+      id: "move:none",
+      text: "Remove from folder",
+      action: () => onMoveTo(""),
+    } as any);
+  }
+
   const moveToSubmenu: SubmenuOptions = {
     text: "Move to",
-    items:
-      folders.length === 0
-        ? [{ text: "No folders", enabled: false }]
-        : folders.map((folder) => ({
-            id: `move:${folder.id}`,
-            text: folder.name,
-            action: () => onMoveTo(folder.id),
-          })),
+    items: moveToItems,
   };
 
   const menu = await Menu.new({
