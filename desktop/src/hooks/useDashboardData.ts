@@ -214,7 +214,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
     }
 
     const timer = setTimeout(() => {
-      void renameFolderMutation.mutateAsync({ folderId, payload: { name: trimmedName } });
+      void renameFolderMutation.mutateAsync({ id: folderId, payload: { name: trimmedName } });
       renameFolderTimersRef.current.delete(folderId);
     }, 300);
 
