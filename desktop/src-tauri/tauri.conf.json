@@ -19,7 +19,7 @@
         "hiddenTitle": true,
         "titleBarStyle": "Overlay",
         "transparent": false,
-        "trafficLightPosition": { "x": 14, "y": 12 }
+        "trafficLightPosition": { "x": 14, "y": 15 }
       },
       {
         "label": "menu-bar-note",
