@@ -93,15 +93,17 @@ pub fn create_folder(app: AppHandle, payload: CreateFolderPayload) -> Result<Fol
     let now = Utc::now().to_rfc3339();
 
     db.execute(
-        "INSERT INTO folders (id, name, created_at, updated_at) 
-         VALUES (?, ?, ?, ?)",
+        "INSERT INTO folders (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
         params![id.clone(), payload.name, now.clone(), now],
-    )
-    .map_err(|e| crate::error::AppError {
-        message: format!("Failed to create folder: {}", e),
-    })?;
+    ).map_err(|e| crate::error::AppError { message: format!("Failed to create folder: {}", e) })?;
 
-    get_folder(app.clone(), id)
+    db.query_row(
+        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, COUNT(n.id) as notes_count
+         FROM folders f LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
+         WHERE f.id = ? GROUP BY f.id",
+        params![id],
+        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, notes_count: row.get(5)? }),
+    ).map_err(|e| crate::error::AppError { message: format!("Failed to fetch created folder: {}", e) })
 }
 
 #[command]
@@ -114,12 +116,15 @@ pub fn rename_folder(app: AppHandle, id: String, payload: RenameFolderPayload) -
     db.execute(
         "UPDATE folders SET name = ?, updated_at = ? WHERE id = ?",
         params![payload.name, now, id.clone()],
-    )
-    .map_err(|e| crate::error::AppError {
-        message: format!("Failed to rename folder: {}", e),
-    })?;
+    ).map_err(|e| crate::error::AppError { message: format!("Failed to rename folder: {}", e) })?;
 
-    get_folder(app.clone(), id)
+    db.query_row(
+        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, COUNT(n.id) as notes_count
+         FROM folders f LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
+         WHERE f.id = ? GROUP BY f.id",
+        params![id],
+        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, notes_count: row.get(5)? }),
+    ).map_err(|e| crate::error::AppError { message: format!("Folder not found: {}", e) })
 }
 
 #[command]
