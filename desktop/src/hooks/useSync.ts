@@ -30,11 +30,15 @@ export function useSync(_options?: { auto?: boolean }) {
         invoke<Task[]>("list_tasks").catch(() => [] as Task[]),
       ]);
 
-      // Also include trashed notes so deletes sync
-      const trashedNotes = await invoke<Note[]>("list_trash").catch(() => [] as Note[]);
+      // Include trashed notes and tasks so deletes sync
+      const [trashedNotes, trashedTasks] = await Promise.all([
+        invoke<Note[]>("list_trash").catch(() => [] as Note[]),
+        invoke<Task[]>("list_deleted_tasks").catch(() => [] as Task[]),
+      ]);
       const allNotes = [...notes, ...trashedNotes];
+      const allTasks = [...tasks, ...trashedTasks];
 
-      const ops = buildSyncOps(allNotes, folders, tasks, cursor);
+      const ops = buildSyncOps(allNotes, folders, allTasks, cursor);
 
       const response = await apiClient.post<SyncResponse>("/sync", { cursor, ops });
 

@@ -270,7 +270,7 @@ pub fn upsert_note(app: AppHandle, note: Note) -> Result<()> {
            is_pinned = excluded.is_pinned,
            updated_at = excluded.updated_at,
            deleted_at = excluded.deleted_at
-         WHERE excluded.updated_at > notes.updated_at",
+         WHERE datetime(excluded.updated_at) > datetime(notes.updated_at)",
         params![
             note.id,
             note.user_id,

@@ -146,7 +146,7 @@ pub fn upsert_folder(app: AppHandle, folder: crate::models::Folder) -> Result<()
          ON CONFLICT(id) DO UPDATE SET
            name = excluded.name,
            updated_at = excluded.updated_at
-         WHERE excluded.updated_at > folders.updated_at",
+         WHERE datetime(excluded.updated_at) > datetime(folders.updated_at)",
         params![
             folder.id,
             folder.user_id,

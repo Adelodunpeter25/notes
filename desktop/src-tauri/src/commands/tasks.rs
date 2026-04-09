@@ -237,7 +237,7 @@ pub fn upsert_task(app: AppHandle, task: crate::models::Task) -> Result<()> {
            due_date = excluded.due_date,
            updated_at = excluded.updated_at,
            deleted_at = excluded.deleted_at
-         WHERE excluded.updated_at > tasks.updated_at",
+         WHERE datetime(excluded.updated_at) > datetime(tasks.updated_at)",
         params![
             task.id,
             task.user_id,
@@ -252,4 +252,32 @@ pub fn upsert_task(app: AppHandle, task: crate::models::Task) -> Result<()> {
     ).map_err(|e| crate::error::AppError { message: format!("upsert_task failed: {}", e) })?;
 
     Ok(())
+}
+
+#[command]
+pub fn list_deleted_tasks(app: AppHandle) -> Result<Vec<Task>> {
+    let db_state = app.state::<DbState>();
+    let db = db_state.0.lock().unwrap();
+
+    let mut stmt = db.prepare(
+        "SELECT id, user_id, title, description, is_completed, due_date, created_at, updated_at, deleted_at
+         FROM tasks WHERE deleted_at IS NOT NULL ORDER BY updated_at DESC"
+    ).map_err(|e| crate::error::AppError { message: format!("Failed to prepare: {}", e) })?;
+
+    let tasks = stmt.query_map([], |row| Ok(Task {
+        id: row.get(0)?,
+        user_id: row.get(1)?,
+        title: row.get(2)?,
+        description: row.get(3)?,
+        is_completed: row.get(4)?,
+        due_date: row.get(5)?,
+        created_at: row.get(6)?,
+        updated_at: row.get(7)?,
+        deleted_at: row.get(8)?,
+    }))
+    .map_err(|e| crate::error::AppError { message: format!("Query failed: {}", e) })?
+    .collect::<std::result::Result<Vec<_>, _>>()
+    .map_err(|e| crate::error::AppError { message: format!("Collect failed: {}", e) })?;
+
+    Ok(tasks)
 }

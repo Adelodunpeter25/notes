@@ -24,7 +24,7 @@ export function buildSyncOps(
 
   for (const note of notes) {
     const updatedAt = note.updatedAt ?? note.createdAt ?? new Date().toISOString();
-    if (since && new Date(updatedAt) <= since) continue;
+    if (since && new Date(updatedAt) < since) continue;
 
     if (note.deletedAt) {
       ops.push({ id: uuid(), type: 'delete', entityType: 'note', entityId: note.id, updatedAt });
@@ -38,7 +38,7 @@ export function buildSyncOps(
 
   for (const folder of folders) {
     const updatedAt = folder.updatedAt ?? folder.createdAt ?? new Date().toISOString();
-    if (since && new Date(updatedAt) <= since) continue;
+    if (since && new Date(updatedAt) < since) continue;
     ops.push({
       id: uuid(), type: 'upsert', entityType: 'folder', entityId: folder.id, updatedAt,
       payload: { name: folder.name, createdAt: folder.createdAt },
@@ -47,7 +47,7 @@ export function buildSyncOps(
 
   for (const task of tasks) {
     const updatedAt = task.updatedAt ?? task.createdAt ?? new Date().toISOString();
-    if (since && new Date(updatedAt) <= since) continue;
+    if (since && new Date(updatedAt) < since) continue;
 
     if (task.deletedAt) {
       ops.push({ id: uuid(), type: 'delete', entityType: 'task', entityId: task.id, updatedAt });

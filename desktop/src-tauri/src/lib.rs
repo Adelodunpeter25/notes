@@ -153,6 +153,7 @@ pub fn run() {
             upsert_note,
             upsert_folder,
             upsert_task,
+            list_deleted_tasks,
             get_scratch_pad,
             save_scratch_pad,
         ])
