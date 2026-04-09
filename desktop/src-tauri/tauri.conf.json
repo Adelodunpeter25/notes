@@ -18,7 +18,8 @@
         "decorations": true,
         "hiddenTitle": true,
         "titleBarStyle": "Overlay",
-        "transparent": false
+        "transparent": false,
+        "trafficLightPosition": { "x": 14, "y": 10 }
       },
       {
         "label": "menu-bar-note",
