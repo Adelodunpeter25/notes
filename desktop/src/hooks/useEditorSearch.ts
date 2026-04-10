@@ -18,27 +18,6 @@ export function useEditorSearch() {
     }
   }, [isOpen]);
 
-  // Real-time search + count on query change
-  useEffect(() => {
-    if (!query) {
-      setMatchCount(0);
-      window.getSelection()?.removeAllRanges();
-      return;
-    }
-
-    // Count matches in the editor DOM
-    const editorEl = document.querySelector(".ProseMirror");
-    if (editorEl) {
-      const text = editorEl.textContent ?? "";
-      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const count = (text.match(new RegExp(escaped, "gi")) ?? []).length;
-      setMatchCount(count);
-    }
-
-    // Jump to first match
-    window.find(query, false, false, true, false, false, false);
-  }, [query]);
-
   useEffect(() => {
     if (!isOpen) return;
     function onKey(e: KeyboardEvent) {
@@ -51,6 +30,15 @@ export function useEditorSearch() {
 
   function find(reverse = false) {
     if (!query) return;
+
+    // Count matches
+    const editorEl = document.querySelector(".ProseMirror");
+    if (editorEl) {
+      const text = editorEl.textContent ?? "";
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      setMatchCount((text.match(new RegExp(escaped, "gi")) ?? []).length);
+    }
+
     window.find(query, false, reverse, true, false, false, false);
   }
 
