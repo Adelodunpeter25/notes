@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUiStore } from "@/stores";
 
 export function useEditorSearch() {
@@ -18,6 +18,17 @@ export function useEditorSearch() {
     }
   }, [isOpen]);
 
+  const find = useCallback((reverse = false) => {
+    if (!query) return;
+    const editorEl = document.querySelector(".ProseMirror");
+    if (editorEl) {
+      const text = editorEl.textContent ?? "";
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      setMatchCount((text.match(new RegExp(escaped, "gi")) ?? []).length);
+    }
+    window.find(query, false, reverse, true, false, false, false);
+  }, [query]);
+
   useEffect(() => {
     if (!isOpen) return;
     function onKey(e: KeyboardEvent) {
@@ -26,30 +37,19 @@ export function useEditorSearch() {
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [isOpen, query]);
+  }, [isOpen, find, setIsOpen]);
 
-  function find(reverse = false) {
-    if (!query) return;
+  const findNext = useCallback(() => find(false), [find]);
+  const findPrev = useCallback(() => find(true), [find]);
 
-    // Count matches
-    const editorEl = document.querySelector(".ProseMirror");
-    if (editorEl) {
-      const text = editorEl.textContent ?? "";
-      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      setMatchCount((text.match(new RegExp(escaped, "gi")) ?? []).length);
-    }
-
-    window.find(query, false, reverse, true, false, false, false);
-  }
-
-  return {
+  return useMemo(() => ({
     isOpen,
     setIsOpen,
     query,
     setQuery,
     matchCount,
     inputRef,
-    findNext: () => find(false),
-    findPrev: () => find(true),
-  };
+    findNext,
+    findPrev,
+  }), [isOpen, setIsOpen, query, matchCount, findNext, findPrev]);
 }
