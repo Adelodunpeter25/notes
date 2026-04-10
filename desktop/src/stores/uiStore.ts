@@ -10,6 +10,9 @@ type UiState = {
   isSidebarCollapsed: boolean;
   isSearchExpanded: boolean;
   isSearchModalOpen: boolean;
+  isEditorSearchOpen: boolean;
+  setIsEditorSearchOpen: (value: boolean) => void;
+  isEditorSearchOpen: boolean;
   tasksView: "list" | "kanban";
   setActiveView: (view: "notes" | "tasks" | "trash") => void;
   setSelectedFolderId: (folderId: string | null) => void;
@@ -32,6 +35,7 @@ export const useUiStore = create<UiState>()(
       searchQuery: "",
       isSearchExpanded: false,
       isSearchModalOpen: false,
+      isEditorSearchOpen: false,
       manualClearCount: 0,
       isSidebarCollapsed: false,
       tasksView: "list",
@@ -54,9 +58,8 @@ export const useUiStore = create<UiState>()(
       setIsSearchExpanded: (value) => {
         set({ isSearchExpanded: value });
       },
-      setIsSearchModalOpen: (value) => {
-        set({ isSearchModalOpen: value });
-      },
+      setIsSearchModalOpen: (value) => set({ isSearchModalOpen: value }),
+      setIsEditorSearchOpen: (value) => set({ isEditorSearchOpen: value }),
       clearSelectedNote: () => {
         set((state) => ({
           selectedNoteId: undefined,

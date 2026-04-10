@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NotebookText } from "lucide-react";
+import { NotebookText, Search, X, ChevronUp, ChevronDown } from "lucide-react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -8,7 +8,9 @@ import { useDebounce } from "@/hooks";
 import { formatNoteDateTime } from "@shared-utils/formatDate";
 import { deriveNoteTitleFromHtml } from "@shared-utils/noteContent";
 import { Toolbar } from "./Toolbar";
+import { EditorSearchBar } from "./EditorSearchBar";
 import { Editor } from "@/components/editor";
+import { useUiStore } from "@/stores";
 
 type NoteEditorProps = {
     note?: Note;
@@ -23,6 +25,41 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
     const [, forceRender] = useState(0);
     const editorRef = useRef<TiptapEditor | null>(null);
     const contentContainerRef = useRef<HTMLDivElement | null>(null);
+
+    const isEditorSearchOpen = useUiStore((state) => state.isEditorSearchOpen);
+    const setIsEditorSearchOpen = useUiStore((state) => state.setIsEditorSearchOpen);
+    const [findQuery, setFindQuery] = useState("");
+    const findInputRef = useRef<HTMLInputElement>(null);
+
+    // Focus find input when opened
+    useEffect(() => {
+        if (isEditorSearchOpen) {
+            setTimeout(() => findInputRef.current?.focus(), 10);
+        } else {
+            setFindQuery("");
+            // Clear highlights
+            if (typeof window !== "undefined") {
+                window.getSelection()?.removeAllRanges();
+            }
+        }
+    }, [isEditorSearchOpen]);
+
+    // Find in page using window.find
+    function findNext(reverse = false) {
+        if (!findQuery) return;
+        window.find(findQuery, false, reverse, true, false, false, false);
+    }
+
+    // Close on Escape
+    useEffect(() => {
+        if (!isEditorSearchOpen) return;
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") { e.stopPropagation(); setIsEditorSearchOpen(false); }
+            if (e.key === "Enter") { e.preventDefault(); findNext(e.shiftKey); }
+        }
+        window.addEventListener("keydown", onKey, true);
+        return () => window.removeEventListener("keydown", onKey, true);
+    }, [isEditorSearchOpen, findQuery]);
 
     const debouncedContent = useDebounce(content, 200);
     const debouncedIsPinned = useDebounce(isPinned, 200);
@@ -220,6 +257,7 @@ export function NoteEditor({ note, onSave, onClearSelection, searchResultsOverla
                 }}
                 showFormatting={!!note && !searchResultsOverlay}
             />
+            <EditorSearchBar />
 
             {searchResultsOverlay ? (
                 <div className="flex-1 overflow-hidden">

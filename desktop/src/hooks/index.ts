@@ -1,3 +1,4 @@
+export * from "./useEditorSearch";
 export * from "./useAuth";
 export * from "./useNotes";
 export * from "./useFolders";

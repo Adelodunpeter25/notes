@@ -9,6 +9,8 @@ export function useKeyboardShortcuts() {
   const setActiveView = useUiStore((state) => state.setActiveView);
   const setIsSearchExpanded = useUiStore((state) => state.setIsSearchExpanded);
   const setIsSearchModalOpen = useUiStore((state) => state.setIsSearchModalOpen);
+  const setIsEditorSearchOpen = useUiStore((state) => state.setIsEditorSearchOpen);
+  const selectedNoteId = useUiStore((state) => state.selectedNoteId);
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
@@ -54,7 +56,11 @@ export function useKeyboardShortcuts() {
 
       if (isSearchShortcut) {
         event.preventDefault();
-        setIsSearchModalOpen(true);
+        if (selectedNoteId) {
+          setIsEditorSearchOpen(true);
+        } else {
+          setIsSearchModalOpen(true);
+        }
         return;
       }
 
@@ -70,5 +76,5 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener("keydown", handleKeydown);
     };
-  }, [setActiveView, setIsSearchExpanded, triggerNewFolder, triggerNewNote]);
+  }, [setActiveView, setIsSearchExpanded, setIsEditorSearchOpen, setIsSearchModalOpen, selectedNoteId, triggerNewFolder, triggerNewNote]);
 }
