@@ -5,6 +5,7 @@ export function useEditorSearch() {
   const isOpen = useUiStore((state) => state.isEditorSearchOpen);
   const setIsOpen = useUiStore((state) => state.setIsEditorSearchOpen);
   const [query, setQuery] = useState("");
+  const [matchCount, setMatchCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -12,9 +13,31 @@ export function useEditorSearch() {
       setTimeout(() => inputRef.current?.focus(), 10);
     } else {
       setQuery("");
+      setMatchCount(0);
       window.getSelection()?.removeAllRanges();
     }
   }, [isOpen]);
+
+  // Real-time search + count on query change
+  useEffect(() => {
+    if (!query) {
+      setMatchCount(0);
+      window.getSelection()?.removeAllRanges();
+      return;
+    }
+
+    // Count matches in the editor DOM
+    const editorEl = document.querySelector(".ProseMirror");
+    if (editorEl) {
+      const text = editorEl.textContent ?? "";
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const count = (text.match(new RegExp(escaped, "gi")) ?? []).length;
+      setMatchCount(count);
+    }
+
+    // Jump to first match
+    window.find(query, false, false, true, false, false, false);
+  }, [query]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -36,6 +59,7 @@ export function useEditorSearch() {
     setIsOpen,
     query,
     setQuery,
+    matchCount,
     inputRef,
     findNext: () => find(false),
     findPrev: () => find(true),
