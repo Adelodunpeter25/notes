@@ -46,10 +46,11 @@ export function useSync(_options?: { auto?: boolean }) {
       // Apply server changes to local SQLite
       await applyServerChanges(response);
 
-      // Save cursor to database instead of localStorage
-      if (user?.id) {
-        await invoke("save_sync_cursor", { cursor: response.nextCursor, userId: user.id });
-      }
+      // Save cursor to database
+      await invoke("save_sync_cursor", {
+        cursor: response.nextCursor,
+        userId: user?.id ?? null,
+      });
 
       // Invalidate all queries so UI reflects changes
       await queryClient.invalidateQueries();
@@ -70,27 +71,23 @@ export function useSync(_options?: { auto?: boolean }) {
 
 async function applyServerChanges(response: SyncResponse) {
   // Apply tombstones first
-  for (const tombstone of response.deleted) {
+  await Promise.all(response.deleted.map(async (tombstone) => {
     if (tombstone.entityType === "note") {
-      await invoke("delete_note", { id: tombstone.entityId }).catch(() => {});
+      await invoke("delete_note", { id: tombstone.entityId }).catch((e) => console.warn("[sync] delete_note failed", e));
     } else if (tombstone.entityType === "task") {
-      await invoke("delete_task", { id: tombstone.entityId }).catch(() => {});
+      await invoke("delete_task", { id: tombstone.entityId }).catch((e) => console.warn("[sync] delete_task failed", e));
     }
-    // folders are hard-deleted on server, skip
-  }
+  }));
 
-  // Upsert notes
-  for (const note of response.notes as any[]) {
-    await invoke("upsert_note", { note }).catch(() => {});
-  }
-
-  // Upsert folders
-  for (const folder of response.folders as any[]) {
-    await invoke("upsert_folder", { folder }).catch(() => {});
-  }
-
-  // Upsert tasks
-  for (const task of response.tasks as any[]) {
-    await invoke("upsert_task", { task }).catch(() => {});
-  }
+  await Promise.all([
+    ...(response.notes as any[]).map((note) =>
+      invoke("upsert_note", { note }).catch((e) => console.warn("[sync] upsert_note failed", note.id, e))
+    ),
+    ...(response.folders as any[]).map((folder) =>
+      invoke("upsert_folder", { folder }).catch((e) => console.warn("[sync] upsert_folder failed", folder.id, e))
+    ),
+    ...(response.tasks as any[]).map((task) =>
+      invoke("upsert_task", { task }).catch((e) => console.warn("[sync] upsert_task failed", task.id, e))
+    ),
+  ]);
 }

@@ -3,35 +3,38 @@ use rusqlite::{params, OptionalExtension};
 use tauri::State;
 use uuid::Uuid;
 
-fn get_device_id() -> String {
-    std::env::var("DEVICE_ID").unwrap_or_else(|_| Uuid::new_v4().to_string())
+fn get_device_id(conn: &rusqlite::Connection) -> Result<String, String> {
+    conn.query_row(
+        "SELECT device_id FROM sync_state LIMIT 1",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_sync_cursor(db: State<DbState>) -> Result<Option<String>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let device_id = get_device_id();
+    let device_id = get_device_id(&conn)?;
 
-    let mut stmt = conn
-        .prepare("SELECT last_cursor FROM sync_state WHERE device_id = ? LIMIT 1")
-        .map_err(|e| e.to_string())?;
-
-    let result = stmt
-        .query_row(params![device_id], |row| row.get::<_, Option<String>>(0))
-        .optional()
-        .map_err(|e| e.to_string())?;
-
-    Ok(result.flatten())
+    conn.query_row(
+        "SELECT last_cursor FROM sync_state WHERE device_id = ? LIMIT 1",
+        params![device_id],
+        |row| row.get::<_, Option<String>>(0),
+    )
+    .optional()
+    .map_err(|e| e.to_string())
+    .map(|r| r.flatten())
 }
 
 #[tauri::command]
 pub fn save_sync_cursor(
     cursor: String,
-    user_id: String,
+    user_id: Option<String>,
     db: State<DbState>,
 ) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let device_id = get_device_id();
+    let device_id = get_device_id(&conn)?;
     let now = chrono::Utc::now().to_rfc3339();
     let id = Uuid::new_v4().to_string();
 
@@ -39,6 +42,7 @@ pub fn save_sync_cursor(
         "INSERT INTO sync_state (id, user_id, device_id, last_cursor, last_sync_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(device_id) DO UPDATE SET
+           user_id = COALESCE(excluded.user_id, sync_state.user_id),
            last_cursor = excluded.last_cursor,
            last_sync_at = excluded.last_sync_at,
            updated_at = excluded.updated_at",
@@ -52,15 +56,19 @@ pub fn save_sync_cursor(
 #[tauri::command]
 pub fn clear_sync_cursor(db: State<DbState>) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let device_id = get_device_id();
+    let device_id = get_device_id(&conn)?;
 
-    conn.execute("DELETE FROM sync_state WHERE device_id = ?1", params![device_id])
-        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "UPDATE sync_state SET last_cursor = NULL WHERE device_id = ?1",
+        params![device_id],
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
 #[tauri::command]
-pub fn get_device_identifier() -> String {
-    get_device_id()
+pub fn get_device_identifier(db: State<DbState>) -> Result<String, String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    get_device_id(&conn)
 }
