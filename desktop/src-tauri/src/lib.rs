@@ -156,6 +156,10 @@ pub fn run() {
             list_deleted_tasks,
             get_scratch_pad,
             save_scratch_pad,
+            get_sync_cursor,
+            save_sync_cursor,
+            clear_sync_cursor,
+            get_device_identifier,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

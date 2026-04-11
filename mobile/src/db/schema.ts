@@ -37,4 +37,15 @@ export const MIGRATIONS = [
     deleted_at TEXT
   )`,
   `CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at DESC)`,
+
+  // v2 - sync_state table
+  `CREATE TABLE IF NOT EXISTS sync_state (
+    id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL,
+    device_id TEXT NOT NULL,
+    last_cursor TEXT,
+    last_sync_at TEXT,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_sync_state_user_device ON sync_state(user_id, device_id)`,
 ];

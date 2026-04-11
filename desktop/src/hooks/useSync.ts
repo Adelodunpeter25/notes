@@ -3,18 +3,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 
 import { apiClient } from "@/services/apiClient";
+import { useAuthStore } from "@/stores/authStore";
 import { buildSyncOps } from "@shared-utils/sync";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
 import type { Task } from "@shared/tasks";
 import type { SyncResponse } from "@shared/sync";
 
-const CURSOR_KEY = "notes_sync_cursor";
-
 export function useSync(_options?: { auto?: boolean }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const syncingRef = useRef(false);
+  const user = useAuthStore((state) => state.user);
 
   const syncNow = useCallback(async () => {
     if (syncingRef.current) return;
@@ -22,7 +22,8 @@ export function useSync(_options?: { auto?: boolean }) {
     setIsSyncing(true);
 
     try {
-      const cursor = localStorage.getItem(CURSOR_KEY);
+      // Get cursor from database instead of localStorage
+      const cursor = await invoke<string | null>("get_sync_cursor");
 
       const [notes, folders, tasks] = await Promise.all([
         invoke<Note[]>("list_notes").catch(() => [] as Note[]),
@@ -45,7 +46,10 @@ export function useSync(_options?: { auto?: boolean }) {
       // Apply server changes to local SQLite
       await applyServerChanges(response);
 
-      localStorage.setItem(CURSOR_KEY, response.nextCursor);
+      // Save cursor to database instead of localStorage
+      if (user?.id) {
+        await invoke("save_sync_cursor", { cursor: response.nextCursor, userId: user.id });
+      }
 
       // Invalidate all queries so UI reflects changes
       await queryClient.invalidateQueries();
@@ -55,10 +59,10 @@ export function useSync(_options?: { auto?: boolean }) {
       syncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [queryClient]);
+  }, [queryClient, user?.id]);
 
-  const resetSyncCursor = useCallback(() => {
-    localStorage.removeItem(CURSOR_KEY);
+  const resetSyncCursor = useCallback(async () => {
+    await invoke("clear_sync_cursor");
   }, []);
 
   return { syncNow, isSyncing, resetSyncCursor };

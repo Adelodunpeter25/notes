@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { apiClient } from "@/api/apiClient";
 import { getDb } from "@/db/client";
@@ -9,9 +8,10 @@ import { listNotes } from "@/db/repos/noteRepo";
 import { listFolders } from "@/db/repos/folderRepo";
 import { listTasks } from "@/db/repos/taskRepo";
 import { listTrash } from "@/db/repos/trashRepo";
+import { getSyncCursor, saveSyncCursor, clearSyncCursor } from "@/db/repos/syncStateRepo";
+import { useAuthStore } from "@/stores/authStore";
 import type { SyncResponse } from "@shared/sync";
 
-const CURSOR_KEY = "notes_sync_cursor";
 const AUTO_SYNC_INTERVAL_MS = 15_000;
 
 export function useSync(options?: { auto?: boolean }) {
@@ -19,6 +19,7 @@ export function useSync(options?: { auto?: boolean }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const syncingRef = useRef(false);
+  const user = useAuthStore((state) => state.user);
 
   const syncNow = useCallback(async () => {
     if (syncingRef.current) return;
@@ -26,7 +27,8 @@ export function useSync(options?: { auto?: boolean }) {
     setIsSyncing(true);
 
     try {
-      const cursor = await AsyncStorage.getItem(CURSOR_KEY);
+      // Get cursor from database instead of AsyncStorage
+      const cursor = await getSyncCursor();
 
       const [notes, folders, tasks, trashedNotes] = await Promise.all([
         listNotes().catch(() => []),
@@ -42,7 +44,11 @@ export function useSync(options?: { auto?: boolean }) {
 
       await applyServerChanges(response);
 
-      await AsyncStorage.setItem(CURSOR_KEY, response.nextCursor);
+      // Save cursor to database instead of AsyncStorage
+      if (user?.id) {
+        await saveSyncCursor(response.nextCursor, user.id);
+      }
+      
       await queryClient.invalidateQueries();
     } catch (err) {
       console.error("[sync] failed:", err);
@@ -50,7 +56,7 @@ export function useSync(options?: { auto?: boolean }) {
       syncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [queryClient]);
+  }, [queryClient, user?.id]);
 
   const resetAndSync = useCallback(async () => {
     if (syncingRef.current) return;
@@ -58,8 +64,8 @@ export function useSync(options?: { auto?: boolean }) {
     setIsResetting(true);
 
     try {
-      // Clear the sync cursor
-      await AsyncStorage.removeItem(CURSOR_KEY);
+      // Clear the sync cursor from database
+      await clearSyncCursor();
 
       // Clear local database
       const db = getDb();
@@ -72,7 +78,11 @@ export function useSync(options?: { auto?: boolean }) {
 
       await applyServerChangesForReset(response);
 
-      await AsyncStorage.setItem(CURSOR_KEY, response.nextCursor);
+      // Save new cursor to database
+      if (user?.id) {
+        await saveSyncCursor(response.nextCursor, user.id);
+      }
+      
       await queryClient.invalidateQueries();
     } catch (err) {
       console.error("[reset and sync] failed:", err);
@@ -81,10 +91,10 @@ export function useSync(options?: { auto?: boolean }) {
       syncingRef.current = false;
       setIsResetting(false);
     }
-  }, [queryClient]);
+  }, [queryClient, user?.id]);
 
   const resetSyncCursor = useCallback(async () => {
-    await AsyncStorage.removeItem(CURSOR_KEY);
+    await clearSyncCursor();
   }, []);
 
   // Auto-sync: fire syncNow every 15 s when the option is enabled
