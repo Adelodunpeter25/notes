@@ -1,24 +1,10 @@
 use crate::db::DbState;
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use tauri::State;
 use uuid::Uuid;
 
-/// Get or generate a stable device ID
 fn get_device_id() -> String {
-    use tauri::utils::platform::current_exe;
-    
-    // Try to use machine-specific identifier
-    // For now, we'll use a simple approach: store in a local file or generate once
-    // In production, you might use hardware UUID or similar
-    
-    // For simplicity, generate a UUID and store it persistently
-    // This is a placeholder - in production, use a more robust approach
-    let device_id = std::env::var("DEVICE_ID").unwrap_or_else(|_| {
-        // Generate new UUID for this installation
-        Uuid::new_v4().to_string()
-    });
-    
-    device_id
+    std::env::var("DEVICE_ID").unwrap_or_else(|_| Uuid::new_v4().to_string())
 }
 
 #[tauri::command]

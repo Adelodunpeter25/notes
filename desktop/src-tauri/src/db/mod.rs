@@ -84,21 +84,17 @@ pub fn init_db(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         [],
     )?;
 
-    // v2 migration - sync_state table
+    // v2 migration - sync_state table (recreate if missing user_id column)
+    conn.execute("DROP TABLE IF EXISTS sync_state", [])?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS sync_state (
           id TEXT PRIMARY KEY NOT NULL,
           user_id TEXT NOT NULL,
-          device_id TEXT NOT NULL,
+          device_id TEXT NOT NULL UNIQUE,
           last_cursor TEXT,
           last_sync_at TEXT,
           updated_at TEXT NOT NULL
         )",
-        [],
-    )?;
-
-    conn.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_sync_state_user_device ON sync_state(user_id, device_id)",
         [],
     )?;
 
