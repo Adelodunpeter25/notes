@@ -54,7 +54,7 @@ export async function getSyncCursor(): Promise<string | null> {
 /**
  * Save the sync cursor to the database
  */
-export async function saveSyncCursor(cursor: string, userId: string): Promise<void> {
+export async function saveSyncCursor(cursor: string, userId?: string | null): Promise<void> {
   try {
     const db = getDb();
     const deviceId = await getDeviceId();
