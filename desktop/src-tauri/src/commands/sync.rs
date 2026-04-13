@@ -4,12 +4,26 @@ use tauri::State;
 use uuid::Uuid;
 
 fn get_device_id(conn: &rusqlite::Connection) -> Result<String, String> {
-    conn.query_row(
-        "SELECT device_id FROM sync_state LIMIT 1",
-        [],
-        |row| row.get::<_, String>(0),
-    )
-    .map_err(|e| e.to_string())
+    // Try to get existing device ID
+    let existing: Option<String> = conn
+        .query_row("SELECT device_id FROM sync_state LIMIT 1", [], |row| row.get(0))
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    if let Some(id) = existing {
+        return Ok(id);
+    }
+
+    // None exists — seed one now
+    let device_id = Uuid::new_v4().to_string();
+    let id = Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO sync_state (id, device_id, updated_at) VALUES (?1, ?2, ?3)",
+        params![id, device_id, now],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(device_id)
 }
 
 #[tauri::command]
