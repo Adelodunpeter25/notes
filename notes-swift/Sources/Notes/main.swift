@@ -1,7 +1,7 @@
 import AppKit
 
-// AppDelegate is @MainActor so we assign it on the main thread via NSApplication.shared
+let delegate = AppDelegate()
 NSApplication.shared.setActivationPolicy(.regular)
-NSApplication.shared.delegate = AppDelegate()
+NSApplication.shared.delegate = delegate
 NSApplication.shared.activate(ignoringOtherApps: true)
 NSApplication.shared.run()
