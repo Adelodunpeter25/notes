@@ -6,7 +6,7 @@ final class APIClient {
     private let baseURL: URL
     var token: String?
 
-    init(baseURL: String = "http://localhost:3000") {
+    init(baseURL: String = "http://localhost:8000/api") {
         self.baseURL = URL(string: baseURL)!
     }
 
