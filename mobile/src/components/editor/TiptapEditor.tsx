@@ -13,6 +13,7 @@ export type TiptapEditorRef = {
   undo: () => void;
   redo: () => void;
   setContent: (content: string) => void;
+  blur: () => void;
 };
 
 type TiptapEditorProps = {
@@ -64,6 +65,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       undo: () => executeScript(`window.editor?.chain().focus().undo().run();`),
       redo: () => executeScript(`window.editor?.chain().focus().redo().run();`),
       setContent: (content: string) => setWebViewContent(content),
+      blur: () => executeScript(`window.editor?.chain().blur().run();`),
     }));
 
     // Sync editable state

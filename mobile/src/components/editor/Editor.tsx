@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { ScrollView, Platform, Keyboard, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { formatNoteDateTime } from "@shared-utils/formatDate";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +13,10 @@ import {
   Undo2, 
   Redo2 
 } from "lucide-react-native";
+
+export type EditorRef = {
+  blur: () => void;
+};
 
 type EditorProps = {
   value: string;
@@ -41,16 +45,22 @@ const ToolbarButton = ({
   </TouchableOpacity>
 );
 
-export function Editor({
+export const Editor = forwardRef<EditorRef, EditorProps>(({
   value,
   onChange,
   placeholder = "Start writing...",
   timestamp,
   editable = true,
-}: EditorProps) {
+}, ref) => {
   const editorRef = useRef<TiptapEditorRef>(null);
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useImperativeHandle(ref, () => ({
+    blur: () => {
+      editorRef.current?.blur();
+    }
+  }));
 
   useEffect(() => {
     if (!editable) {
@@ -152,4 +162,4 @@ export function Editor({
       )}
     </View>
   );
-}
+});

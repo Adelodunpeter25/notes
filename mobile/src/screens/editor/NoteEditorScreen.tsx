@@ -6,7 +6,7 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 
 import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout";
-import { Editor } from "@/components/editor";
+import { Editor, type EditorRef } from "@/components/editor";
 import { NoteContextMenu } from "@/components/notes";
 import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
 import {
@@ -54,6 +54,7 @@ export function NoteEditorScreen() {
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const editorRef = useRef<EditorRef>(null);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(
@@ -279,6 +280,7 @@ export function NoteEditorScreen() {
             {isKeyboardVisible ? (
               <Pressable
                 onPress={() => {
+                  editorRef.current?.blur();
                   Keyboard.dismiss();
                   void saveNow();
                 }}
@@ -310,6 +312,7 @@ export function NoteEditorScreen() {
 
       <View className="flex-1">
         <Editor
+          ref={editorRef}
           key={noteId}
           value={content}
           onChange={handleEditorChange}
