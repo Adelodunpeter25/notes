@@ -7,7 +7,10 @@ import axios, {
 
 import type { ApiError, ApiErrorPayload } from "@shared/api";
 
-const API_BASE_URL = "https://notes-api.scaleitpro.com/api";
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = isDev 
+  ? "http://localhost:8000/api" 
+  : "https://notes-api.scaleitpro.com/api";
 
 const AUTH_TOKEN_STORAGE_KEY = "notes_access_token";
 

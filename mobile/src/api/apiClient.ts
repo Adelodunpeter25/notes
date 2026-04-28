@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import axios, {
     AxiosError,
     type AxiosInstance,
@@ -11,7 +12,9 @@ import type { ApiError, ApiErrorPayload } from "@shared/api";
 // For Android emulator, use IP address of your computer instead of localhost
 // For real devices, replace with your computer's local IP (e.g., 192.168.1.5)
 const API_BASE_URL = __DEV__
-    ? "https://notes-api.scaleitpro.com/api"
+    ? Platform.OS === "android"
+        ? "http://10.0.2.2:8000/api"
+        : "http://localhost:8000/api"
     : "https://notes-api.scaleitpro.com/api";
 
 const instance: AxiosInstance = axios.create({
