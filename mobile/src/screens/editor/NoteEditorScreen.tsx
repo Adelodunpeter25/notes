@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View, Keyboard, Platform } from "react-native";
 import { ChevronLeft, MoreVertical } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
@@ -53,11 +53,23 @@ export function NoteEditorScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(!routeNote || isEmptyDraftNote({ 
-    title: routeNote.title, 
-    content: routeNote.content, 
-    isPinned: routeNote.isPinned 
-  }));
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (routeNote && routeNote.id === noteId && prevNoteId.current !== noteId) {
@@ -70,7 +82,6 @@ export function NoteEditorScreen() {
       lastSavedContent.current = initialContent;
       lastSavedTitle.current = routeNote.title || "Untitled";
       savingPromiseRef.current = null;
-      setIsEditing(false);
     }
   }, [routeNote, noteId]);
 
@@ -89,7 +100,6 @@ export function NoteEditorScreen() {
       lastSavedContent.current = initialContent;
       lastSavedTitle.current = note.title || "Untitled";
       savingPromiseRef.current = null;
-      setIsEditing(false);
       return;
     }
 
@@ -266,40 +276,33 @@ export function NoteEditorScreen() {
             </View>
           ) : (
           <View className="flex-row items-center gap-1">
-            {isEditing ? (
+            {isKeyboardVisible ? (
               <Pressable
                 onPress={() => {
+                  Keyboard.dismiss();
                   void saveNow();
-                  setIsEditing(false);
                 }}
                 disabled={updateNoteMutation.isPending}
                 className="rounded-md px-2.5 py-1.5 hover:bg-white/5 active:bg-white/10"
                 hitSlop={20}
               >
                 <Text className={`text-[15px] font-bold ${updateNoteMutation.isPending ? "text-accent/50" : "text-accent"}`}>
-                  {updateNoteMutation.isPending ? "Saving..." : "Save"}
+                  {updateNoteMutation.isPending ? "Saving..." : "Done"}
                 </Text>
               </Pressable>
             ) : (
               <Pressable
-                onPress={() => setIsEditing(true)}
-                className="rounded-md px-2.5 py-1.5 hover:bg-white/5 active:bg-white/10"
+                onPress={(event) => {
+                  const { pageX, pageY } = event.nativeEvent;
+                  setMenuAnchor({ x: pageX, y: pageY });
+                  setIsMenuOpen(true);
+                }}
+                className="rounded-md p-2 hover:bg-white/5 active:bg-white/10"
                 hitSlop={20}
               >
-                <Text className="text-[15px] font-bold text-accent">Edit</Text>
+                <MoreVertical size={22} color="#eab308" />
               </Pressable>
             )}
-            <Pressable
-              onPress={(event) => {
-                const { pageX, pageY } = event.nativeEvent;
-                setMenuAnchor({ x: pageX, y: pageY });
-                setIsMenuOpen(true);
-              }}
-              className="rounded-md p-2 hover:bg-white/5 active:bg-white/10"
-              hitSlop={20}
-            >
-              <MoreVertical size={22} color="#eab308" />
-            </Pressable>
           </View>
           )}
         </View>
@@ -311,7 +314,7 @@ export function NoteEditorScreen() {
           value={content}
           onChange={handleEditorChange}
           timestamp={note?.updatedAt || note?.createdAt}
-          editable={isTrash ? false : isEditing}
+          editable={!isTrash}
         />
       </View>
 

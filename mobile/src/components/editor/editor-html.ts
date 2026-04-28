@@ -7,7 +7,7 @@ export const TIPTAP_EDITOR_HTML = `
   <style>
     body {
       font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1.5;
       color: #ffffff;
       background-color: #1A1B1E;
