@@ -89,7 +89,15 @@ export const TIPTAP_EDITOR_HTML = `
   <div id="editor"></div>
 
   <script type="module">
-    console.log('[WebView] Starting Tiptap initialization...');
+    const rnLog = (msg) => {
+      try {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', payload: msg }));
+        }
+      } catch (e) {}
+    };
+
+    rnLog('[WebView] Starting Tiptap initialization...');
     
     try {
       import('https://esm.sh/@tiptap/core@2.11.0').then(({ Editor }) => {
@@ -108,7 +116,7 @@ export const TIPTAP_EDITOR_HTML = `
           { default: Link },
           { default: Placeholder }
         ]) => {
-          console.log('[WebView] Tiptap modules loaded successfully');
+          rnLog('[WebView] Tiptap modules loaded successfully');
           
           let isInternalUpdate = false;
 
@@ -158,17 +166,27 @@ export const TIPTAP_EDITOR_HTML = `
 
           window.editor = editor;
 
+          // Expose global function for highly reliable RN direct injections
+          window.rnUpdateContent = function(htmlContent) {
+            try {
+              rnLog('[WebView] rnUpdateContent called, content length: ' + (htmlContent ? htmlContent.length : 0));
+              const currentHtml = editor.getHTML();
+              if (htmlContent !== currentHtml) {
+                editor.commands.setContent(htmlContent, false);
+              }
+              isInternalUpdate = false;
+            } catch (e) {
+              rnLog('[WebView] rnUpdateContent Error: ' + e.message);
+            }
+          };
+
           window.addEventListener('message', (event) => {
             try {
               const message = JSON.parse(event.data);
-              console.log('[WebView] Received message:', message.type);
+              rnLog('[WebView] Received message: ' + message.type);
               
               if (message.type === 'setContent') {
-                const currentHtml = editor.getHTML();
-                if (message.payload !== currentHtml) {
-                  editor.commands.setContent(message.payload, false);
-                }
-                isInternalUpdate = false;
+                window.rnUpdateContent(message.payload);
               } else if (message.type === 'toggleBold') {
                 editor.chain().focus().toggleBold().run();
               } else if (message.type === 'toggleItalic') {
@@ -187,24 +205,34 @@ export const TIPTAP_EDITOR_HTML = `
                 editor.chain().focus().redo().run();
               }
             } catch (e) {
-              console.error('[WebView] JS Message Error:', e);
+              rnLog('[WebView] JS Message Error: ' + e.message);
             }
           });
 
-          console.log('[WebView] Editor initialized, sending onReady');
+          // Fallback for some Android RN versions
+          document.addEventListener('message', (event) => {
+            try {
+              const message = JSON.parse(event.data);
+              if (message.type === 'setContent') {
+                 window.rnUpdateContent(message.payload);
+              }
+            } catch (e) {}
+          });
+
+          rnLog('[WebView] Editor initialized, sending onReady');
           if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'onReady'
             }));
           }
         }).catch(err => {
-          console.error('[WebView] Module load error:', err);
+          rnLog('[WebView] Module load error: ' + err.message);
         });
       }).catch(err => {
-        console.error('[WebView] Core module load error:', err);
+        rnLog('[WebView] Core module load error: ' + err.message);
       });
     } catch (err) {
-      console.error('[WebView] Init error:', err);
+      rnLog('[WebView] Init error: ' + err.message);
     }
   </script>
 </body>

@@ -29,40 +29,64 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     const isReady = useRef(false);
     const lastValue = useRef(value);
 
-    const postMessage = useCallback((type: string, payload?: any) => {
+    // Keep track of the VERY latest value to avoid stale closures in handleMessage
+    const currentValueRef = useRef(value);
+    useEffect(() => {
+      currentValueRef.current = value;
+    }, [value]);
+
+    // Use injectJavaScript for highest reliability across RN platforms
+    const executeScript = useCallback((script: string) => {
       if (webViewRef.current) {
-        const message = JSON.stringify({ type, payload });
-        webViewRef.current.postMessage(message);
+        webViewRef.current.injectJavaScript(`
+          try { ${script} } catch(e) { window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'log', payload: 'Execute error: ' + e.message })); }
+          true;
+        `);
       }
     }, []);
 
+    const setWebViewContent = useCallback((newContent: string) => {
+      console.log('[RN] setWebViewContent called, length:', newContent ? newContent.length : 0);
+      executeScript(`
+        if (window.rnUpdateContent) {
+          window.rnUpdateContent(${JSON.stringify(newContent || '')});
+        }
+      `);
+    }, [executeScript]);
+
     useImperativeHandle(ref, () => ({
-      toggleBold: () => postMessage('toggleBold'),
-      toggleItalic: () => postMessage('toggleItalic'),
-      toggleStrike: () => postMessage('toggleStrike'),
-      toggleBulletList: () => postMessage('toggleBulletList'),
-      toggleOrderedList: () => postMessage('toggleOrderedList'),
-      toggleTaskList: () => postMessage('toggleTaskList'),
-      undo: () => postMessage('undo'),
-      redo: () => postMessage('redo'),
-      setContent: (content: string) => postMessage('setContent', content),
+      toggleBold: () => executeScript(`window.editor?.chain().focus().toggleBold().run();`),
+      toggleItalic: () => executeScript(`window.editor?.chain().focus().toggleItalic().run();`),
+      toggleStrike: () => executeScript(`window.editor?.chain().focus().toggleStrike().run();`),
+      toggleBulletList: () => executeScript(`window.editor?.chain().focus().toggleBulletList().run();`),
+      toggleOrderedList: () => executeScript(`window.editor?.chain().focus().toggleOrderedList().run();`),
+      toggleTaskList: () => executeScript(`window.editor?.chain().focus().toggleTaskList().run();`),
+      undo: () => executeScript(`window.editor?.chain().focus().undo().run();`),
+      redo: () => executeScript(`window.editor?.chain().focus().redo().run();`),
+      setContent: (content: string) => setWebViewContent(content),
     }));
 
     // Sync content changes from parent to WebView
     useEffect(() => {
       if (isReady.current && value !== lastValue.current) {
+        console.log('[RN] Props value changed, syncing to WebView');
         lastValue.current = value;
-        postMessage('setContent', value);
+        setWebViewContent(value);
       }
-    }, [value, postMessage]);
+    }, [value, setWebViewContent]);
 
     const handleMessage = (event: WebViewMessageEvent) => {
       try {
         const message = JSON.parse(event.nativeEvent.data);
         switch (message.type) {
+          case 'log':
+            console.log(message.payload);
+            break;
           case 'onReady':
+            console.log('[RN] Received onReady from WebView');
             isReady.current = true;
-            postMessage('setContent', value);
+            // Use currentValueRef to guarantee we don't send a stale closure value
+            setWebViewContent(currentValueRef.current);
             break;
           case 'onChange':
             lastValue.current = message.payload;
@@ -90,13 +114,11 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             // Backup init if onReady was missed
             setTimeout(() => {
               if (!isReady.current) {
+                console.log('[RN] onLoadEnd timeout: isReady false, forcing init');
                 isReady.current = true;
-                postMessage('setContent', value);
+                setWebViewContent(currentValueRef.current);
               }
             }, 300);
-          }}
-          onConsoleMessage={(event) => {
-            console.log('[WebView Console]', event.nativeEvent.data);
           }}
           scrollEnabled={true}
           overScrollMode="never"
@@ -108,7 +130,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           textZoom={100}
           keyboardDisplayRequiresUserAction={false}
           hideKeyboardAccessoryView={true}
-          // Removing pointerEvents restriction to ensure WebView is interactive
           pointerEvents="auto"
         />
       </View>
