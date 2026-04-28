@@ -84,104 +84,128 @@ export const TIPTAP_EDITOR_HTML = `
       accent-color: #eab308;
     }
   </style>
-  <script src="https://unpkg.com/@tiptap/standalone@2.11.0"></script>
 </head>
 <body>
   <div id="editor"></div>
 
-  <script>
-    (function() {
-      try {
-        const { Editor, StarterKit, Underline, TaskList, TaskItem, Link, Placeholder } = Tiptap;
+  <script type="module">
+    console.log('[WebView] Starting Tiptap initialization...');
+    
+    try {
+      import('https://esm.sh/@tiptap/core@2.11.0').then(({ Editor }) => {
+        Promise.all([
+          import('https://esm.sh/@tiptap/starter-kit@2.11.0'),
+          import('https://esm.sh/@tiptap/extension-underline@2.11.0'),
+          import('https://esm.sh/@tiptap/extension-task-list@2.11.0'),
+          import('https://esm.sh/@tiptap/extension-task-item@2.11.0'),
+          import('https://esm.sh/@tiptap/extension-link@2.11.0'),
+          import('https://esm.sh/@tiptap/extension-placeholder@2.11.0')
+        ]).then(([
+          { default: StarterKit },
+          { default: Underline },
+          { default: TaskList },
+          { default: TaskItem },
+          { default: Link },
+          { default: Placeholder }
+        ]) => {
+          console.log('[WebView] Tiptap modules loaded successfully');
+          
+          let isInternalUpdate = false;
 
-        let isInternalUpdate = false;
-
-        const editor = new Editor({
-          element: document.querySelector('#editor'),
-          extensions: [
-            StarterKit,
-            Underline,
-            TaskList,
-            TaskItem.configure({
-              nested: true,
-            }),
-            Link.configure({
-              openOnClick: false,
-              autolink: true,
-            }),
-            Placeholder.configure({
-              placeholder: 'Start writing...',
-            }),
-          ],
-          content: '',
-          onUpdate({ editor }) {
-            isInternalUpdate = true;
-            const html = editor.getHTML();
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'onChange',
-                payload: html
-              }));
-            }
-          },
-          onFocus() {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'onFocus'
-              }));
-            }
-          },
-          onBlur() {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'onBlur'
-              }));
-            }
-          }
-        });
-
-        window.editor = editor;
-
-        window.addEventListener('message', (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            if (message.type === 'setContent') {
-              const currentHtml = editor.getHTML();
-              if (message.payload !== currentHtml) {
-                editor.commands.setContent(message.payload, false);
+          const editor = new Editor({
+            element: document.querySelector('#editor'),
+            extensions: [
+              StarterKit,
+              Underline,
+              TaskList,
+              TaskItem.configure({
+                nested: true,
+              }),
+              Link.configure({
+                openOnClick: false,
+                autolink: true,
+              }),
+              Placeholder.configure({
+                placeholder: 'Start writing...',
+              }),
+            ],
+            content: '',
+            onUpdate({ editor }) {
+              isInternalUpdate = true;
+              const html = editor.getHTML();
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'onChange',
+                  payload: html
+                }));
               }
-              isInternalUpdate = false;
-            } else if (message.type === 'toggleBold') {
-              editor.chain().focus().toggleBold().run();
-            } else if (message.type === 'toggleItalic') {
-              editor.chain().focus().toggleItalic().run();
-            } else if (message.type === 'toggleStrike') {
-              editor.chain().focus().toggleStrike().run();
-            } else if (message.type === 'toggleBulletList') {
-              editor.chain().focus().toggleBulletList().run();
-            } else if (message.type === 'toggleOrderedList') {
-              editor.chain().focus().toggleOrderedList().run();
-            } else if (message.type === 'toggleTaskList') {
-              editor.chain().focus().toggleTaskList().run();
-            } else if (message.type === 'undo') {
-              editor.chain().focus().undo().run();
-            } else if (message.type === 'redo') {
-              editor.chain().focus().redo().run();
+            },
+            onFocus() {
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'onFocus'
+                }));
+              }
+            },
+            onBlur() {
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'onBlur'
+                }));
+              }
             }
-          } catch (e) {
-            console.error('JS Message Error:', e);
-          }
-        });
+          });
 
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'onReady'
-          }));
-        }
-      } catch (err) {
-        console.error('JS Init Error:', err);
-      }
-    })();
+          window.editor = editor;
+
+          window.addEventListener('message', (event) => {
+            try {
+              const message = JSON.parse(event.data);
+              console.log('[WebView] Received message:', message.type);
+              
+              if (message.type === 'setContent') {
+                const currentHtml = editor.getHTML();
+                if (message.payload !== currentHtml) {
+                  editor.commands.setContent(message.payload, false);
+                }
+                isInternalUpdate = false;
+              } else if (message.type === 'toggleBold') {
+                editor.chain().focus().toggleBold().run();
+              } else if (message.type === 'toggleItalic') {
+                editor.chain().focus().toggleItalic().run();
+              } else if (message.type === 'toggleStrike') {
+                editor.chain().focus().toggleStrike().run();
+              } else if (message.type === 'toggleBulletList') {
+                editor.chain().focus().toggleBulletList().run();
+              } else if (message.type === 'toggleOrderedList') {
+                editor.chain().focus().toggleOrderedList().run();
+              } else if (message.type === 'toggleTaskList') {
+                editor.chain().focus().toggleTaskList().run();
+              } else if (message.type === 'undo') {
+                editor.chain().focus().undo().run();
+              } else if (message.type === 'redo') {
+                editor.chain().focus().redo().run();
+              }
+            } catch (e) {
+              console.error('[WebView] JS Message Error:', e);
+            }
+          });
+
+          console.log('[WebView] Editor initialized, sending onReady');
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'onReady'
+            }));
+          }
+        }).catch(err => {
+          console.error('[WebView] Module load error:', err);
+        });
+      }).catch(err => {
+        console.error('[WebView] Core module load error:', err);
+      });
+    } catch (err) {
+      console.error('[WebView] Init error:', err);
+    }
   </script>
 </body>
 </html>
