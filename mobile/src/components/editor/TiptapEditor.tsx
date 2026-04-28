@@ -66,6 +66,13 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       setContent: (content: string) => setWebViewContent(content),
     }));
 
+    // Sync editable state
+    useEffect(() => {
+      if (isReady.current) {
+        executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
+      }
+    }, [editable, executeScript]);
+
     // Sync content changes from parent to WebView
     useEffect(() => {
       if (isReady.current && value !== lastValue.current) {
@@ -87,6 +94,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             isReady.current = true;
             // Use currentValueRef to guarantee we don't send a stale closure value
             setWebViewContent(currentValueRef.current);
+            executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
             break;
           case 'onChange':
             lastValue.current = message.payload;
@@ -117,6 +125,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
                 console.log('[RN] onLoadEnd timeout: isReady false, forcing init');
                 isReady.current = true;
                 setWebViewContent(currentValueRef.current);
+                executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
               }
             }, 300);
           }}

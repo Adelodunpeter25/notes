@@ -84,7 +84,6 @@ export function Editor({
     <View style={{ backgroundColor: EDITOR_SURFACE_COLOR }} className="flex-1">
       <View 
         className="flex-1"
-        pointerEvents={editable ? "auto" : "none"}
       >
         {timestamp && (
           <View className="pt-2 pb-2 items-center">
