@@ -13,14 +13,18 @@ export const TIPTAP_EDITOR_HTML = `
       background-color: #1A1B1E;
       margin: 0;
       padding: 16px;
-      height: 100vh;
+      min-height: 100vh;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
 
+    #editor {
+      min-height: calc(100vh - 32px);
+    }
+
     .ProseMirror {
       outline: none;
-      min-height: 100%;
+      min-height: calc(100vh - 32px);
     }
 
     .ProseMirror p {
@@ -80,98 +84,104 @@ export const TIPTAP_EDITOR_HTML = `
       accent-color: #eab308;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@tiptap/standalone@2.11.0/dist/index.js"></script>
+  <script src="https://unpkg.com/@tiptap/standalone@2.11.0"></script>
 </head>
 <body>
   <div id="editor"></div>
 
   <script>
-    const { Editor, StarterKit, Underline, TaskList, TaskItem, Link, Placeholder } = Tiptap;
-
-    let isInternalUpdate = false;
-
-    const editor = new Editor({
-      element: document.querySelector('#editor'),
-      extensions: [
-        StarterKit,
-        Underline,
-        TaskList,
-        TaskItem.configure({
-          nested: true,
-        }),
-        Link.configure({
-          openOnClick: false,
-          autolink: true,
-        }),
-        Placeholder.configure({
-          placeholder: 'Start writing...',
-        }),
-      ],
-      content: '',
-      onUpdate({ editor }) {
-        isInternalUpdate = true;
-        const html = editor.getHTML();
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'onChange',
-            payload: html
-          }));
-        }
-      },
-      onFocus() {
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'onFocus'
-          }));
-        }
-      },
-      onBlur() {
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'onBlur'
-          }));
-        }
-      }
-    });
-
-    window.addEventListener('message', (event) => {
+    (function() {
       try {
-        const message = JSON.parse(event.data);
-        if (message.type === 'setContent') {
-          // If we receive setContent, we force it unless it's exactly what we already have
-          const currentHtml = editor.getHTML();
-          if (message.payload !== currentHtml) {
-            editor.commands.setContent(message.payload, false);
-          }
-          isInternalUpdate = false;
-        } else if (message.type === 'toggleBold') {
-          editor.chain().focus().toggleBold().run();
-        } else if (message.type === 'toggleItalic') {
-          editor.chain().focus().toggleItalic().run();
-        } else if (message.type === 'toggleStrike') {
-          editor.chain().focus().toggleStrike().run();
-        } else if (message.type === 'toggleBulletList') {
-          editor.chain().focus().toggleBulletList().run();
-        } else if (message.type === 'toggleOrderedList') {
-          editor.chain().focus().toggleOrderedList().run();
-        } else if (message.type === 'toggleTaskList') {
-          editor.chain().focus().toggleTaskList().run();
-        } else if (message.type === 'undo') {
-          editor.chain().focus().undo().run();
-        } else if (message.type === 'redo') {
-          editor.chain().focus().redo().run();
-        }
-      } catch (e) {
-        // Silently handle
-      }
-    });
+        const { Editor, StarterKit, Underline, TaskList, TaskItem, Link, Placeholder } = Tiptap;
 
-    // Notify RN that we're ready
-    if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'onReady'
-      }));
-    }
+        let isInternalUpdate = false;
+
+        const editor = new Editor({
+          element: document.querySelector('#editor'),
+          extensions: [
+            StarterKit,
+            Underline,
+            TaskList,
+            TaskItem.configure({
+              nested: true,
+            }),
+            Link.configure({
+              openOnClick: false,
+              autolink: true,
+            }),
+            Placeholder.configure({
+              placeholder: 'Start writing...',
+            }),
+          ],
+          content: '',
+          onUpdate({ editor }) {
+            isInternalUpdate = true;
+            const html = editor.getHTML();
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'onChange',
+                payload: html
+              }));
+            }
+          },
+          onFocus() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'onFocus'
+              }));
+            }
+          },
+          onBlur() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'onBlur'
+              }));
+            }
+          }
+        });
+
+        window.editor = editor;
+
+        window.addEventListener('message', (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === 'setContent') {
+              const currentHtml = editor.getHTML();
+              if (message.payload !== currentHtml) {
+                editor.commands.setContent(message.payload, false);
+              }
+              isInternalUpdate = false;
+            } else if (message.type === 'toggleBold') {
+              editor.chain().focus().toggleBold().run();
+            } else if (message.type === 'toggleItalic') {
+              editor.chain().focus().toggleItalic().run();
+            } else if (message.type === 'toggleStrike') {
+              editor.chain().focus().toggleStrike().run();
+            } else if (message.type === 'toggleBulletList') {
+              editor.chain().focus().toggleBulletList().run();
+            } else if (message.type === 'toggleOrderedList') {
+              editor.chain().focus().toggleOrderedList().run();
+            } else if (message.type === 'toggleTaskList') {
+              editor.chain().focus().toggleTaskList().run();
+            } else if (message.type === 'undo') {
+              editor.chain().focus().undo().run();
+            } else if (message.type === 'redo') {
+              editor.chain().focus().redo().run();
+            }
+          } catch (e) {
+            console.error('JS Message Error:', e);
+          }
+        });
+
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'onReady'
+          }));
+        }
+      } catch (err) {
+        console.error('JS Init Error:', err);
+      }
+    })();
   </script>
 </body>
 </html>

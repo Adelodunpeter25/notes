@@ -53,7 +53,11 @@ export function NoteEditorScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!routeNote || isEmptyDraftNote({ 
+    title: routeNote.title, 
+    content: routeNote.content, 
+    isPinned: routeNote.isPinned 
+  }));
 
   useEffect(() => {
     if (routeNote && routeNote.id === noteId && prevNoteId.current !== noteId) {
@@ -110,6 +114,9 @@ export function NoteEditorScreen() {
     if (savingPromiseRef.current) {
       return savingPromiseRef.current;
     }
+
+    // Small delay to ensure any pending webview bridge messages are processed
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     if (!hasInitializedContent.current || !hasUserEdited.current) {
       return;

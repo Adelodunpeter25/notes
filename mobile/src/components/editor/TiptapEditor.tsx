@@ -30,8 +30,10 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     const lastValue = useRef(value);
 
     const postMessage = useCallback((type: string, payload?: any) => {
-      const message = JSON.stringify({ type, payload });
-      webViewRef.current?.postMessage(message);
+      if (webViewRef.current) {
+        const message = JSON.stringify({ type, payload });
+        webViewRef.current.postMessage(message);
+      }
     }, []);
 
     useImperativeHandle(ref, () => ({
@@ -46,7 +48,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       setContent: (content: string) => postMessage('setContent', content),
     }));
 
-    // Handle incoming value changes from parent
+    // Sync content changes from parent to WebView
     useEffect(() => {
       if (isReady.current && value !== lastValue.current) {
         lastValue.current = value;
@@ -60,7 +62,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         switch (message.type) {
           case 'onReady':
             isReady.current = true;
-            // Send initial content as soon as webview says it's ready
             postMessage('setContent', value);
             break;
           case 'onChange':
@@ -75,7 +76,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             break;
         }
       } catch (e) {
-        // Error parsing message
+        console.error('[TiptapEditor] Message Parse Error:', e);
       }
     };
 
@@ -86,14 +87,16 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           source={{ html: TIPTAP_EDITOR_HTML }}
           onMessage={handleMessage}
           onLoadEnd={() => {
-            // Backup initialization if onReady message is missed or delayed
-            if (!isReady.current) {
-              // We wait a bit to ensure script has run
-              setTimeout(() => {
+            // Backup init if onReady was missed
+            setTimeout(() => {
+              if (!isReady.current) {
                 isReady.current = true;
                 postMessage('setContent', value);
-              }, 500);
-            }
+              }
+            }, 300);
+          }}
+          onConsoleMessage={(event) => {
+            console.log('[WebView Console]', event.nativeEvent.data);
           }}
           scrollEnabled={true}
           overScrollMode="never"
@@ -105,7 +108,8 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           textZoom={100}
           keyboardDisplayRequiresUserAction={false}
           hideKeyboardAccessoryView={true}
-          pointerEvents={editable ? 'auto' : 'none'}
+          // Removing pointerEvents restriction to ensure WebView is interactive
+          pointerEvents="auto"
         />
       </View>
     );
