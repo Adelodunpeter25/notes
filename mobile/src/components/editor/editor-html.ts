@@ -79,44 +79,14 @@ export const TIPTAP_EDITOR_HTML = `
       height: 18px;
       accent-color: #eab308;
     }
-
-    pre {
-      background: #2a2b2e;
-      border-radius: 4px;
-      padding: 12px;
-      overflow-x: auto;
-    }
-
-    code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.9em;
-    }
   </style>
-  <script type="importmap">
-    {
-      "imports": {
-        "@tiptap/core": "https://esm.sh/@tiptap/core@2.11.0",
-        "@tiptap/starter-kit": "https://esm.sh/@tiptap/starter-kit@2.11.0",
-        "@tiptap/extension-underline": "https://esm.sh/@tiptap/extension-underline@2.11.0",
-        "@tiptap/extension-task-list": "https://esm.sh/@tiptap/extension-task-list@2.11.0",
-        "@tiptap/extension-task-item": "https://esm.sh/@tiptap/extension-task-item@2.11.0",
-        "@tiptap/extension-link": "https://esm.sh/@tiptap/extension-link@2.11.0",
-        "@tiptap/extension-placeholder": "https://esm.sh/@tiptap/extension-placeholder@2.11.0"
-      }
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@tiptap/standalone@2.11.0/dist/index.js"></script>
 </head>
 <body>
   <div id="editor"></div>
 
-  <script type="module">
-    import { Editor } from '@tiptap/core'
-    import StarterKit from '@tiptap/starter-kit'
-    import Underline from '@tiptap/extension-underline'
-    import TaskList from '@tiptap/extension-task-list'
-    import TaskItem from '@tiptap/extension-task-item'
-    import Link from '@tiptap/extension-link'
-    import Placeholder from '@tiptap/extension-placeholder'
+  <script>
+    const { Editor, StarterKit, Underline, TaskList, TaskItem, Link, Placeholder } = Tiptap;
 
     let isInternalUpdate = false;
 
@@ -141,20 +111,26 @@ export const TIPTAP_EDITOR_HTML = `
       onUpdate({ editor }) {
         isInternalUpdate = true;
         const html = editor.getHTML();
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'onChange',
-          payload: html
-        }));
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'onChange',
+            payload: html
+          }));
+        }
       },
       onFocus() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'onFocus'
-        }));
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'onFocus'
+          }));
+        }
       },
       onBlur() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'onBlur'
-        }));
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'onBlur'
+          }));
+        }
       }
     });
 
@@ -162,7 +138,9 @@ export const TIPTAP_EDITOR_HTML = `
       try {
         const message = JSON.parse(event.data);
         if (message.type === 'setContent') {
-          if (!isInternalUpdate) {
+          // If we receive setContent, we force it unless it's exactly what we already have
+          const currentHtml = editor.getHTML();
+          if (message.payload !== currentHtml) {
             editor.commands.setContent(message.payload, false);
           }
           isInternalUpdate = false;
@@ -184,13 +162,16 @@ export const TIPTAP_EDITOR_HTML = `
           editor.chain().focus().redo().run();
         }
       } catch (e) {
-        console.error('Error handling message:', e);
+        // Silently handle
       }
     });
 
-    window.ReactNativeWebView.postMessage(JSON.stringify({
-      type: 'onReady'
-    }));
+    // Notify RN that we're ready
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'onReady'
+      }));
+    }
   </script>
 </body>
 </html>

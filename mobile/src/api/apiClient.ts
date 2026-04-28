@@ -9,12 +9,9 @@ import { useAuthStore } from "@/stores/authStore";
 
 import type { ApiError, ApiErrorPayload } from "@shared/api";
 
-// For Android emulator, use IP address of your computer instead of localhost
-// For real devices, replace with your computer's local IP (e.g., 192.168.1.5)
+// For real devices, replace localhost with your computer's local IP (e.g., http://192.168.1.5:8000/api)
 const API_BASE_URL = __DEV__
-  ? Platform.OS === "android"
-    ? "http://10.0.2.2:8000/api"
-    : "http://192.168.1.107:8000/api"
+  ? "http://192.168.1.107:8000/api"
   : "https://notes-api.scaleitpro.com/api";
 
 const instance: AxiosInstance = axios.create({
