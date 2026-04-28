@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Editor</title>
+
+<!-- Tiptap + ProseMirror via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prosemirror-model/1.19.0/index.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@tiptap/core": "https://esm.sh/@tiptap/core@2.7.3",
+    "@tiptap/pm/state": "https://esm.sh/@tiptap/pm@2.7.3/state",
+    "@tiptap/pm/view": "https://esm.sh/@tiptap/pm@2.7.3/view",
+    "@tiptap/pm/model": "https://esm.sh/@tiptap/pm@2.7.3/model",
+    "@tiptap/pm/transform": "https://esm.sh/@tiptap/pm@2.7.3/transform",
+    "@tiptap/pm/commands": "https://esm.sh/@tiptap/pm@2.7.3/commands",
+    "@tiptap/pm/keymap": "https://esm.sh/@tiptap/pm@2.7.3/keymap",
+    "@tiptap/pm/dropcursor": "https://esm.sh/@tiptap/pm@2.7.3/dropcursor",
+    "@tiptap/pm/gapcursor": "https://esm.sh/@tiptap/pm@2.7.3/gapcursor",
+    "@tiptap/pm/history": "https://esm.sh/@tiptap/pm@2.7.3/history",
+    "@tiptap/pm/schema-list": "https://esm.sh/@tiptap/pm@2.7.3/schema-list",
+    "@tiptap/pm/inputrules": "https://esm.sh/@tiptap/pm@2.7.3/inputrules",
+    "@tiptap/extension-document": "https://esm.sh/@tiptap/extension-document@2.7.3",
+    "@tiptap/extension-paragraph": "https://esm.sh/@tiptap/extension-paragraph@2.7.3",
+    "@tiptap/extension-text": "https://esm.sh/@tiptap/extension-text@2.7.3",
+    "@tiptap/extension-bold": "https://esm.sh/@tiptap/extension-bold@2.7.3",
+    "@tiptap/extension-italic": "https://esm.sh/@tiptap/extension-italic@2.7.3",
+    "@tiptap/extension-underline": "https://esm.sh/@tiptap/extension-underline@2.7.3",
+    "@tiptap/extension-strike": "https://esm.sh/@tiptap/extension-strike@2.7.3",
+    "@tiptap/extension-code": "https://esm.sh/@tiptap/extension-code@2.7.3",
+    "@tiptap/extension-code-block": "https://esm.sh/@tiptap/extension-code-block@2.7.3",
+    "@tiptap/extension-heading": "https://esm.sh/@tiptap/extension-heading@2.7.3",
+    "@tiptap/extension-bullet-list": "https://esm.sh/@tiptap/extension-bullet-list@2.7.3",
+    "@tiptap/extension-ordered-list": "https://esm.sh/@tiptap/extension-ordered-list@2.7.3",
+    "@tiptap/extension-list-item": "https://esm.sh/@tiptap/extension-list-item@2.7.3",
+    "@tiptap/extension-task-list": "https://esm.sh/@tiptap/extension-task-list@2.7.3",
+    "@tiptap/extension-task-item": "https://esm.sh/@tiptap/extension-task-item@2.7.3",
+    "@tiptap/extension-text-align": "https://esm.sh/@tiptap/extension-text-align@2.7.3",
+    "@tiptap/extension-indent": "https://esm.sh/@tiptap/extension-indent@2.7.3",
+    "@tiptap/extension-history": "https://esm.sh/@tiptap/extension-history@2.7.3",
+    "@tiptap/extension-placeholder": "https://esm.sh/@tiptap/extension-placeholder@2.7.3",
+    "@tiptap/extension-character-count": "https://esm.sh/@tiptap/extension-character-count@2.7.3",
+    "@tiptap/extension-horizontal-rule": "https://esm.sh/@tiptap/extension-horizontal-rule@2.7.3",
+    "@tiptap/extension-blockquote": "https://esm.sh/@tiptap/extension-blockquote@2.7.3",
+    "@tiptap/extension-link": "https://esm.sh/@tiptap/extension-link@2.7.3"
+  }
+}
+</script>
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f2f2f7;
+    --border: #e0e0e5;
+    --text: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --accent: #007aff;
+    --accent-light: #e8f1ff;
+    --toolbar-bg: #f9f9fb;
+    --toolbar-border: #d1d1d6;
+    --btn-active: #007aff;
+    --btn-active-text: #ffffff;
+    --btn-hover: #e8e8ed;
+    --task-checked: #34c759;
+    --monospace: 'Menlo', 'Courier New', monospace;
+    --serif: Georgia, serif;
+    --radius: 8px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --surface: #1c1c1e;
+      --border: #38383a;
+      --text: #f2f2f7;
+      --text-secondary: #636366;
+      --accent: #0a84ff;
+      --accent-light: #0a2040;
+      --toolbar-bg: #1c1c1e;
+      --toolbar-border: #38383a;
+      --btn-hover: #2c2c2e;
+      --task-checked: #32d74b;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Text', sans-serif;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+  }
+
+  /* ── Toolbar ── */
+  #toolbar-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--toolbar-border);
+    flex-shrink: 0;
+  }
+  #toolbar-scroll::-webkit-scrollbar { display: none; }
+
+  #toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    min-width: max-content;
+  }
+
+  .tb-divider {
+    width: 1px;
+    height: 22px;
+    background: var(--toolbar-border);
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .tb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    -webkit-user-select: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .tb-btn:active { opacity: 0.6; }
+  .tb-btn.is-active {
+    background: var(--btn-active);
+    color: var(--btn-active-text);
+  }
+  .tb-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Style label buttons */
+  .tb-style-label {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 10px;
+    min-width: auto;
+  }
+
+  /* ── Editor area ── */
+  #editor-wrap {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 18px calc(16px + var(--safe-bottom)) 18px;
+  }
+
+  .ProseMirror {
+    outline: none;
+    min-height: 100%;
+    word-break: break-word;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  /* Placeholder */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--text-secondary);
+    pointer-events: none;
+    float: left;
+    height: 0;
+  }
+
+  /* ── Typography styles matching Apple Notes ── */
+  .ProseMirror h1 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .ProseMirror h2 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 12px;
+    margin-bottom: 2px;
+  }
+  .ProseMirror h3 {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 8px;
+    margin-bottom: 2px;
+  }
+  .ProseMirror p { margin-bottom: 2px; }
+
+  /* Monospaced body style via a custom class */
+  .ProseMirror p.mono,
+  .ProseMirror li.mono {
+    font-family: var(--monospace);
+    font-size: 15px;
+  }
+
+  /* Lists */
+  .ProseMirror ul,
+  .ProseMirror ol {
+    padding-left: 24px;
+    margin: 2px 0;
+  }
+  .ProseMirror li { margin: 1px 0; }
+  .ProseMirror li p { margin: 0; }
+
+  /* Task list */
+  .ProseMirror ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 4px;
+  }
+  .ProseMirror ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 3px 0;
+  }
+  .ProseMirror ul[data-type="taskList"] li > label {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+    background: var(--task-checked);
+    border-color: var(--task-checked);
+  }
+  .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 6px; height: 10px;
+    border: 2px solid white;
+    border-top: none; border-left: none;
+    transform: rotate(45deg);
+  }
+  .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+  }
+  .ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+
+  /* Blockquote */
+  .ProseMirror blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+    color: var(--text-secondary);
+    margin: 6px 0;
+    font-style: italic;
+  }
+
+  /* Code inline */
+  .ProseMirror code {
+    font-family: var(--monospace);
+    font-size: 14px;
+    background: var(--surface);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--text);
+  }
+
+  /* Code block */
+  .ProseMirror pre {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-family: var(--monospace);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .ProseMirror pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Horizontal rule */
+  .ProseMirror hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 14px 0;
+  }
+
+  /* Link */
+  .ProseMirror a {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  /* Text align */
+  .ProseMirror [style*="text-align: center"] { text-align: center; }
+  .ProseMirror [style*="text-align: right"] { text-align: right; }
+  .ProseMirror [style*="text-align: justify"] { text-align: justify; }
+
+  /* Indent via margin */
+  .ProseMirror [data-indent="1"] { margin-left: 24px; }
+  .ProseMirror [data-indent="2"] { margin-left: 48px; }
+  .ProseMirror [data-indent="3"] { margin-left: 72px; }
+  .ProseMirror [data-indent="4"] { margin-left: 96px; }
+  .ProseMirror [data-indent="5"] { margin-left: 120px; }
+  .ProseMirror [data-indent="6"] { margin-left: 144px; }
+
+  /* Selection */
+  .ProseMirror ::selection {
+    background: var(--accent-light);
+  }
+
+  /* Popover for heading styles */
+  #style-popover {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  #style-popover.open { display: flex; }
+  #style-popover-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.25);
+  }
+  #style-popover-sheet {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    background: var(--toolbar-bg);
+    border-radius: 16px 16px 0 0;
+    padding: 12px 16px calc(20px + var(--safe-bottom));
+    border-top: 1px solid var(--toolbar-border);
+  }
+  #style-popover-sheet h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .style-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+    -webkit-user-select: none;
+    user-select: none;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    color: var(--text);
+  }
+  .style-option:active { background: var(--btn-hover); }
+  .style-option.active { background: var(--accent-light); color: var(--accent); }
+  .style-option .preview { flex: 1; }
+  .style-option .check { color: var(--accent); font-size: 18px; }
+  .so-title { font-size: 24px; font-weight: 700; }
+  .so-heading { font-size: 19px; font-weight: 600; }
+  .so-subheading { font-size: 15px; font-weight: 600; }
+  .so-body { font-size: 17px; }
+  .so-mono { font-size: 15px; font-family: var(--monospace); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Scrollable toolbar -->
+  <div id="toolbar-scroll">
+    <div id="toolbar">
+      <!-- Undo / Redo -->
+      <button class="tb-btn" id="btn-undo" title="Undo">
+        <svg viewBox="0 0 24 24"><path d="M12 6a7 7 0 1 1-7 7H3a9 9 0 1 0 2.64-6.36L4 5v5h5L7.76 8.76A7 7 0 0 1 12 6Z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-redo" title="Redo">
+        <svg viewBox="0 0 24 24"><path d="M12 6a7 7 0 1 1 7 7h2a9 9 0 1 0-2.64-6.36L20 5v5h-5l1.24-1.24A7 7 0 0 0 12 6Z"/></svg>
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Style picker -->
+      <button class="tb-btn tb-style-label" id="btn-style" title="Text Style">
+        <span id="style-label">Body</span> ▾
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Bold, Italic, Underline, Strike -->
+      <button class="tb-btn" id="btn-bold" title="Bold">
+        <svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 0 8H6V4zm0 8h9a4 4 0 0 1 0 8H6v-8z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-italic" title="Italic">
+        <svg viewBox="0 0 24 24"><path d="M11 4h6v2h-2.3l-3.4 12H14v2H8v-2h2.3l3.4-12H11V4z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-underline" title="Underline">
+        <svg viewBox="0 0 24 24"><path d="M5 20h14v2H5v-2zm7-2a6 6 0 0 1-6-6V4h2v8a4 4 0 0 0 8 0V4h2v8a6 6 0 0 1-6 6z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-strike" title="Strikethrough">
+        <svg viewBox="0 0 24 24"><path d="M13.3 12H20v2h-3.19c.39.61.69 1.32.69 2a4 4 0 0 1-8 0h2a2 2 0 0 0 4 0c0-.98-.82-1.79-2.32-2H4v-2h6.38c-1.04-.52-2.38-1.35-2.38-3a4 4 0 0 1 8 0h-2a2 2 0 0 0-4 0c0 .84.8 1.43 3.3 3z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-code" title="Inline Code">
+        <svg viewBox="0 0 24 24"><path d="m8 18-6-6 6-6 1.41 1.41L4.83 12l4.58 4.59zm8 0 6-6-6-6-1.41 1.41L19.17 12l-4.58 4.59z"/></svg>
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Lists -->
+      <button class="tb-btn" id="btn-bullet" title="Bullet List">
+        <svg viewBox="0 0 24 24"><path d="M4 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm3-1h13v2H7V5zm-3 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm3-1h13v2H7v-2zm-3 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm3-1h13v2H7v-2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-ordered" title="Numbered List">
+        <svg viewBox="0 0 24 24"><path d="M3 17h2v.5H4v1h1v.5H3v1h3v-4H3v1zm1-9h1V4H3v1h1v3zm-1 3h1.8L3 13.1v.9h3v-1H4.2L6 10.9V10H3v1zm5-8v2h12V3H8zm0 14h12v-2H8v2zm0-6h12v-2H8v2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-tasklist" title="Checklist">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14zm-9-5.41-2.29-2.3L6.3 12.7 10 16.41 17.7 8.7l-1.41-1.41z"/></svg>
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Indent -->
+      <button class="tb-btn" id="btn-indent" title="Indent">
+        <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm4 4h14v2H7V7zm-4 4h18v2H3v-2zm4 4h14v2H7v-2zm-4 4h18v2H3v-2zM3 7l4 4-4 4V7z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-outdent" title="Outdent">
+        <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm4 4h14v2H7V7zm-4 4h18v2H3v-2zm4 4h14v2H7v-2zm-4 4h18v2H3v-2zm4-14v8L3 11l4-4z"/></svg>
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Text Align -->
+      <button class="tb-btn" id="btn-align-left" title="Align Left">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 4h12v2H3V9zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-align-center" title="Align Center">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm3 4h12v2H6V9zm-3 4h18v2H3v-2zm3 4h12v2H6v-2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-align-right" title="Align Right">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm6 4h12v2H9V9zm-6 4h18v2H3v-2zm6 4h12v2H9v-2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-align-justify" title="Justify">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3V5zm0 4h18v2H3V9zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg>
+      </button>
+
+      <div class="tb-divider"></div>
+
+      <!-- Extras -->
+      <button class="tb-btn" id="btn-blockquote" title="Blockquote">
+        <svg viewBox="0 0 24 24"><path d="M14 17h3l2-4V7h-6v6h3zm-8 0h3l2-4V7H5v6h3z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-codeblock" title="Code Block">
+        <svg viewBox="0 0 24 24"><path d="M8 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4v-2H4V5h4V3zm12 0h-4v2h4v14h-4v2h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM7 15l2-2-2-2-1.41 1.41L7.17 13l-1.58 1.59zm10 0 1.41-1.41L16.83 13l1.58-1.59L17 10l-2 2z"/></svg>
+      </button>
+      <button class="tb-btn" id="btn-hr" title="Divider">
+        <svg viewBox="0 0 24 24"><path d="M3 11h18v2H3z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div id="editor-wrap">
+    <div id="editor"></div>
+  </div>
+</div>
+
+<!-- Style Popover -->
+<div id="style-popover">
+  <div id="style-popover-backdrop"></div>
+  <div id="style-popover-sheet">
+    <h4>Text Style</h4>
+    <button class="style-option" data-style="title">
+      <span class="preview so-title">Title</span>
+    </button>
+    <button class="style-option" data-style="heading">
+      <span class="preview so-heading">Heading</span>
+    </button>
+    <button class="style-option" data-style="subheading">
+      <span class="preview so-subheading">Subheading</span>
+    </button>
+    <button class="style-option" data-style="body">
+      <span class="preview so-body">Body</span>
+    </button>
+    <button class="style-option" data-style="mono">
+      <span class="preview so-mono">Monospaced</span>
+    </button>
+  </div>
+</div>
+
+<script type="module">
+import { Editor } from '@tiptap/core';
+import Document from '@tiptap/extension-document';
+import Paragraph from '@tiptap/extension-paragraph';
+import Text from '@tiptap/extension-text';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
+import Underline from '@tiptap/extension-underline';
+import Strike from '@tiptap/extension-strike';
+import Code from '@tiptap/extension-code';
+import CodeBlock from '@tiptap/extension-code-block';
+import Heading from '@tiptap/extension-heading';
+import BulletList from '@tiptap/extension-bullet-list';
+import OrderedList from '@tiptap/extension-ordered-list';
+import ListItem from '@tiptap/extension-list-item';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import TextAlign from '@tiptap/extension-text-align';
+import History from '@tiptap/extension-history';
+import Placeholder from '@tiptap/extension-placeholder';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
+import Blockquote from '@tiptap/extension-blockquote';
+import Link from '@tiptap/extension-link';
+import { Extension } from '@tiptap/core';
+
+// ── Custom Indent Extension ──
+const Indent = Extension.create({
+  name: 'indent',
+  addOptions() {
+    return { minIndent: 0, maxIndent: 6 };
+  },
+  addGlobalAttributes() {
+    return [{
+      types: ['paragraph', 'heading', 'listItem', 'taskItem'],
+      attributes: {
+        indent: {
+          default: 0,
+          renderHTML: attrs => attrs.indent > 0 ? { 'data-indent': attrs.indent } : {},
+          parseHTML: el => parseInt(el.getAttribute('data-indent') || '0', 10),
+        }
+      }
+    }];
+  },
+  addCommands() {
+    return {
+      indent: () => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        const { from, to } = selection;
+        let changed = false;
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (['paragraph', 'heading', 'listItem', 'taskItem'].includes(node.type.name)) {
+            const cur = node.attrs.indent || 0;
+            if (cur < 6) {
+              tr.setNodeMarkup(pos, null, { ...node.attrs, indent: cur + 1 });
+              changed = true;
+            }
+          }
+        });
+        if (changed && dispatch) dispatch(tr);
+        return changed;
+      },
+      outdent: () => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        const { from, to } = selection;
+        let changed = false;
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (['paragraph', 'heading', 'listItem', 'taskItem'].includes(node.type.name)) {
+            const cur = node.attrs.indent || 0;
+            if (cur > 0) {
+              tr.setNodeMarkup(pos, null, { ...node.attrs, indent: cur - 1 });
+              changed = true;
+            }
+          }
+        });
+        if (changed && dispatch) dispatch(tr);
+        return changed;
+      }
+    };
+  },
+});
+
+// ── Editor init ──
+const editor = new Editor({
+  element: document.getElementById('editor'),
+  extensions: [
+    Document,
+    Paragraph,
+    Text,
+    Bold,
+    Italic,
+    Underline,
+    Strike,
+    Code,
+    CodeBlock,
+    Heading.configure({ levels: [1, 2, 3] }),
+    BulletList,
+    OrderedList,
+    ListItem,
+    TaskList,
+    TaskItem.configure({ nested: false }),
+    TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    Indent,
+    History,
+    HorizontalRule,
+    Blockquote,
+    Link.configure({ openOnClick: false, autolink: true }),
+    Placeholder.configure({ placeholder: 'Start typing…' }),
+  ],
+  content: '',
+  onUpdate({ editor }) {
+    syncToolbar();
+    postToRN('update', { html: editor.getHTML(), text: editor.getText() });
+  },
+  onSelectionUpdate() {
+    syncToolbar();
+  },
+});
+
+// ── RN bridge ──
+function postToRN(type, payload = {}) {
+  const msg = JSON.stringify({ type, ...payload });
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(msg);
+  }
+}
+
+// Expose API for RN → WebView
+window.editorSetContent = (html) => editor.commands.setContent(html);
+window.editorGetHTML = () => editor.getHTML();
+window.editorGetText = () => editor.getText();
+window.editorFocus = () => editor.commands.focus();
+
+// ── Style label map ──
+const styleLabels = {
+  title: 'Title', heading: 'Heading',
+  subheading: 'Subheading', body: 'Body', mono: 'Mono'
+};
+
+function getCurrentStyle() {
+  if (editor.isActive('heading', { level: 1 })) return 'title';
+  if (editor.isActive('heading', { level: 2 })) return 'heading';
+  if (editor.isActive('heading', { level: 3 })) return 'subheading';
+  return 'body'; // mono not detectable via isActive; default body
+}
+
+function syncToolbar() {
+  const style = getCurrentStyle();
+  document.getElementById('style-label').textContent = styleLabels[style];
+
+  const map = {
+    'btn-bold': () => editor.isActive('bold'),
+    'btn-italic': () => editor.isActive('italic'),
+    'btn-underline': () => editor.isActive('underline'),
+    'btn-strike': () => editor.isActive('strike'),
+    'btn-code': () => editor.isActive('code'),
+    'btn-bullet': () => editor.isActive('bulletList'),
+    'btn-ordered': () => editor.isActive('orderedList'),
+    'btn-tasklist': () => editor.isActive('taskList'),
+    'btn-blockquote': () => editor.isActive('blockquote'),
+    'btn-codeblock': () => editor.isActive('codeBlock'),
+    'btn-align-left': () => editor.isActive({ textAlign: 'left' }),
+    'btn-align-center': () => editor.isActive({ textAlign: 'center' }),
+    'btn-align-right': () => editor.isActive({ textAlign: 'right' }),
+    'btn-align-justify': () => editor.isActive({ textAlign: 'justify' }),
+  };
+
+  for (const [id, check] of Object.entries(map)) {
+    document.getElementById(id)?.classList.toggle('is-active', check());
+  }
+}
+
+// ── Button wiring ──
+function wire(id, fn) {
+  document.getElementById(id)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    fn();
+    editor.commands.focus();
+  });
+}
+
+wire('btn-undo', () => editor.commands.undo());
+wire('btn-redo', () => editor.commands.redo());
+wire('btn-bold', () => editor.chain().focus().toggleBold().run());
+wire('btn-italic', () => editor.chain().focus().toggleItalic().run());
+wire('btn-underline', () => editor.chain().focus().toggleUnderline().run());
+wire('btn-strike', () => editor.chain().focus().toggleStrike().run());
+wire('btn-code', () => editor.chain().focus().toggleCode().run());
+wire('btn-bullet', () => editor.chain().focus().toggleBulletList().run());
+wire('btn-ordered', () => editor.chain().focus().toggleOrderedList().run());
+wire('btn-tasklist', () => editor.chain().focus().toggleTaskList().run());
+wire('btn-indent', () => editor.chain().focus().indent().run());
+wire('btn-outdent', () => editor.chain().focus().outdent().run());
+wire('btn-align-left', () => editor.chain().focus().setTextAlign('left').run());
+wire('btn-align-center', () => editor.chain().focus().setTextAlign('center').run());
+wire('btn-align-right', () => editor.chain().focus().setTextAlign('right').run());
+wire('btn-align-justify', () => editor.chain().focus().setTextAlign('justify').run());
+wire('btn-blockquote', () => editor.chain().focus().toggleBlockquote().run());
+wire('btn-codeblock', () => editor.chain().focus().toggleCodeBlock().run());
+wire('btn-hr', () => editor.chain().focus().setHorizontalRule().run());
+
+// Style button opens popover
+document.getElementById('btn-style').addEventListener('click', () => {
+  openStylePopover();
+});
+
+// ── Style popover ──
+function openStylePopover() {
+  const pop = document.getElementById('style-popover');
+  pop.classList.add('open');
+  const cur = getCurrentStyle();
+  document.querySelectorAll('.style-option').forEach(opt => {
+    const active = opt.dataset.style === cur;
+    opt.classList.toggle('active', active);
+  });
+}
+function closeStylePopover() {
+  document.getElementById('style-popover').classList.remove('open');
+}
+
+document.getElementById('style-popover-backdrop').addEventListener('click', closeStylePopover);
+
+document.querySelectorAll('.style-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    const style = opt.dataset.style;
+    switch (style) {
+      case 'title':      editor.chain().focus().setHeading({ level: 1 }).run(); break;
+      case 'heading':    editor.chain().focus().setHeading({ level: 2 }).run(); break;
+      case 'subheading': editor.chain().focus().setHeading({ level: 3 }).run(); break;
+      case 'body':       editor.chain().focus().setParagraph().run(); break;
+      case 'mono':
+        editor.chain().focus().setParagraph().run();
+        // Toggle mono class on selection nodes
+        break;
+    }
+    closeStylePopover();
+    syncToolbar();
+  });
+});
+
+// Initial sync
+syncToolbar();
+</script>
+</body>
+</html>

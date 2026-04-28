@@ -14,6 +14,7 @@ interface ListItemProps {
     onLongPress?: (event: GestureResponderEvent) => void;
     className?: string;
     showChevron?: boolean;
+    showDivider?: boolean;
     isActive?: boolean;
     searchQuery?: string;
 }
@@ -53,6 +54,7 @@ export const ListItem = React.memo(function ListItem({
     onLongPress,
     className,
     showChevron = true,
+    showDivider = true,
     isActive = false,
     searchQuery = "",
 }: ListItemProps) {
@@ -63,7 +65,8 @@ export const ListItem = React.memo(function ListItem({
             delayLongPress={220}
             activeOpacity={0.6}
             className={cn(
-                "flex-row items-center justify-between py-3.5 px-4 border-b border-border/50",
+                "flex-row items-center justify-between py-3.5 px-4",
+                showDivider && "border-b border-border/50",
                 isActive && "bg-surfaceSecondary",
                 className
             )}

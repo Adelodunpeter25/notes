@@ -2,7 +2,7 @@ import { FlatList, Text, View } from "react-native";
 import { Folder as FolderIcon, Trash2 } from "lucide-react-native";
 
 import type { Folder } from "@shared/folders";
-import { ListItem, Skeleton } from "@/components/common";
+import { CardContainer, ListItem, Skeleton } from "@/components/common";
 import type { GestureResponderEvent } from "react-native";
 
 type FolderListProps = {
@@ -45,31 +45,37 @@ export function FolderList({
   }
 
   return (
-    <FlatList
-      data={folders}
-      keyExtractor={(item) => item.id}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      renderItem={({ item }) => (
-        <ListItem
-          title={item.name}
-          count={item.notesCount}
-          icon={<FolderIcon size={18} color="#eab308" />}
-          onPress={() => onSelectFolder(item)}
-          onLongPress={(event) => onLongPressFolder?.(item, event)}
-        />
-      )}
-      ListFooterComponent={
-        onSelectTrash ? (
-          <ListItem
-            title="Trash"
-            count={trashCount}
-            icon={<Trash2 size={18} color="#ff4444" />}
-            onPress={onSelectTrash}
-            className="border-t border-border"
-          />
-        ) : null
-      }
-    />
+    <CardContainer className="mt-3">
+      <FlatList
+        data={folders}
+        keyExtractor={(item) => item.id}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        renderItem={({ item, index }) => {
+          const isLast = index === folders.length - 1 && !(onSelectTrash && trashCount > 0);
+          return (
+            <ListItem
+              title={item.name}
+              count={item.notesCount}
+              icon={<FolderIcon size={18} color="#eab308" />}
+              onPress={() => onSelectFolder(item)}
+              onLongPress={(event) => onLongPressFolder?.(item, event)}
+              showDivider={!isLast}
+            />
+          );
+        }}
+        ListFooterComponent={
+          onSelectTrash ? (
+            <ListItem
+              title="Trash"
+              count={trashCount}
+              icon={<Trash2 size={18} color="#ff4444" />}
+              onPress={onSelectTrash}
+              showDivider={false}
+            />
+          ) : null
+        }
+      />
+    </CardContainer>
   );
 }

@@ -2,7 +2,7 @@ import { Text, View, Alert, Animated, Easing, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { Search, PenLine, Plus, WifiOff, RefreshCw, Calendar, List } from "lucide-react-native";
+import { PenLine, Plus, WifiOff, RefreshCw, Calendar, List } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback } from "react";
@@ -10,7 +10,7 @@ import { useCallback } from "react";
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, NoteList, NoteContextMenu, FolderContextMenu, FolderModal } from "@/components/notes";
 import { TaskList, TaskModal, CalendarView } from "@/components/tasks";
-import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
+import { ConfirmDialog, ContextMenu, InlineSearchBar, type ContextMenuItem } from "@/components/common";
 import { BottomBar } from "@/components/layout";
 import { useDashboardData, useSync } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
@@ -185,13 +185,6 @@ export function DashboardScreen() {
             </Pressable>
           )}
           <Pressable
-            onPress={() => navigation.navigate("Search")}
-            hitSlop={10}
-            className="rounded-md p-1.5"
-          >
-            <Search size={18} color="#eab308" />
-          </Pressable>
-          <Pressable
             onPress={() => {
               void syncNow();
             }}
@@ -205,6 +198,13 @@ export function DashboardScreen() {
           </Pressable>
         </View>
       </View>
+
+      {activeTab !== "tasks" && (
+        <InlineSearchBar
+          onPress={() => navigation.navigate("Search")}
+          placeholder="Search"
+        />
+      )}
 
       <View className="flex-1">
         {activeTab === "folders" ? (
