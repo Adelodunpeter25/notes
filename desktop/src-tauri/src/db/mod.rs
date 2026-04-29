@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection};
+use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
 
