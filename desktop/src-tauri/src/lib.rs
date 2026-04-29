@@ -23,6 +23,33 @@ fn open_in_quick_note(app: tauri::AppHandle, note_id: Option<String>) {
     }
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .setup(|app| {
+            db::init_db(&app.handle())?;
+
+            let handle = app.handle().clone();
+            let shortcut = Shortcut::new(Some(Modifiers::META | Modifiers::SHIFT), Code::KeyN);
+            app.global_shortcut()
+                .on_shortcut(shortcut, move |_app, _shortcut, event| {
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    if let Some(win) = handle.get_webview_window("quick-note") {
+                        if win.is_visible().unwrap_or(false) {
+                            let _ = win.hide();
+                        } else {
+                            let _ = win.show();
+                            let _ = win.set_focus();
+                        }
+                    }
+                })?;
+
             // Tray icon
             let icon = app.default_window_icon().unwrap().clone();
 
