@@ -33,7 +33,7 @@ export function InlineSearchBar({
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.placeholder}
-          className="ml-2 flex-1 py-2 text-[15px] text-text"
+          className="ml-2 flex-1 py-2.5 text-[15px] text-text"
         />
       </View>
     );
@@ -47,7 +47,7 @@ export function InlineSearchBar({
       accessibilityLabel="Search"
     >
       <Search size={16} color={colors.textMuted} />
-      <Text className="ml-2 py-2 text-[15px] text-textMuted">{placeholder}</Text>
+      <Text className="ml-2 py-2.5 text-[15px] text-textMuted">{placeholder}</Text>
       <View className="flex-1" />
     </Pressable>
   );

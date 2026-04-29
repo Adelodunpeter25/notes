@@ -8,7 +8,7 @@ module.exports = {
       colors: {
         background: "#000000",
         surface: "#0a0a0a",
-        surfaceSecondary: "#222222",
+        surfaceSecondary: "#282828",
         border: "#222222",
         accent: "#eab308",
         text: "#ffffff",
