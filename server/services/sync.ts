@@ -6,10 +6,13 @@ import type { SyncRequest, SyncResponse, SyncOperation, SyncTombstone } from '@t
 export async function syncForce(userId: string): Promise<SyncResponse> {
   const nextCursor = new Date().toISOString();
 
-  const [allNotes, allFolders, allTasks] = await Promise.all([
+  const [allNotes, allFolders, allTasks, deletedNotes, deletedFolders, deletedTasks] = await Promise.all([
     db.query.notes.findMany({ where: and(eq(notes.userId, userId), isNull(notes.deletedAt)) }),
-    db.query.folders.findMany({ where: eq(folders.userId, userId) }),
+    db.query.folders.findMany({ where: and(eq(folders.userId, userId), isNull(folders.deletedAt)) }),
     db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), isNull(tasks.deletedAt)) }),
+    db.query.notes.findMany({ where: and(eq(notes.userId, userId), isNotNull(notes.deletedAt)) }),
+    db.query.folders.findMany({ where: and(eq(folders.userId, userId), isNotNull(folders.deletedAt)) }),
+    db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), isNotNull(tasks.deletedAt)) }),
   ]);
 
   return {
@@ -17,7 +20,11 @@ export async function syncForce(userId: string): Promise<SyncResponse> {
     notes: allNotes,
     folders: allFolders,
     tasks: allTasks,
-    deleted: [],
+    deleted: [
+      ...deletedNotes.map(n => ({ entityType: 'note' as const, entityId: n.id, deletedAt: n.deletedAt!.toISOString() })),
+      ...deletedFolders.map(f => ({ entityType: 'folder' as const, entityId: f.id, deletedAt: f.deletedAt!.toISOString() })),
+      ...deletedTasks.map(t => ({ entityType: 'task' as const, entityId: t.id, deletedAt: t.deletedAt!.toISOString() })),
+    ],
     processedOpIds: [],
   };
 }
@@ -59,7 +66,8 @@ async function processDelete(userId: string, op: SyncOperation): Promise<void> {
         .where(and(eq(notes.id, op.entityId), eq(notes.userId, userId)));
       break;
     case 'folder':
-      await db.delete(folders)
+      await db.update(folders)
+        .set({ deletedAt: now, updatedAt: now })
         .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
       break;
     case 'task':
@@ -118,6 +126,7 @@ async function processUpsert(userId: string, op: SyncOperation): Promise<void> {
         await db.update(folders)
           .set({
             name: (p.name as string) ?? existing.name,
+            deletedAt: p.deletedAt ? new Date(p.deletedAt as string) : existing.deletedAt,
             updatedAt: clientUpdatedAt,
           })
           .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
@@ -187,7 +196,7 @@ export async function sync(userId: string, req: SyncRequest): Promise<SyncRespon
   const nextCursor = new Date().toISOString();
 
   // If no cursor, fetch ALL data (initial sync). If cursor exists, fetch only changes since cursor.
-  const [updatedNotes, updatedFolders, updatedTasks, deletedNotes, deletedTasks] = await Promise.all([
+  const [updatedNotes, updatedFolders, updatedTasks, deletedNotes, deletedFolders, deletedTasks] = await Promise.all([
     cursor
       ? db.query.notes.findMany({ where: and(eq(notes.userId, userId), gt(notes.updatedAt, cursor)) })
       : db.query.notes.findMany({ where: eq(notes.userId, userId) }),
@@ -200,25 +209,30 @@ export async function sync(userId: string, req: SyncRequest): Promise<SyncRespon
     // Tombstones: soft-deleted items updated since cursor (only for incremental syncs)
     cursor
       ? db.query.notes.findMany({ where: and(eq(notes.userId, userId), gt(notes.updatedAt, cursor), isNotNull(notes.deletedAt)) })
-      : [],
+      : db.query.notes.findMany({ where: and(eq(notes.userId, userId), isNotNull(notes.deletedAt)) }),
+    cursor
+      ? db.query.folders.findMany({ where: and(eq(folders.userId, userId), gt(folders.updatedAt, cursor), isNotNull(folders.deletedAt)) })
+      : db.query.folders.findMany({ where: and(eq(folders.userId, userId), isNotNull(folders.deletedAt)) }),
     cursor
       ? db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), gt(tasks.updatedAt, cursor), isNotNull(tasks.deletedAt)) })
-      : [],
+      : db.query.tasks.findMany({ where: and(eq(tasks.userId, userId), isNotNull(tasks.deletedAt)) }),
   ]);
 
   const deleted: SyncTombstone[] = [
     ...deletedNotes.map(n => ({ entityType: 'note' as const, entityId: n.id, deletedAt: n.deletedAt!.toISOString() })),
+    ...deletedFolders.map(f => ({ entityType: 'folder' as const, entityId: f.id, deletedAt: f.deletedAt!.toISOString() })),
     ...deletedTasks.map(t => ({ entityType: 'task' as const, entityId: t.id, deletedAt: t.deletedAt!.toISOString() })),
   ];
 
   // Filter out soft-deleted from live lists
   const liveNotes = updatedNotes.filter(n => !n.deletedAt);
+  const liveFolders = updatedFolders.filter(f => !f.deletedAt);
   const liveTasks = updatedTasks.filter(t => !t.deletedAt);
 
   return {
     nextCursor,
     notes: liveNotes,
-    folders: updatedFolders,
+    folders: liveFolders,
     tasks: liveTasks,
     deleted,
     processedOpIds,

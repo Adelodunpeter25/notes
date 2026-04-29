@@ -11,6 +11,7 @@ function rowToFolder(row: any): Folder {
     notesCount: Number(row.notes_count ?? 0),
     createdAt: row.created_at ?? undefined,
     updatedAt: row.updated_at ?? undefined,
+    deletedAt: row.deleted_at ?? undefined,
   };
 }
 
@@ -20,6 +21,7 @@ export async function listFolders(): Promise<Folder[]> {
     `SELECT f.*, COUNT(n.id) as notes_count
      FROM folders f
      LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
+     WHERE f.deleted_at IS NULL
      GROUP BY f.id
      ORDER BY f.updated_at DESC`,
   );
@@ -32,7 +34,7 @@ export async function getFolder(id: string): Promise<Folder> {
     `SELECT f.*, COUNT(n.id) as notes_count
      FROM folders f
      LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
-     WHERE f.id = ?
+     WHERE f.id = ? AND f.deleted_at IS NULL
      GROUP BY f.id`,
     [id],
   );
@@ -63,7 +65,8 @@ export async function renameFolder(id: string, payload: RenameFolderPayload): Pr
 
 export async function deleteFolder(id: string): Promise<void> {
   const db = getDb();
-  // Hard delete — move notes to All Notes first
-  await db.runAsync("UPDATE notes SET folder_id = NULL WHERE folder_id = ?", [id]);
-  await db.runAsync("DELETE FROM folders WHERE id = ?", [id]);
+  // Soft delete — move notes to All Notes first, then mark folder deleted so it can sync.
+  const now = new Date().toISOString();
+  await db.runAsync("UPDATE notes SET folder_id = NULL, updated_at = ? WHERE folder_id = ?", [now, id]);
+  await db.runAsync("UPDATE folders SET deleted_at = ?, updated_at = ? WHERE id = ?", [now, now, id]);
 }

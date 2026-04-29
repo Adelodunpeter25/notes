@@ -39,10 +39,14 @@ export function buildSyncOps(
   for (const folder of folders) {
     const updatedAt = folder.updatedAt ?? folder.createdAt ?? new Date().toISOString();
     if (since && new Date(updatedAt) < since) continue;
-    ops.push({
-      id: uuid(), type: 'upsert', entityType: 'folder', entityId: folder.id, updatedAt,
-      payload: { name: folder.name, createdAt: folder.createdAt },
-    });
+    if (folder.deletedAt) {
+      ops.push({ id: uuid(), type: 'delete', entityType: 'folder', entityId: folder.id, updatedAt });
+    } else {
+      ops.push({
+        id: uuid(), type: 'upsert', entityType: 'folder', entityId: folder.id, updatedAt,
+        payload: { name: folder.name, createdAt: folder.createdAt },
+      });
+    }
   }
 
   for (const task of tasks) {

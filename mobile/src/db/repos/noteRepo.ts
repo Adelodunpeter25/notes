@@ -84,5 +84,5 @@ export async function updateNote(id: string, payload: UpdateNotePayload): Promis
 export async function deleteNote(id: string): Promise<void> {
   const db = getDb();
   const now = new Date().toISOString();
-  await db.runAsync("UPDATE notes SET deleted_at = ? WHERE id = ?", [now, id]);
+  await db.runAsync("UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?", [now, now, id]);
 }

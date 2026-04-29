@@ -116,6 +116,9 @@ async function applyServerChanges(response: SyncResponse) {
   for (const tombstone of response.deleted) {
     if (tombstone.entityType === "note") {
       await db.runAsync("UPDATE notes SET deleted_at = ? WHERE id = ?", [tombstone.deletedAt, tombstone.entityId]).catch(() => {});
+    } else if (tombstone.entityType === "folder") {
+      await db.runAsync("UPDATE notes SET folder_id = NULL WHERE folder_id = ?", [tombstone.entityId]).catch(() => {});
+      await db.runAsync("UPDATE folders SET deleted_at = ?, updated_at = ? WHERE id = ?", [tombstone.deletedAt, tombstone.deletedAt, tombstone.entityId]).catch(() => {});
     } else if (tombstone.entityType === "task") {
       await db.runAsync("UPDATE tasks SET deleted_at = ? WHERE id = ?", [tombstone.deletedAt, tombstone.entityId]).catch(() => {});
     }

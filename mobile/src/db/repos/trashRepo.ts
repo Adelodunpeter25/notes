@@ -33,7 +33,8 @@ export async function listTrash(): Promise<Note[]> {
 
 export async function restoreNote(id: string): Promise<Note> {
   const db = getDb();
-  await db.runAsync("UPDATE notes SET deleted_at = NULL WHERE id = ?", [id]);
+  const now = new Date().toISOString();
+  await db.runAsync("UPDATE notes SET deleted_at = NULL, updated_at = ? WHERE id = ?", [now, id]);
   return getNote(id);
 }
 

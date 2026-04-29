@@ -4,6 +4,7 @@ export type Folder = {
   name: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date | null;
 };
 
 export type CreateFolderPayload = {

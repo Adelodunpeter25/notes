@@ -5,6 +5,7 @@ export type Folder = {
   notesCount: number;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
 };
 
 export type CreateFolderPayload = {
