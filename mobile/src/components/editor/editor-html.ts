@@ -321,7 +321,7 @@ export const TIPTAP_EDITOR_HTML = `
             HorizontalRule,
             Blockquote,
             Link.configure({ openOnClick: false, autolink: true }),
-            Placeholder.configure({ placeholder: ({ node, editor }) => editor.state.doc.firstChild === node ? 'Title' : 'Start writing...' }),
+            Placeholder.configure({ placeholder: 'Start writing...' }),
           ],
           content: '',
           onUpdate({ editor }) {

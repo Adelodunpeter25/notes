@@ -75,10 +75,7 @@ export function Editor({ content, onChange, editorRef }: EditorProps) {
             },
         }),
         Placeholder.configure({
-            placeholder: ({ node, editor }) => {
-                const isFirst = editor.state.doc.firstChild === node;
-                return isFirst ? "Title" : "Write your note here...";
-            },
+            placeholder: "Write your note here...",
         }),
     ], []);
 

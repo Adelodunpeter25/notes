@@ -4,7 +4,6 @@ mod error;
 mod models;
 
 use commands::*;
-use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -49,15 +48,6 @@ pub fn run() {
                         }
                     }
                 })?;
-
-            // Tray icon
-            let icon = app.default_window_icon().unwrap().clone();
-
-            TrayIconBuilder::new()
-                .icon(icon)
-                .tooltip("Notes - Scratch Pad")
-                .show_menu_on_left_click(true)
-                .build(app)?;
 
             // Hide main window instead of closing (keeps tray icon alive)
             let main_win = app.get_webview_window("main").unwrap();
