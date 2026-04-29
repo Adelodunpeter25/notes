@@ -47,16 +47,21 @@ export function SettingsScreen() {
 
   return (
     <ScreenContainer>
-      <View className="flex-row items-center border-b border-border px-4 py-3">
+      <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
         <Pressable
           onPress={() => navigation.goBack()}
-          className="flex-row items-center rounded-md py-1 pr-2"
+          className="flex-row items-center rounded-md py-1 pr-2 z-10"
           hitSlop={15}
         >
           <ChevronLeft size={20} color="#eab308" />
           <Text className="text-sm font-medium text-accent">Back</Text>
         </Pressable>
-        <Text className="ml-4 text-xl font-semibold text-text">Settings</Text>
+        
+        <Text className="absolute left-0 right-0 text-center text-xl font-semibold text-text pointer-events-none">
+          Settings
+        </Text>
+        
+        <View className="w-[60px]" /> 
       </View>
 
       <View className="flex-1 px-4 pt-6">

@@ -8,12 +8,13 @@ import { useCallback } from "react";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { FolderList, FolderContextMenu, FolderModal } from "@/components/notes";
-import { ConfirmDialog, InlineSearchBar, type ContextMenuItem } from "@/components/common";
+import { ConfirmDialog, InlineSearchBar } from "@/components/common";
 import { useDashboardData, useSync } from "@/hooks";
 import type { AppStackParamList } from "@/navigation/types";
 import type { Folder } from "@shared/folders";
 import { isEmptyDraftNote } from "@shared-utils/noteContent";
 import { useDeleteNoteMutation } from "@/hooks";
+import { colors } from "@/theme/colors";
 
 type Navigation = StackNavigationProp<AppStackParamList, "Dashboard">;
 
@@ -118,7 +119,7 @@ export function DashboardScreen() {
           </Text>
           {netInfo.isConnected === false && (
             <View className="ml-3 flex-row items-center rounded-full bg-danger/20 px-2 py-1">
-              <WifiOff size={12} color="#ff4444" />
+              <WifiOff size={12} color={colors.danger} />
               <Text className="ml-1 text-[11px] font-medium text-danger uppercase tracking-wider">
                 Offline
               </Text>
@@ -131,7 +132,7 @@ export function DashboardScreen() {
             hitSlop={10}
             className="rounded-md p-1.5 mr-1"
           >
-            <FolderPlus size={22} color="#eab308" />
+            <FolderPlus size={22} color={colors.accent} />
           </Pressable>
           <Pressable
             onPress={() => {
@@ -142,7 +143,7 @@ export function DashboardScreen() {
             className="rounded-full p-1.5 mr-1"
           >
             <Animated.View style={{ transform: [{ rotate: isSyncing ? spin : "0deg" }] }}>
-              <RefreshCw size={20} color={isSyncing ? "#a0a0a0" : "#eab308"} />
+              <RefreshCw size={20} color={isSyncing ? colors.textMuted : colors.accent} />
             </Animated.View>
           </Pressable>
           <Pressable
@@ -150,7 +151,7 @@ export function DashboardScreen() {
             hitSlop={10}
             className="rounded-md p-1.5"
           >
-            <Settings size={22} color="#eab308" />
+            <Settings size={22} color={colors.accent} />
           </Pressable>
         </View>
       </View>
@@ -206,7 +207,7 @@ export function DashboardScreen() {
           elevation: 8,
         }}
       >
-        <PenLine size={24} color="#000000" />
+        <PenLine size={24} color={colors.background} />
       </Pressable>
 
       <FolderContextMenu

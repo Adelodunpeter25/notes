@@ -20,9 +20,11 @@ import {
 import { deriveNoteTitleFromHtml, isEmptyDraftNote } from "@shared-utils/noteContent";
 import type { Note } from "@shared/notes";
 
+import { colors } from "@/theme/colors";
+
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
-const EDITOR_SURFACE_COLOR = "#000000";
+const EDITOR_SURFACE_COLOR = colors.background;
 
 export function NoteEditorScreen() {
   const navigation = useNavigation<Navigation>();

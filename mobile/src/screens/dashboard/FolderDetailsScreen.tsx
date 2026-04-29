@@ -1,14 +1,13 @@
-import { Text, View, Alert } from "react-native";
-import { Pressable } from "react-native";
+import { Text, View, Alert, Pressable } from "react-native";
 import { useState } from "react";
-import { ChevronLeft, Plus, PenLine, Search } from "lucide-react-native";
+import { ChevronLeft, Plus, PenLine } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
 import type { AppStackParamList } from "@/navigation/types";
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
 import { NoteList, NoteContextMenu } from "@/components/notes";
-import { ConfirmDialog, ContextMenu, type ContextMenuItem } from "@/components/common";
+import { ConfirmDialog, ContextMenu, InlineSearchBar, type ContextMenuItem } from "@/components/common";
 import {
   useCreateNoteMutation,
   useDeleteNoteMutation,
@@ -101,7 +100,7 @@ export function FolderDetailsScreen() {
       <View className="flex-row items-center justify-between border-b border-border px-4 py-3 pb-2">
         <Pressable
           onPress={() => navigation.goBack()}
-          className="flex-row items-center rounded-md py-1 pr-2"
+          className="flex-row items-center rounded-md py-1 pr-2 z-10"
           hitSlop={15}
         >
           <ChevronLeft size={22} color="#eab308" />
@@ -114,13 +113,6 @@ export function FolderDetailsScreen() {
 
         <View className="flex-row items-center">
           <Pressable
-            onPress={() => navigation.navigate("Search", { folderId: isAllNotes ? undefined : folderId })}
-            className="rounded-md p-2 mr-1"
-            hitSlop={10}
-          >
-            <Search size={20} color="#eab308" />
-          </Pressable>
-          <Pressable
             onPress={() => {
               void handleCreateNote();
             }}
@@ -132,6 +124,11 @@ export function FolderDetailsScreen() {
           </Pressable>
         </View>
       </View>
+
+      <InlineSearchBar
+        placeholder={`Search in ${folderName}`}
+        onPress={() => navigation.navigate("Search", { folderId: isAllNotes ? undefined : folderId })}
+      />
 
       <View className="flex-1">
         <NoteList
@@ -158,7 +155,7 @@ export function FolderDetailsScreen() {
           void handleCreateNote();
         }}
         disabled={createNoteMutation.isPending}
-        className="absolute bottom-6 right-5 h-[63px] w-[63px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
+        className="absolute bottom-8 right-8 h-[60px] w-[60px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
       >
         <PenLine size={24} color="#000000" />
       </Pressable>

@@ -1,25 +1,16 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import { colors } from '@/theme/colors';
 import { TIPTAP_EDITOR_HTML } from './editor-html';
 
 export type TiptapEditorRef = {
   toggleBold: () => void;
   toggleItalic: () => void;
-  toggleUnderline: () => void;
   toggleStrike: () => void;
-  toggleCode: () => void;
-  toggleCodeBlock: () => void;
-  toggleBlockquote: () => void;
   toggleBulletList: () => void;
   toggleOrderedList: () => void;
   toggleTaskList: () => void;
-  setHeading: (level: 1 | 2 | 3) => void;
-  setParagraph: () => void;
-  setTextAlign: (align: "left" | "center" | "right" | "justify") => void;
-  indent: () => void;
-  outdent: () => void;
-  insertHorizontalRule: () => void;
   undo: () => void;
   redo: () => void;
   setContent: (content: string) => void;
@@ -57,7 +48,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     }, []);
 
     const setWebViewContent = useCallback((newContent: string) => {
-      console.log('[RN] setWebViewContent called, length:', newContent ? newContent.length : 0);
       executeScript(`
         if (window.rnUpdateContent) {
           window.rnUpdateContent(${JSON.stringify(newContent || '')});
@@ -68,22 +58,10 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     useImperativeHandle(ref, () => ({
       toggleBold: () => executeScript(`window.editor?.chain().focus().toggleBold().run();`),
       toggleItalic: () => executeScript(`window.editor?.chain().focus().toggleItalic().run();`),
-      toggleUnderline: () => executeScript(`window.editor?.chain().focus().toggleUnderline().run();`),
       toggleStrike: () => executeScript(`window.editor?.chain().focus().toggleStrike().run();`),
-      toggleCode: () => executeScript(`window.editor?.chain().focus().toggleCode().run();`),
-      toggleCodeBlock: () => executeScript(`window.editor?.chain().focus().toggleCodeBlock().run();`),
-      toggleBlockquote: () => executeScript(`window.editor?.chain().focus().toggleBlockquote().run();`),
       toggleBulletList: () => executeScript(`window.editor?.chain().focus().toggleBulletList().run();`),
       toggleOrderedList: () => executeScript(`window.editor?.chain().focus().toggleOrderedList().run();`),
       toggleTaskList: () => executeScript(`window.editor?.chain().focus().toggleTaskList().run();`),
-      setHeading: (level) =>
-        executeScript(`window.editor?.chain().focus().setHeading({ level: ${level} }).run();`),
-      setParagraph: () => executeScript(`window.editor?.chain().focus().setParagraph().run();`),
-      setTextAlign: (align) =>
-        executeScript(`window.editor?.chain().focus().setTextAlign(${JSON.stringify(align)}).run();`),
-      indent: () => executeScript(`window.editor?.chain().focus().indent().run();`),
-      outdent: () => executeScript(`window.editor?.chain().focus().outdent().run();`),
-      insertHorizontalRule: () => executeScript(`window.editor?.chain().focus().setHorizontalRule().run();`),
       undo: () => executeScript(`window.editor?.chain().focus().undo().run();`),
       redo: () => executeScript(`window.editor?.chain().focus().redo().run();`),
       setContent: (content: string) => setWebViewContent(content),
@@ -100,7 +78,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     // Sync content changes from parent to WebView
     useEffect(() => {
       if (isReady.current && value !== lastValue.current) {
-        console.log('[RN] Props value changed, syncing to WebView');
         lastValue.current = value;
         setWebViewContent(value);
       }
@@ -114,7 +91,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             console.log(message.payload);
             break;
           case 'onReady':
-            console.log('[RN] Received onReady from WebView');
             isReady.current = true;
             // Use currentValueRef to guarantee we don't send a stale closure value
             setWebViewContent(currentValueRef.current);
@@ -146,7 +122,6 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             // Backup init if onReady was missed
             setTimeout(() => {
               if (!isReady.current) {
-                console.log('[RN] onLoadEnd timeout: isReady false, forcing init');
                 isReady.current = true;
                 setWebViewContent(currentValueRef.current);
                 executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
@@ -173,7 +148,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.background,
   },
   webview: {
     flex: 1,

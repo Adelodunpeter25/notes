@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
-import { ScrollView, Platform, Keyboard, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ScrollView, Platform, Keyboard, View, Text, TouchableOpacity } from "react-native";
 import { formatNoteDateTime } from "@shared-utils/formatDate";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TiptapEditor, type TiptapEditorRef } from "./TiptapEditor";
@@ -13,6 +13,7 @@ import {
   Undo2, 
   Redo2 
 } from "lucide-react-native";
+import { colors } from "@/theme/colors";
 
 export type EditorRef = {
   blur: () => void;
@@ -26,7 +27,7 @@ type EditorProps = {
   editable?: boolean;
 };
 
-const EDITOR_SURFACE_COLOR = "#000000";
+const EDITOR_SURFACE_COLOR = colors.background;
 
 const ToolbarButton = ({ 
   onPress, 
@@ -41,7 +42,7 @@ const ToolbarButton = ({
     onPress={onPress}
     className={`p-2 rounded-md mr-1 ${active ? 'bg-yellow-500/20' : ''}`}
   >
-    <Icon size={20} color={active ? "#eab308" : "#ffffff"} />
+    <Icon size={20} color={active ? colors.accent : colors.text} />
   </TouchableOpacity>
 );
 
@@ -116,7 +117,7 @@ export const Editor = forwardRef<EditorRef, EditorProps>(({
             marginBottom: keyboardHeight,
             paddingBottom: Platform.OS === "ios" && keyboardHeight === 0 ? insets.bottom : 8,
           }}
-          className="border-t border-white/5 bg-[#000000]"
+          className="border-t border-white/5 bg-background"
         >
           <ScrollView 
             horizontal 
