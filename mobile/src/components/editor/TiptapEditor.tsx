@@ -173,7 +173,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1B1E',
+    backgroundColor: '#000000',
   },
   webview: {
     flex: 1,

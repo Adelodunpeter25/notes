@@ -13,6 +13,7 @@ import {
   useCreateNoteMutation,
   useDeleteNoteMutation,
   useFolderNotesQuery,
+  useNotesQuery,
   useFoldersQuery,
   useUpdateNoteMutation,
 } from "@/hooks";
@@ -26,7 +27,12 @@ export function FolderDetailsScreen() {
   const route = useRoute<FolderDetailsRoute>();
   const { folderId, folderName } = route.params;
 
-  const notesQuery = useFolderNotesQuery(folderId);
+  const isAllNotes = folderId === 'all';
+  
+  const allNotesQuery = useNotesQuery();
+  const folderNotesQuery = useFolderNotesQuery(isAllNotes ? "" : folderId);
+  const notesQuery = isAllNotes ? allNotesQuery : folderNotesQuery;
+
   const foldersQuery = useFoldersQuery();
   const createNoteMutation = useCreateNoteMutation();
   const updateNoteMutation = useUpdateNoteMutation();
@@ -79,7 +85,7 @@ export function FolderDetailsScreen() {
   const handleCreateNote = async () => {
     try {
       const created = await createNoteMutation.mutateAsync({
-        folderId,
+        folderId: isAllNotes ? undefined : folderId,
         title: "Untitled",
         content: "",
         isPinned: false,

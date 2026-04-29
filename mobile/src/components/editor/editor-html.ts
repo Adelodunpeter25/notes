@@ -10,7 +10,7 @@ export const TIPTAP_EDITOR_HTML = `
       font-size: 15px;
       line-height: 1.55;
       color: #ffffff;
-      background-color: #1A1B1E;
+      background-color: #000000;
       margin: 0;
       padding: 16px;
       min-height: 100vh;

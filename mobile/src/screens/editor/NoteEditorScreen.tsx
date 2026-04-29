@@ -22,7 +22,7 @@ import type { Note } from "@shared/notes";
 
 type EditorRoute = RouteProp<AppStackParamList, "Editor">;
 type Navigation = StackNavigationProp<AppStackParamList, "Editor">;
-const EDITOR_SURFACE_COLOR = "#1A1B1E";
+const EDITOR_SURFACE_COLOR = "#000000";
 
 export function NoteEditorScreen() {
   const navigation = useNavigation<Navigation>();

@@ -116,7 +116,7 @@ export const Editor = forwardRef<EditorRef, EditorProps>(({
             marginBottom: keyboardHeight,
             paddingBottom: Platform.OS === "ios" && keyboardHeight === 0 ? insets.bottom : 8,
           }}
-          className="border-t border-white/5 bg-[#1A1B1E]"
+          className="border-t border-white/5 bg-[#000000]"
         >
           <ScrollView 
             horizontal 
