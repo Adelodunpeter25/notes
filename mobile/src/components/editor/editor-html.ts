@@ -140,9 +140,34 @@ export const TIPTAP_EDITOR_HTML = `
     }
 
     input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
       width: 18px;
       height: 18px;
-      accent-color: #eab308;
+      border-radius: 50%;
+      border: 2px solid #6f6f6f;
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    input[type="checkbox"]:checked {
+      background: #eab308;
+      border-color: #eab308;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #000;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
     }
   </style>
 </head>
