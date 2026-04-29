@@ -9,6 +9,7 @@ import { CardContainer, ListItem, Skeleton, ConfirmDialog } from "@/components/c
 import { deriveNotePreviewFromHtml, deriveNoteTitleFromHtml } from "@shared-utils/noteContent";
 import { formatNoteDate } from "@shared-utils/formatDate";
 import { useDeleteNoteMutation } from "@/hooks";
+import { colors } from "@/theme/colors";
 import type { GestureResponderEvent } from "react-native";
 
 type NoteListProps = {

@@ -20,20 +20,20 @@ export function InlineSearchBar({
   className,
 }: InlineSearchBarProps) {
   const containerClass = cn(
-    "mx-4 mt-3 flex-row items-center rounded-xl bg-surfaceSecondary border border-white/5 px-3 py-2",
+    "mx-4 mt-3 flex-row items-center rounded-xl bg-surfaceSecondary px-3 py-2",
     className,
   );
 
   if (onChangeText !== undefined) {
     return (
       <View className={containerClass}>
-        <Search size={18} color={colors.icon} />
+        <Search size={16} color={colors.textMuted} />
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.placeholder}
-          className="ml-2 flex-1 text-[15px] text-text"
+          className="ml-2 flex-1 py-2 text-[15px] text-text"
         />
       </View>
     );
@@ -46,8 +46,8 @@ export function InlineSearchBar({
       accessibilityRole="button"
       accessibilityLabel="Search"
     >
-      <Search size={18} color={colors.icon} />
-      <Text className="ml-2 text-[15px] text-textMuted">{placeholder}</Text>
+      <Search size={16} color={colors.textMuted} />
+      <Text className="ml-2 py-2 text-[15px] text-textMuted">{placeholder}</Text>
       <View className="flex-1" />
     </Pressable>
   );
