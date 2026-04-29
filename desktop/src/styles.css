@@ -64,6 +64,17 @@
   @apply outline-none min-h-[500px];
 }
 
+/* First block acts as a title */
+.ProseMirror > *:first-child {
+  @apply text-2xl font-bold text-white mb-1;
+}
+
+.ProseMirror > *:first-child.is-editor-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  @apply text-muted/50 pointer-events-none h-0;
+}
+
 .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;

@@ -40,6 +40,15 @@ export const TIPTAP_EDITOR_HTML = `
       height: 0;
     }
 
+    /* First block acts as a title */
+    .ProseMirror > *:first-child {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
     /* Apple Notes-ish typography */
     .ProseMirror h1 {
       font-size: 26px;
@@ -312,7 +321,7 @@ export const TIPTAP_EDITOR_HTML = `
             HorizontalRule,
             Blockquote,
             Link.configure({ openOnClick: false, autolink: true }),
-            Placeholder.configure({ placeholder: 'Start writing...' }),
+            Placeholder.configure({ placeholder: ({ node, editor }) => editor.state.doc.firstChild === node ? 'Title' : 'Start writing...' }),
           ],
           content: '',
           onUpdate({ editor }) {
