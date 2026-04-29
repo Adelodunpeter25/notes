@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -10,7 +10,7 @@ import type { Folder } from "@shared/folders";
 import type { Task } from "@shared/tasks";
 import type { SyncResponse } from "@shared/sync";
 
-export function useSync(_options?: { auto?: boolean }) {
+export function useSync(options?: { auto?: boolean }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const syncingRef = useRef(false);
@@ -65,6 +65,12 @@ export function useSync(_options?: { auto?: boolean }) {
   const resetSyncCursor = useCallback(async () => {
     await invoke("clear_sync_cursor");
   }, []);
+
+  useEffect(() => {
+    if (!options?.auto) return;
+    const id = setInterval(() => void syncNow(), 15_000);
+    return () => clearInterval(id);
+  }, [options?.auto, syncNow]);
 
   return { syncNow, isSyncing, resetSyncCursor };
 }

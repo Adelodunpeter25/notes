@@ -32,7 +32,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function App() {
   useKeyboardShortcuts();
   useWindowSizePersist();
-  const { syncNow, isSyncing, resetSyncCursor } = useSync();
+  const { syncNow, isSyncing, resetSyncCursor } = useSync({ auto: true });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
