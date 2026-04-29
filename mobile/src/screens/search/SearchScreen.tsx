@@ -1,20 +1,27 @@
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Search } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
 import { ScreenContainer } from "@/components/layout";
 import { SearchResults } from "@/components/search";
 import { useDebounce, useNotesQuery, useSearch, useFoldersQuery } from "@/hooks";
 import { useEffect, useRef } from "react";
+import type { AppStackParamList } from "@/navigation/types";
+
+type SearchRoute = RouteProp<AppStackParamList, "Search">;
 
 export function SearchScreen() {
   const navigation = useNavigation();
+  const route = useRoute<SearchRoute>();
   const { searchQuery, handleSearchChange, closeSearch } = useSearch();
   const debouncedQuery = useDebounce(searchQuery, 300);
   const inputRef = useRef<TextInput>(null);
 
+  const folderId = route.params?.folderId;
+
   const resultsQuery = useNotesQuery({
     q: debouncedQuery.trim() || undefined,
+    folderId,
   });
   const foldersQuery = useFoldersQuery();
 

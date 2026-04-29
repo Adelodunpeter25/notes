@@ -2,10 +2,9 @@ import { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { RefreshCw, LogOut, Clock } from "lucide-react-native";
+import { RefreshCw, LogOut, Clock, ChevronLeft } from "lucide-react-native";
 
 import { ScreenContainer } from "@/components/layout/ScreenContainer";
-import { BottomBar } from "@/components/layout";
 import { ConfirmDialog, ToastContainer } from "@/components/common";
 import { useSync, useToast } from "@/hooks";
 import { useAuthStore } from "@/stores/authStore";
@@ -48,8 +47,16 @@ export function SettingsScreen() {
 
   return (
     <ScreenContainer>
-      <View className="flex-row items-center justify-center border-b border-border px-4 py-3">
-        <Text className="text-xl font-semibold text-text">Settings</Text>
+      <View className="flex-row items-center border-b border-border px-4 py-3">
+        <Pressable
+          onPress={() => navigation.goBack()}
+          className="flex-row items-center rounded-md py-1 pr-2"
+          hitSlop={15}
+        >
+          <ChevronLeft size={20} color="#eab308" />
+          <Text className="text-sm font-medium text-accent">Back</Text>
+        </Pressable>
+        <Text className="ml-4 text-xl font-semibold text-text">Settings</Text>
       </View>
 
       <View className="flex-1 px-4 pt-6">
@@ -136,14 +143,6 @@ export function SettingsScreen() {
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-
-      <BottomBar
-        activeTab="settings"
-        onChangeTab={(tab) => {
-          if (tab === "settings") return;
-          navigation.navigate("Dashboard");
-        }}
-      />
     </ScreenContainer>
   );
 }

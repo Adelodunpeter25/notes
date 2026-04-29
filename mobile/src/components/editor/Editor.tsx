@@ -26,7 +26,7 @@ type EditorProps = {
   editable?: boolean;
 };
 
-const EDITOR_SURFACE_COLOR = "#1A1B1E";
+const EDITOR_SURFACE_COLOR = "#000000";
 
 const ToolbarButton = ({ 
   onPress, 

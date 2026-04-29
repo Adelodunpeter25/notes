@@ -49,7 +49,7 @@ export function FolderList({
           <ListItem
             title="All Notes"
             count={allNotesCount}
-            icon={<FileText size={18} color="#eab308" />}
+            icon={<FolderIcon size={18} color="#eab308" />}
             onPress={() => onSelectFolder('all')}
             showDivider={folders.length > 0 || !!onSelectTrash}
           />

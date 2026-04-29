@@ -9,7 +9,7 @@ export type AppStackParamList = {
   Dashboard: undefined;
   FolderDetails: { folderId: string; folderName: string };
   Editor: { noteId: string; note?: Note; isTrash?: boolean };
-  Search: undefined;
+  Search: { folderId?: string } | undefined;
   Trash: undefined;
   Settings: undefined;
 };

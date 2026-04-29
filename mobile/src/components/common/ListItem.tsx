@@ -65,7 +65,7 @@ export const ListItem = React.memo(function ListItem({
             delayLongPress={220}
             activeOpacity={0.6}
             className={cn(
-                "flex-row items-center justify-between py-3.5 px-4",
+                "flex-row items-center justify-between py-4 px-4",
                 showDivider && "border-b border-border/50",
                 isActive && "bg-surfaceSecondary",
                 className

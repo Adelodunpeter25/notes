@@ -1,7 +1,7 @@
 import { Text, View, Alert } from "react-native";
 import { Pressable } from "react-native";
 import { useState } from "react";
-import { ChevronLeft, Plus, PenLine } from "lucide-react-native";
+import { ChevronLeft, Plus, PenLine, Search } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 
@@ -98,24 +98,37 @@ export function FolderDetailsScreen() {
 
   return (
     <ScreenContainer>
-      <View className="border-b border-border px-4 py-3">
+      <View className="flex-row items-center justify-between border-b border-border px-4 py-3 pb-2">
         <Pressable
           onPress={() => navigation.goBack()}
-          className="mb-2 flex-row items-center self-start rounded-md px-1 py-1"
+          className="flex-row items-center rounded-md py-1 pr-2"
+          hitSlop={15}
         >
-          <ChevronLeft size={18} color="#eab308" />
-          <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
+          <ChevronLeft size={22} color="#eab308" />
+          <Text className="text-[17px] font-medium text-accent">Back</Text>
         </Pressable>
-        <View className="flex-row items-center justify-between">
-          <Text className="text-lg font-semibold text-text">{folderName}</Text>
+        
+        <Text className="absolute left-0 right-0 text-center text-lg font-semibold text-text pointer-events-none">
+          {folderName}
+        </Text>
+
+        <View className="flex-row items-center">
+          <Pressable
+            onPress={() => navigation.navigate("Search", { folderId: isAllNotes ? undefined : folderId })}
+            className="rounded-md p-2 mr-1"
+            hitSlop={10}
+          >
+            <Search size={20} color="#eab308" />
+          </Pressable>
           <Pressable
             onPress={() => {
               void handleCreateNote();
             }}
             disabled={createNoteMutation.isPending}
             className="rounded-md p-2"
+            hitSlop={10}
           >
-            <Plus size={22} color="#eab308" />
+            <Plus size={24} color="#eab308" />
           </Pressable>
         </View>
       </View>
@@ -123,6 +136,7 @@ export function FolderDetailsScreen() {
       <View className="flex-1">
         <NoteList
           notes={notesQuery.data ?? []}
+          folders={isAllNotes ? (foldersQuery.data ?? []) : []}
           isLoading={notesQuery.isLoading}
           refreshing={notesQuery.isRefetching}
           onRefresh={() => {
