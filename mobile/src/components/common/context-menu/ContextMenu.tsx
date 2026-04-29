@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, TouchableWithoutFeedback, View, Text, Pressable, PressableStateCallbackType } from "react-native";
 import { LucideIcon } from "lucide-react-native";
 import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from "react-native-reanimated";
+import { colors } from "@/theme/colors";
 
 export interface ContextMenuItem {
     label: string;
@@ -39,9 +40,9 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
                 <View className="flex-1 bg-black/50">
                     <TouchableWithoutFeedback>
                         <Animated.View
-                            entering={ZoomIn.duration(200).springify().damping(18)}
-                            exiting={ZoomOut.duration(150).springify().damping(20)}
-                            className="absolute w-[220px] bg-[#1c1c1e] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+                            entering={ZoomIn.duration(150).springify().damping(22)}
+                            exiting={ZoomOut.duration(100).springify().damping(25)}
+                            className="absolute w-[220px] bg-surfaceSecondary border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
                             style={{ left, top }}
                         >
                             {title && (
@@ -80,7 +81,7 @@ export function ContextMenu({ visible, onClose, items, title, anchor }: ContextM
                                             {Icon && (
                                                 <Icon
                                                     size={20}
-                                                    color={item.destructive ? "#ff4444" : "#eab308"}
+                                                    color={item.destructive ? colors.danger : colors.accent}
                                                 />
                                             )}
                                         </Pressable>

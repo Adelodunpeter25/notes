@@ -66,7 +66,7 @@ export const ListItem = React.memo(function ListItem({
             activeOpacity={0.6}
             className={cn(
                 "flex-row items-center justify-between py-4 px-4",
-                showDivider && "border-b border-border/50",
+                showDivider && "border-b border-white/10",
                 isActive && "bg-surfaceSecondary",
                 className
             )}

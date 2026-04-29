@@ -112,8 +112,8 @@ export function NoteList({
                       </Text>
                       {folderName ? (
                         <View className="mt-1 flex-row items-center">
-                          <FolderIcon size={14} color="#8b8b8b" />
-                          <Text className="ml-1.5 text-[13px] text-textMuted">{folderName}</Text>
+                          <FolderIcon size={14} color={colors.accent} />
+                          <Text className="ml-1.5 text-[13px] text-accent">{folderName}</Text>
                         </View>
                       ) : null}
                     </View>

@@ -68,10 +68,9 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       blur: () => executeScript(`window.editor?.chain().blur().run();`),
     }));
 
-    // Sync editable state
     useEffect(() => {
       if (isReady.current) {
-        executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
+        executeScript(`if (typeof window.editor !== 'undefined' && window.editor.setEditable) { window.editor.setEditable(${editable}); }`);
       }
     }, [editable, executeScript]);
 
@@ -94,7 +93,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             isReady.current = true;
             // Use currentValueRef to guarantee we don't send a stale closure value
             setWebViewContent(currentValueRef.current);
-            executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
+            executeScript(`if (typeof window.editor !== 'undefined' && window.editor.setEditable) { window.editor.setEditable(${editable}); }`);
             break;
           case 'onChange':
             lastValue.current = message.payload;
@@ -124,7 +123,7 @@ export const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
               if (!isReady.current) {
                 isReady.current = true;
                 setWebViewContent(currentValueRef.current);
-                executeScript(`if (window.editor) { window.editor.setEditable(${editable}); }`);
+                executeScript(`if (typeof window.editor !== 'undefined' && window.editor.setEditable) { window.editor.setEditable(${editable}); }`);
               }
             }, 300);
           }}

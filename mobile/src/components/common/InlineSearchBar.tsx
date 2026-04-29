@@ -20,7 +20,7 @@ export function InlineSearchBar({
   className,
 }: InlineSearchBarProps) {
   const containerClass = cn(
-    "mx-4 mt-3 flex-row items-center rounded-xl bg-surfaceSecondary px-3 py-2",
+    "mx-4 mt-3 flex-row items-center rounded-xl bg-surfaceSecondary border border-white/5 px-3 py-2",
     className,
   );
 
