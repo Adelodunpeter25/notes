@@ -7,7 +7,7 @@ export const TIPTAP_EDITOR_HTML = `
   <style>
     body {
       font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 17px;
+      font-size: 15px;
       line-height: 1.55;
       color: #ffffff;
       background-color: #1A1B1E;
@@ -55,7 +55,7 @@ export const TIPTAP_EDITOR_HTML = `
       margin: 12px 0 2px;
     }
     .ProseMirror h3 {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 600;
       line-height: 1.4;
       margin: 8px 0 2px;
