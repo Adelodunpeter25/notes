@@ -109,7 +109,7 @@ export function FoldersSidebar({
               >
                 <SidebarItem
                   icon={<Folder size={16} strokeWidth={2} />}
-                  active={selectedFolderId === folder.id}
+                  active={activeView !== "trash" && selectedFolderId === folder.id}
                   count={folder.notesCount}
                   onClick={() => onSelectFolder(folder.id)}
                   onDoubleClick={() => setEditingFolderId?.(folder.id)}
