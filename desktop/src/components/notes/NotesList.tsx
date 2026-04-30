@@ -57,7 +57,7 @@ export function NotesList({
         void onUpdateNote(note.id, { isPinned: !note.isPinned });
       },
       onMoveTo: (folderId) => {
-        void onUpdateNote(note.id, { folderId: folderId || null });
+        void onUpdateNote(note.id, { folderId: folderId ?? undefined });
       },
       onOpenInQuickNote: () => {
         void invoke("open_in_quick_note", { noteId: note.id });

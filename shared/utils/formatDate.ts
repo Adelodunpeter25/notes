@@ -1,24 +1,75 @@
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+function parseDate(value: string): Date {
+  return new Date(value);
+}
+
+function isToday(date: Date): boolean {
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+function isYesterday(date: Date): boolean {
+  const now = new Date();
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  return (
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate()
+  );
+}
+
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+
+function formatMonthDayYear(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatFullDateTime(date: Date): string {
+  const day = date.getDate();
+  const month = new Intl.DateTimeFormat(undefined, { month: "long" }).format(date);
+  const year = date.getFullYear();
+  return `${day} ${month} ${year} at ${formatTime(date)}`;
+}
+
+function formatDayMonthYearDashed(date: Date): string {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
 
 export function formatNoteDate(value?: string): string {
   if (!value) {
     return "";
   }
 
-  const parsed = parseISO(value);
+  const parsed = parseDate(value);
   if (Number.isNaN(parsed.getTime())) {
     return "";
   }
 
   if (isToday(parsed)) {
-    return format(parsed, "h:mm a");
+    return formatTime(parsed);
   }
 
   if (isYesterday(parsed)) {
     return "Yesterday";
   }
 
-  return format(parsed, "MMM d, yyyy");
+  return formatMonthDayYear(parsed);
 }
 
 export function formatNoteDateTime(value?: string): string {
@@ -26,20 +77,20 @@ export function formatNoteDateTime(value?: string): string {
     return "";
   }
 
-  const parsed = parseISO(value);
+  const parsed = parseDate(value);
   if (Number.isNaN(parsed.getTime())) {
     return "";
   }
 
-  return format(parsed, "d MMMM yyyy 'at' h:mm a");
+  return formatFullDateTime(parsed);
 }
 
 export function formatDate(value?: string | number | Date): string {
   if (!value) return "";
-  const date = typeof value === "string" ? parseISO(value) : new Date(value);
+  const date = typeof value === "string" ? parseDate(value) : new Date(value);
   if (isNaN(date.getTime())) return "";
-  
+
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "dd-MM-yyyy");
+  return formatDayMonthYearDashed(date);
 }

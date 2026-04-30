@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NotebookText, Search, X, ChevronUp, ChevronDown } from "lucide-react";
+import { NotebookText } from "lucide-react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 

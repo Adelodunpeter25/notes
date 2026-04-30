@@ -13,6 +13,7 @@ export type Task = {
 export type CreateTaskPayload = {
   title: string;
   description?: string;
+  isCompleted?: boolean;
   dueDate?: string;
 };
 

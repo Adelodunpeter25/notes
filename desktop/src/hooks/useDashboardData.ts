@@ -11,13 +11,13 @@ import { isEmptyDraftNote } from "@shared-utils/noteContent";
 import { useTasksQuery, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation, useToggleTaskMutation } from "./useTasks";
 
 type DashboardSelectionState = {
-  activeView: "notes" | "tasks";
+  activeView: "notes" | "tasks" | "trash";
   selectedFolderId: string | null;
   selectedNoteId: string | undefined;
   searchQuery: string;
   isSearchExpanded: boolean;
   manualClearCount: number;
-  setActiveView: (view: "notes" | "tasks") => void;
+  setActiveView: (view: "notes" | "tasks" | "trash") => void;
   setSelectedFolderId: (folderId: string | null) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
 };

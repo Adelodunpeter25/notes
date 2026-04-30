@@ -14,9 +14,7 @@ if (typeof CSSStyleSheet !== "undefined") {
   try {
     new CSSStyleSheet();
   } catch {
-    const OriginalCSSStyleSheet = CSSStyleSheet;
-    // @ts-expect-error – patching the global for WebKit compatibility
-    window.CSSStyleSheet = class PatchedCSSStyleSheet extends OriginalCSSStyleSheet {
+    (window as any).CSSStyleSheet = class PatchedCSSStyleSheet {
       constructor() {
         const style = document.createElement("style");
         document.head.appendChild(style);

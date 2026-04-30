@@ -1,4 +1,4 @@
-import { Bold, ListChecks, Search, Pin, Italic, Underline as UnderlineIcon, Strikethrough, Check, X } from "lucide-react";
+import { Bold, ListChecks, Search, Pin, Italic, Underline as UnderlineIcon, Strikethrough, Check } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useState } from "react";

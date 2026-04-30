@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 
 import { Editor } from "@/components/editor";
 import { deriveNoteTitleFromHtml } from "@shared-utils/noteContent";
@@ -54,7 +54,7 @@ export function QuickNoteApp() {
     if (saved) {
       try {
         const { width, height } = JSON.parse(saved);
-        getCurrentWindow().setSize({ type: "Logical", width, height });
+        getCurrentWindow().setSize(new LogicalSize(width, height));
       } catch {}
     }
 

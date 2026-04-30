@@ -12,7 +12,6 @@ type UiState = {
   isSearchModalOpen: boolean;
   isEditorSearchOpen: boolean;
   setIsEditorSearchOpen: (value: boolean) => void;
-  isEditorSearchOpen: boolean;
   tasksView: "list" | "kanban";
   setActiveView: (view: "notes" | "tasks" | "trash") => void;
   setSelectedFolderId: (folderId: string | null) => void;
