@@ -7,6 +7,41 @@ use crate::db::DbState;
 use crate::error::Result;
 use crate::models::{CreateNotePayload, Note, UpdateNotePayload};
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteCounts {
+    pub all_notes: i64,
+    pub trash: i64,
+}
+
+#[command]
+pub fn get_note_counts(app: AppHandle) -> Result<NoteCounts> {
+    let db_state = app.state::<DbState>();
+    let db = db_state.0.lock().unwrap();
+
+    let all_notes: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM notes WHERE deleted_at IS NULL",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| crate::error::AppError {
+            message: format!("Failed to count notes: {}", e),
+        })?;
+
+    let trash: i64 = db
+        .query_row(
+            "SELECT COUNT(*) FROM notes WHERE deleted_at IS NOT NULL",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| crate::error::AppError {
+            message: format!("Failed to count trash: {}", e),
+        })?;
+
+    Ok(NoteCounts { all_notes, trash })
+}
+
 #[command]
 pub fn list_notes(
     app: AppHandle,

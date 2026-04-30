@@ -71,6 +71,8 @@ export function DashboardPage() {
           left={
             <FoldersSidebar
               folders={data.folders}
+              allNotesCount={data.allNotesCount}
+              trashCount={data.trashCount}
               selectedFolderId={selection.selectedFolderId}
               activeView={selection.activeView}
               isLoading={data.isFoldersLoading}

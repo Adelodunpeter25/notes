@@ -7,6 +7,8 @@ import { showFolderContextMenu } from "@/services";
 
 type FoldersSidebarProps = {
   folders: FolderType[];
+  allNotesCount?: number;
+  trashCount?: number;
   selectedFolderId: string | null;
   activeView: "notes" | "tasks" | "trash";
   isLoading?: boolean;
@@ -21,6 +23,8 @@ type FoldersSidebarProps = {
 
 export function FoldersSidebar({
   folders,
+  allNotesCount,
+  trashCount,
   selectedFolderId,
   activeView,
   isLoading = false,
@@ -91,6 +95,7 @@ export function FoldersSidebar({
             <SidebarItem
               icon={<Folder size={16} strokeWidth={2} />}
               active={selectedFolderId === null && activeView !== "trash"}
+              count={allNotesCount}
               onClick={() => onSelectFolder(null)}
             >
               All Notes
@@ -124,6 +129,15 @@ export function FoldersSidebar({
                 </SidebarItem>
               </div>
             ))}
+
+            <SidebarItem
+              icon={<Trash2 size={16} strokeWidth={2} />}
+              active={activeView === "trash"}
+              count={trashCount}
+              onClick={onSelectTrash}
+            >
+              Trash
+            </SidebarItem>
           </div>
         )}
 
@@ -135,17 +149,6 @@ export function FoldersSidebar({
         ) : null}
 
         <div className="mt-auto pt-2 pb-4 px-2 flex flex-col gap-1">
-          <button
-            onClick={onSelectTrash}
-            className={[
-              "group flex items-center gap-2 py-1 outline-none transition-[color,transform] duration-140 ease-out active:scale-[0.98]",
-              activeView === "trash" ? "text-[#e3e3e3]" : "text-[#9a9a9a] hover:text-[#e3e3e3]",
-            ].join(" ")}
-          >
-            <Trash2 size={22} strokeWidth={1.5} />
-            <span className="text-[14px] font-medium tracking-wide">Trash</span>
-          </button>
-
           <button
             onClick={onCreateFolder}
             className="group flex items-center gap-2 py-1 text-[#9a9a9a] outline-none transition-[color,transform] duration-140 ease-out hover:text-[#e3e3e3] active:scale-[0.98]"

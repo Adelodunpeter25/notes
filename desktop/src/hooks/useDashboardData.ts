@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useDebounce } from "./useDebounce";
 import { useFoldersQuery, useCreateFolderMutation, useRenameFolderMutation, useDeleteFolderMutation } from "./useFolders";
+import { useNoteCountsQuery } from "./useNoteCounts";
 import { syncPatchedNoteInCache, useNotesQuery } from "./useNotes";
 import { useNotesActions } from "./useNotesActions";
 import { isEmptyDraftNote } from "@shared-utils/noteContent";
@@ -29,6 +30,7 @@ export function useDashboardData(selection: DashboardSelectionState) {
   const createFolderMutation = useCreateFolderMutation();
   const renameFolderMutation = useRenameFolderMutation();
   const deleteFolderMutation = useDeleteFolderMutation();
+  const noteCountsQuery = useNoteCountsQuery();
 
   const notesQuery = useNotesQuery({
     ...(selection.selectedFolderId ? { folderId: selection.selectedFolderId } : {}),
@@ -59,6 +61,8 @@ export function useDashboardData(selection: DashboardSelectionState) {
   const folders = foldersQuery.data ?? [];
   const notes = notesQuery.data ?? [];
   const tasks = tasksQuery.data ?? [];
+  const allNotesCount = noteCountsQuery.data?.allNotes;
+  const trashCount = noteCountsQuery.data?.trash;
 
   const selectedFolderName = useMemo(
     () => folders.find((folder) => folder.id === selection.selectedFolderId)?.name,
@@ -243,6 +247,8 @@ export function useDashboardData(selection: DashboardSelectionState) {
 
   return {
     folders,
+    allNotesCount,
+    trashCount,
     notes,
     tasks,
     selectedFolderName,
