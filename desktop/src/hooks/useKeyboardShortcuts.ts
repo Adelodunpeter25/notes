@@ -31,9 +31,13 @@ export function useKeyboardShortcuts() {
         hasMetaOrCtrl &&
         !event.shiftKey &&
         event.key === "2";
-      const isSearchShortcut =
+      const isGlobalSearchShortcut =
         hasMetaOrCtrl &&
         !event.shiftKey &&
+        event.key.toLowerCase() === "f";
+      const isEditorSearchShortcut =
+        hasMetaOrCtrl &&
+        event.shiftKey &&
         event.key.toLowerCase() === "f";
 
       if (isNewFolderShortcut) {
@@ -54,13 +58,15 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      if (isSearchShortcut) {
+      if (isGlobalSearchShortcut) {
         event.preventDefault();
-        if (selectedNoteId) {
-          setIsEditorSearchOpen(true);
-        } else {
-          setIsSearchModalOpen(true);
-        }
+        setIsSearchModalOpen(true);
+        return;
+      }
+
+      if (isEditorSearchShortcut && selectedNoteId) {
+        event.preventDefault();
+        setIsEditorSearchOpen(true);
         return;
       }
 
