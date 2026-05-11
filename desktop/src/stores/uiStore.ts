@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type UiState = {
-  activeView: "notes" | "tasks" | "trash";
+  activeView: "notes" | "trash";
   selectedFolderId: string | null;
   selectedNoteId: string | undefined;
   searchQuery: string;
@@ -12,8 +12,7 @@ type UiState = {
   isSearchModalOpen: boolean;
   isEditorSearchOpen: boolean;
   setIsEditorSearchOpen: (value: boolean) => void;
-  tasksView: "list" | "kanban";
-  setActiveView: (view: "notes" | "tasks" | "trash") => void;
+  setActiveView: (view: "notes" | "trash") => void;
   setSelectedFolderId: (folderId: string | null) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
   setSearchQuery: (value: string) => void;
@@ -21,7 +20,6 @@ type UiState = {
   setIsSearchModalOpen: (value: boolean) => void;
   clearSelectedNote: () => void;
   toggleSidebarCollapsed: () => void;
-  setTasksView: (view: "list" | "kanban") => void;
   navigateToNote: (noteId: string, folderId: string | null) => void;
 };
 
@@ -37,7 +35,6 @@ export const useUiStore = create<UiState>()(
       isEditorSearchOpen: false,
       manualClearCount: 0,
       isSidebarCollapsed: false,
-      tasksView: "list",
       setActiveView: (view) => {
         set({ activeView: view, selectedNoteId: undefined });
       },
@@ -68,9 +65,6 @@ export const useUiStore = create<UiState>()(
       toggleSidebarCollapsed: () => {
         set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed }));
       },
-      setTasksView: (view) => {
-        set({ tasksView: view });
-      },
       navigateToNote: (noteId, folderId) => {
         set({
           activeView: "notes",
@@ -86,7 +80,6 @@ export const useUiStore = create<UiState>()(
         selectedFolderId: state.selectedFolderId,
         selectedNoteId: state.selectedNoteId,
         isSidebarCollapsed: state.isSidebarCollapsed,
-        tasksView: state.tasksView,
       }),
     }
   )

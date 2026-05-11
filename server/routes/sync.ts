@@ -32,7 +32,7 @@ export async function syncRoutes(fastify: FastifyInstance) {
       try {
         const userId = (request as any).userId as string;
         const result = await syncForce(userId);
-        fastify.log.info({ userId, notes: result.notes.length, folders: result.folders.length, tasks: result.tasks.length }, '[sync-force] full snapshot');
+        fastify.log.info({ userId, notes: result.notes.length, folders: result.folders.length }, '[sync-force] full snapshot');
         return reply.send(result);
       } catch (err: any) {
         fastify.log.error(err);

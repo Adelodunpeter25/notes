@@ -13,14 +13,7 @@ import {
   useNotesQuery,
   useUpdateNoteMutation,
 } from "./useNotes";
-import {
-  useCreateTaskMutation,
-  useDeleteTaskMutation,
-  useTasksQuery,
-  useUpdateTaskMutation,
-} from "./useTasks";
 import { useTrashQuery } from "./useTrash";
-import type { Task } from "@shared/tasks";
 import type { Note } from "@shared/notes";
 
 export function useDashboardData() {
@@ -44,12 +37,6 @@ export function useDashboardData() {
   const renameFolderMutation = useRenameFolderMutation();
   const deleteFolderMutation = useDeleteFolderMutation();
 
-  const tasksQuery = useTasksQuery({
-    q: debouncedSearchQuery || undefined,
-  });
-  const createTaskMutation = useCreateTaskMutation();
-  const updateTaskMutation = useUpdateTaskMutation();
-  const deleteTaskMutation = useDeleteTaskMutation();
   const renameFolderTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const selectedNote = useMemo(
@@ -118,30 +105,6 @@ export function useDashboardData() {
     }
   };
 
-  const createTask = async (payload: { title: string; description?: string; dueDate?: string }) => {
-    return createTaskMutation.mutateAsync({
-      title: payload.title,
-      description: payload.description ?? "",
-      isCompleted: false,
-      dueDate: payload.dueDate,
-    });
-  };
-
-  const toggleTask = async (task: Task) => {
-    return updateTaskMutation.mutateAsync({
-      taskId: task.id,
-      payload: { isCompleted: !task.isCompleted },
-    });
-  };
-
-  const updateTask = async (taskId: string, payload: { title?: string; description?: string; dueDate?: string }) => {
-    return updateTaskMutation.mutateAsync({ taskId, payload });
-  };
-
-  const deleteTask = async (taskId: string) => {
-    return deleteTaskMutation.mutateAsync(taskId);
-  };
-
   return {
     notes: notesQuery.data ?? [],
     folders: foldersQuery.data ?? [],
@@ -172,16 +135,5 @@ export function useDashboardData() {
     isCreatingFolder: createFolderMutation.isPending,
     isRenamingFolder: renameFolderMutation.isPending,
     isDeletingFolder: deleteFolderMutation.isPending,
-    tasks: tasksQuery.data ?? [],
-    isTasksLoading: tasksQuery.isLoading,
-    isTasksRefreshing: tasksQuery.isRefetching,
-    refetchTasks: tasksQuery.refetch,
-    createTask,
-    toggleTask,
-    updateTask,
-    deleteTask,
-    isCreatingTask: createTaskMutation.isPending,
-    isUpdatingTask: updateTaskMutation.isPending,
-    isDeletingTask: deleteTaskMutation.isPending,
   };
 }

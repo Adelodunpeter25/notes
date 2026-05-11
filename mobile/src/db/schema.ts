@@ -25,19 +25,6 @@ export const MIGRATIONS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_folders_updated ON folders(updated_at DESC)`,
 
-  `CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY NOT NULL,
-    user_id TEXT,
-    title TEXT NOT NULL DEFAULT 'Untitled',
-    description TEXT NOT NULL DEFAULT '',
-    is_completed INTEGER NOT NULL DEFAULT 0,
-    due_date TEXT,
-    created_at TEXT,
-    updated_at TEXT,
-    deleted_at TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at DESC)`,
-
   // v2 - sync_state table
   `CREATE TABLE IF NOT EXISTS sync_state (
     id TEXT PRIMARY KEY NOT NULL,

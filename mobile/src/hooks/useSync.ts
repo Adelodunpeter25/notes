@@ -6,7 +6,6 @@ import { getDb } from "@/db/client";
 import { buildSyncOps } from "@shared-utils/sync";
 import { listNotes } from "@/db/repos/noteRepo";
 import { listFolders } from "@/db/repos/folderRepo";
-import { listTasks } from "@/db/repos/taskRepo";
 import { listTrash } from "@/db/repos/trashRepo";
 import { getSyncCursor, saveSyncCursor, clearSyncCursor } from "@/db/repos/syncStateRepo";
 import { useAuthStore } from "@/stores/authStore";
@@ -30,15 +29,14 @@ export function useSync(options?: { auto?: boolean }) {
       // Get cursor from database instead of AsyncStorage
       const cursor = await getSyncCursor();
 
-      const [notes, folders, tasks, trashedNotes] = await Promise.all([
+      const [notes, folders, trashedNotes] = await Promise.all([
         listNotes().catch(() => []),
         listFolders().catch(() => []),
-        listTasks().catch(() => []),
         listTrash().catch(() => []),
       ]);
 
       const allNotes = [...notes, ...trashedNotes];
-      const ops = buildSyncOps(allNotes, folders, tasks, cursor);
+      const ops = buildSyncOps(allNotes, folders, [], cursor);
 
       const response = await apiClient.post<SyncResponse>("/sync", { cursor, ops });
 
@@ -71,7 +69,6 @@ export function useSync(options?: { auto?: boolean }) {
       const db = getDb();
       await db.runAsync("DELETE FROM notes");
       await db.runAsync("DELETE FROM folders");
-      await db.runAsync("DELETE FROM tasks");
 
       // Use force sync endpoint — always returns ALL data
       const response = await apiClient.post<SyncResponse>("/sync-force");
@@ -119,8 +116,6 @@ async function applyServerChanges(response: SyncResponse) {
     } else if (tombstone.entityType === "folder") {
       await db.runAsync("UPDATE notes SET folder_id = NULL WHERE folder_id = ?", [tombstone.entityId]).catch(() => {});
       await db.runAsync("UPDATE folders SET deleted_at = ?, updated_at = ? WHERE id = ?", [tombstone.deletedAt, tombstone.deletedAt, tombstone.entityId]).catch(() => {});
-    } else if (tombstone.entityType === "task") {
-      await db.runAsync("UPDATE tasks SET deleted_at = ? WHERE id = ?", [tombstone.deletedAt, tombstone.entityId]).catch(() => {});
     }
   }
 
@@ -150,21 +145,6 @@ async function applyServerChanges(response: SyncResponse) {
       [folder.id, folder.userId ?? null, folder.name, folder.createdAt ?? now, folder.updatedAt ?? now],
     ).catch(() => {});
   }
-
-  for (const task of response.tasks as any[]) {
-    await db.runAsync(
-      `INSERT INTO tasks (id, user_id, title, description, is_completed, due_date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         title = excluded.title,
-         description = excluded.description,
-         is_completed = excluded.is_completed,
-         due_date = excluded.due_date,
-         updated_at = excluded.updated_at
-       WHERE excluded.updated_at > tasks.updated_at`,
-      [task.id, task.userId ?? null, task.title, task.description, task.isCompleted ? 1 : 0, task.dueDate ?? null, task.createdAt ?? now, task.updatedAt ?? now],
-    ).catch(() => {});
-  }
 }
 
 async function applyServerChangesForReset(response: SyncResponse) {
@@ -191,16 +171,6 @@ async function applyServerChangesForReset(response: SyncResponse) {
       [folder.id, folder.userId ?? null, folder.name, folder.createdAt ?? now, folder.updatedAt ?? now],
     ).catch((err) => {
       console.error("Failed to insert folder:", err);
-    });
-  }
-
-  for (const task of response.tasks as any[]) {
-    await db.runAsync(
-      `INSERT INTO tasks (id, user_id, title, description, is_completed, due_date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [task.id, task.userId ?? null, task.title, task.description, task.isCompleted ? 1 : 0, task.dueDate ?? null, task.createdAt ?? now, task.updatedAt ?? now],
-    ).catch((err) => {
-      console.error("Failed to insert task:", err);
     });
   }
 }

@@ -64,25 +64,6 @@ pub fn init_db(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         [],
     )?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS tasks (
-          id TEXT PRIMARY KEY NOT NULL,
-          user_id TEXT,
-          title TEXT NOT NULL DEFAULT 'Untitled',
-          description TEXT NOT NULL DEFAULT '',
-          is_completed INTEGER NOT NULL DEFAULT 0,
-          due_date TEXT,
-          created_at TEXT,
-          updated_at TEXT,
-          deleted_at TEXT
-        )",
-        [],
-    )?;
-
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at DESC)",
-        [],
-    )?;
 
     // Recreate sync_state if it has the old NOT NULL user_id constraint
     let needs_recreate: bool = conn

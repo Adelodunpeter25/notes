@@ -1,10 +1,9 @@
 import type { Folder } from "./folders";
 import type { Note } from "./notes";
-import type { Task } from "./tasks";
 
 export type SyncOperation = {
   type: "upsert" | "delete";
-  entityType: "note" | "folder" | "task";
+  entityType: "note" | "folder";
   entityId: string;
   payload?: any;
 };
@@ -21,8 +20,7 @@ export type SyncResponse = {
   nextCursor: string;
   notes: Note[];
   folders: Folder[];
-  tasks: Task[];
-  deleted: { entityType: "note" | "folder" | "task"; entityId: string }[];
+  deleted: { entityType: "note" | "folder"; entityId: string }[];
   processedOpIds: string[];
   idMappings: { localId: string; serverId: string }[];
 };

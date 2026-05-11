@@ -7,7 +7,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { buildSyncOps } from "@shared-utils/sync";
 import type { Note } from "@shared/notes";
 import type { Folder } from "@shared/folders";
-import type { Task } from "@shared/tasks";
 import type { SyncResponse } from "@shared/sync";
 
 export function useSync(options?: { auto?: boolean }) {
@@ -25,21 +24,16 @@ export function useSync(options?: { auto?: boolean }) {
       // Get cursor from database instead of localStorage
       const cursor = await invoke<string | null>("get_sync_cursor");
 
-      const [notes, folders, tasks] = await Promise.all([
+      const [notes, folders] = await Promise.all([
         invoke<Note[]>("list_notes").catch(() => [] as Note[]),
         invoke<Folder[]>("list_folders").catch(() => [] as Folder[]),
-        invoke<Task[]>("list_tasks").catch(() => [] as Task[]),
       ]);
 
-      // Include trashed notes and tasks so deletes sync
-      const [trashedNotes, trashedTasks] = await Promise.all([
-        invoke<Note[]>("list_trash").catch(() => [] as Note[]),
-        invoke<Task[]>("list_deleted_tasks").catch(() => [] as Task[]),
-      ]);
+      // Include trashed notes so deletes sync
+      const trashedNotes = await invoke<Note[]>("list_trash").catch(() => [] as Note[]);
       const allNotes = [...notes, ...trashedNotes];
-      const allTasks = [...tasks, ...trashedTasks];
 
-      const ops = buildSyncOps(allNotes, folders, allTasks, cursor);
+      const ops = buildSyncOps(allNotes, folders, [], cursor);
 
       const response = await apiClient.post<SyncResponse>("/sync", { cursor, ops });
 
@@ -80,8 +74,6 @@ async function applyServerChanges(response: SyncResponse) {
   await Promise.all(response.deleted.map(async (tombstone) => {
     if (tombstone.entityType === "note") {
       await invoke("delete_note", { id: tombstone.entityId }).catch((e) => console.warn("[sync] delete_note failed", e));
-    } else if (tombstone.entityType === "task") {
-      await invoke("delete_task", { id: tombstone.entityId }).catch((e) => console.warn("[sync] delete_task failed", e));
     }
   }));
 
@@ -91,9 +83,6 @@ async function applyServerChanges(response: SyncResponse) {
     ),
     ...(response.folders as any[]).map((folder) =>
       invoke("upsert_folder", { folder }).catch((e) => console.warn("[sync] upsert_folder failed", folder.id, e))
-    ),
-    ...(response.tasks as any[]).map((task) =>
-      invoke("upsert_task", { task }).catch((e) => console.warn("[sync] upsert_task failed", task.id, e))
     ),
   ]);
 }

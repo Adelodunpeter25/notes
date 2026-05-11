@@ -8,16 +8,15 @@ import { useNoteCountsQuery } from "./useNoteCounts";
 import { syncPatchedNoteInCache, useNotesQuery } from "./useNotes";
 import { useNotesActions } from "./useNotesActions";
 import { isEmptyDraftNote } from "@shared-utils/noteContent";
-import { useTasksQuery, useCreateTaskMutation, useUpdateTaskMutation, useDeleteTaskMutation, useToggleTaskMutation } from "./useTasks";
 
 type DashboardSelectionState = {
-  activeView: "notes" | "tasks" | "trash";
+  activeView: "notes" | "trash";
   selectedFolderId: string | null;
   selectedNoteId: string | undefined;
   searchQuery: string;
   isSearchExpanded: boolean;
   manualClearCount: number;
-  setActiveView: (view: "notes" | "tasks" | "trash") => void;
+  setActiveView: (view: "notes" | "trash") => void;
   setSelectedFolderId: (folderId: string | null) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
 };
@@ -38,13 +37,6 @@ export function useDashboardData(selection: DashboardSelectionState) {
   });
   const notesActions = useNotesActions();
 
-  const tasksQuery = useTasksQuery({
-    q: debouncedSearchQuery.trim(),
-  });
-  const createTaskMutation = useCreateTaskMutation();
-  const updateTaskMutation = useUpdateTaskMutation();
-  const toggleTaskMutation = useToggleTaskMutation();
-  const deleteTaskMutation = useDeleteTaskMutation();
 
   const pendingCreatedNoteIdRef = useRef<string | null>(null);
   const suppressAutoSelectRef = useRef(false);
@@ -60,7 +52,6 @@ export function useDashboardData(selection: DashboardSelectionState) {
 
   const folders = foldersQuery.data ?? [];
   const notes = notesQuery.data ?? [];
-  const tasks = tasksQuery.data ?? [];
   const allNotesCount = noteCountsQuery.data?.allNotes;
   const trashCount = noteCountsQuery.data?.trash;
 
@@ -255,7 +246,6 @@ export function useDashboardData(selection: DashboardSelectionState) {
     selectedNote,
     isFoldersLoading: foldersQuery.isLoading,
     isNotesLoading: notesQuery.isLoading || notesActions.isCreating,
-    isTasksLoading: tasksQuery.isLoading,
     isSaving: notesActions.isSaving,
     isDeleting: notesActions.isDeleting,
     editingFolderId,
@@ -268,9 +258,5 @@ export function useDashboardData(selection: DashboardSelectionState) {
     createFolder,
     renameFolder,
     deleteFolder,
-    createTask: (payload: any) => createTaskMutation.mutateAsync(payload),
-    updateTask: (taskId: string, payload: any) => updateTaskMutation.mutateAsync({ id: taskId, payload }),
-    deleteTask: (taskId: string) => deleteTaskMutation.mutateAsync(taskId),
-    toggleTask: (task: any) => toggleTaskMutation.mutateAsync(task.id),
   };
 }

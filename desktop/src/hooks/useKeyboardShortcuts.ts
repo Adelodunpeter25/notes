@@ -27,10 +27,6 @@ export function useKeyboardShortcuts() {
         hasMetaOrCtrl &&
         !event.shiftKey &&
         event.key === "1";
-      const isTasksViewShortcut =
-        hasMetaOrCtrl &&
-        !event.shiftKey &&
-        event.key === "2";
       const isGlobalSearchShortcut =
         hasMetaOrCtrl &&
         !event.shiftKey &&
@@ -52,11 +48,6 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      if (isTasksViewShortcut) {
-        event.preventDefault();
-        setActiveView("tasks");
-        return;
-      }
 
       if (isGlobalSearchShortcut) {
         event.preventDefault();

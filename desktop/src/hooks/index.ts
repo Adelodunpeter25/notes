@@ -3,7 +3,6 @@ export * from "./useAuth";
 export * from "./useNotes";
 export * from "./useNoteCounts";
 export * from "./useFolders";
-export * from "./useTasks";
 export * from "./useTrash";
 export * from "./useDebounce";
 export * from "./useNotesActions";

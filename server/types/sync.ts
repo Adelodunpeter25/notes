@@ -1,5 +1,5 @@
 export type SyncOpType = 'upsert' | 'delete';
-export type SyncEntityType = 'note' | 'folder' | 'task';
+export type SyncEntityType = 'note' | 'folder';
 
 export type SyncOperation = {
   id: string;           // client-generated op id for idempotency
@@ -25,7 +25,6 @@ export type SyncResponse = {
   nextCursor: string;
   notes: unknown[];
   folders: unknown[];
-  tasks: unknown[];
   deleted: SyncTombstone[];
   processedOpIds: string[];
 };

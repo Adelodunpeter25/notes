@@ -55,17 +55,6 @@ export function Titlebar({ syncNow, isSyncing = false, onSettingsOpen }: Titleba
         >
           Notes
         </button>
-        <button
-          onClick={() => setActiveView("tasks")}
-          className={cn(
-            "flex h-6 items-center rounded-lg border px-5 text-[12px] font-bold tracking-tight transition-all",
-            activeView === "tasks"
-              ? "bg-accent text-black border-accent"
-              : "text-muted border-border/60 hover:text-text hover:border-border"
-          )}
-        >
-          Tasks
-        </button>
       </div>
 
       <div className="flex items-center gap-1 no-drag" data-no-drag="true">

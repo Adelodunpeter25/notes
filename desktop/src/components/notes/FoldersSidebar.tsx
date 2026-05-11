@@ -10,7 +10,7 @@ type FoldersSidebarProps = {
   allNotesCount?: number;
   trashCount?: number;
   selectedFolderId: string | null;
-  activeView: "notes" | "tasks" | "trash";
+  activeView: "notes" | "trash";
   isLoading?: boolean;
   onSelectFolder: (folderId: string | null) => void;
   onCreateFolder: () => void;

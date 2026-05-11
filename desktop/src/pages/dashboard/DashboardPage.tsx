@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { NoteEditor, NotesList, FoldersSidebar, TrashNoteList, TrashEditor } from "@/components/notes";
-import { TasksList } from "@/components/tasks/TasksList";
 import { ResizableLayout } from "@/components/common";
 import {
   useDashboardData,
@@ -48,20 +47,6 @@ export function DashboardPage() {
 
   const isTrash = selection.activeView === "trash";
 
-  if (selection.activeView === "tasks") {
-    return (
-      <main className="flex h-full flex-1 flex-col bg-background">
-        <TasksList
-          tasks={data.tasks}
-          isLoading={data.isTasksLoading}
-          onCreateTask={data.createTask}
-          onUpdateTask={data.updateTask}
-          onDeleteTask={data.deleteTask}
-          onToggleTask={data.toggleTask}
-        />
-      </main>
-    );
-  }
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">
