@@ -2,7 +2,7 @@ import { Text, View, Animated, Easing, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { PenLine, WifiOff, RefreshCw, FolderPlus, Settings } from "lucide-react-native";
+import { WifiOff, RefreshCw, FolderPlus, Settings } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useCallback } from "react";
 
@@ -80,14 +80,6 @@ export function DashboardScreen() {
     outputRange: ["0deg", "360deg"],
   });
 
-  const handleCreateNote = async () => {
-    try {
-      const note = await dashboard.createNote();
-      navigation.navigate("Editor", { noteId: note.id, note });
-    } catch (error) {
-      console.error("Failed to create note:", error);
-    }
-  };
 
   const handleCreateFolder = async (name: string) => {
     await dashboard.createFolder(name);
@@ -195,20 +187,6 @@ export function DashboardScreen() {
         />
       </View>
 
-      <Pressable
-        onPress={handleCreateNote}
-        disabled={dashboard.isCreatingNote}
-        className="absolute bottom-8 right-8 h-[60px] w-[60px] items-center justify-center rounded-full bg-accent shadow-lg active:scale-95"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 5,
-          elevation: 8,
-        }}
-      >
-        <PenLine size={24} color={colors.background} />
-      </Pressable>
 
       <FolderContextMenu
         visible={!!menuFolder}

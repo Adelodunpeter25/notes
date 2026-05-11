@@ -54,13 +54,19 @@ pub fn init_db(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
           user_id TEXT,
           name TEXT NOT NULL,
           created_at TEXT,
-          updated_at TEXT
+          updated_at TEXT,
+          deleted_at TEXT
         )",
         [],
     )?;
 
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_folders_updated ON folders(updated_at DESC)",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_folders_deleted ON folders(deleted_at)",
         [],
     )?;
 

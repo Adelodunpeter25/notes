@@ -57,7 +57,7 @@ export async function renameFolder(id: string, payload: RenameFolderPayload): Pr
   const db = getDb();
   const now = new Date().toISOString();
   await db.runAsync(
-    "UPDATE folders SET name = ?, updated_at = ? WHERE id = ?",
+    "UPDATE folders SET name = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
     [payload.name, now, id],
   );
   return getFolder(id);

@@ -15,10 +15,11 @@ pub fn list_folders(app: AppHandle) -> Result<Vec<Folder>> {
 
     let mut stmt = db
         .prepare(
-            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
+            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, f.deleted_at,
                   COUNT(n.id) as notes_count
                   FROM folders f
                   LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
+                  WHERE f.deleted_at IS NULL
                   GROUP BY f.id
                   ORDER BY f.updated_at DESC",
         )
@@ -34,7 +35,8 @@ pub fn list_folders(app: AppHandle) -> Result<Vec<Folder>> {
                 name: row.get(2)?,
                 created_at: row.get(3)?,
                 updated_at: row.get(4)?,
-                notes_count: row.get(5)?,
+                deleted_at: row.get(5)?,
+                notes_count: row.get(6)?,
             })
         })
         .map_err(|e| crate::error::AppError {
@@ -55,11 +57,11 @@ pub fn get_folder(app: AppHandle, id: String) -> Result<Folder> {
 
     let mut stmt = db
         .prepare(
-            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at,
+            "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, f.deleted_at,
                   COUNT(n.id) as notes_count
                   FROM folders f
                   LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
-                  WHERE f.id = ?
+                  WHERE f.id = ? AND f.deleted_at IS NULL
                   GROUP BY f.id",
         )
         .map_err(|e| crate::error::AppError {
@@ -74,7 +76,8 @@ pub fn get_folder(app: AppHandle, id: String) -> Result<Folder> {
                 name: row.get(2)?,
                 created_at: row.get(3)?,
                 updated_at: row.get(4)?,
-                notes_count: row.get(5)?,
+                deleted_at: row.get(5)?,
+                notes_count: row.get(6)?,
             })
         })
         .map_err(|_| crate::error::AppError {
@@ -98,11 +101,11 @@ pub fn create_folder(app: AppHandle, payload: CreateFolderPayload) -> Result<Fol
     ).map_err(|e| crate::error::AppError { message: format!("Failed to create folder: {}", e) })?;
 
     db.query_row(
-        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, COUNT(n.id) as notes_count
+        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, f.deleted_at, COUNT(n.id) as notes_count
          FROM folders f LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
          WHERE f.id = ? GROUP BY f.id",
         params![id],
-        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, notes_count: row.get(5)? }),
+        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, deleted_at: row.get(5)?, notes_count: row.get(6)? }),
     ).map_err(|e| crate::error::AppError { message: format!("Failed to fetch created folder: {}", e) })
 }
 
@@ -119,11 +122,11 @@ pub fn rename_folder(app: AppHandle, id: String, payload: RenameFolderPayload) -
     ).map_err(|e| crate::error::AppError { message: format!("Failed to rename folder: {}", e) })?;
 
     db.query_row(
-        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, COUNT(n.id) as notes_count
+        "SELECT f.id, f.user_id, f.name, f.created_at, f.updated_at, f.deleted_at, COUNT(n.id) as notes_count
          FROM folders f LEFT JOIN notes n ON n.folder_id = f.id AND n.deleted_at IS NULL
          WHERE f.id = ? GROUP BY f.id",
         params![id],
-        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, notes_count: row.get(5)? }),
+        |row| Ok(Folder { id: row.get(0)?, user_id: row.get(1)?, name: row.get(2)?, created_at: row.get(3)?, updated_at: row.get(4)?, deleted_at: row.get(5)?, notes_count: row.get(6)? }),
     ).map_err(|e| crate::error::AppError { message: format!("Folder not found: {}", e) })
 }
 
@@ -131,10 +134,15 @@ pub fn rename_folder(app: AppHandle, id: String, payload: RenameFolderPayload) -
 pub fn delete_folder(app: AppHandle, id: String) -> Result<()> {
     let db_state = app.state::<DbState>();
     let db = db_state.0.lock().unwrap();
+    let now = Utc::now().to_rfc3339();
 
-    db.execute("DELETE FROM folders WHERE id = ?", params![id])
+    // Soft delete: update notes in folder to be in "no folder", then mark folder as deleted
+    db.execute("UPDATE notes SET folder_id = NULL, updated_at = ? WHERE folder_id = ?", params![now, id])
+        .map_err(|e| crate::error::AppError { message: format!("Failed to move notes out of folder: {}", e) })?;
+
+    db.execute("UPDATE folders SET deleted_at = ?, updated_at = ? WHERE id = ?", params![now, now, id])
         .map_err(|e| crate::error::AppError {
-            message: format!("Failed to delete folder: {}", e),
+            message: format!("Failed to soft delete folder: {}", e),
         })?;
 
     Ok(())
@@ -146,11 +154,12 @@ pub fn upsert_folder(app: AppHandle, folder: crate::models::Folder) -> Result<()
     let db = db_state.0.lock().unwrap();
 
     db.execute(
-        "INSERT INTO folders (id, user_id, name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5)
+        "INSERT INTO folders (id, user_id, name, created_at, updated_at, deleted_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(id) DO UPDATE SET
            name = excluded.name,
-           updated_at = excluded.updated_at
+           updated_at = excluded.updated_at,
+           deleted_at = excluded.deleted_at
          WHERE datetime(excluded.updated_at) > datetime(folders.updated_at)",
         params![
             folder.id,
@@ -158,6 +167,7 @@ pub fn upsert_folder(app: AppHandle, folder: crate::models::Folder) -> Result<()
             folder.name,
             folder.created_at,
             folder.updated_at,
+            folder.deleted_at,
         ],
     )
     .map_err(|e| crate::error::AppError {

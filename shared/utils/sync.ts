@@ -25,8 +25,12 @@ export function buildSyncOps(
     const updatedAt = note.updatedAt ?? note.createdAt ?? new Date().toISOString();
     if (since && new Date(updatedAt) < since) continue;
 
-    // Filter out deleted items - they won't be synced to the server
-    if (note.deletedAt) continue;
+    if (note.deletedAt) {
+      ops.push({
+        id: uuid(), type: 'delete', entityType: 'note', entityId: note.id, updatedAt,
+      });
+      continue;
+    }
 
     ops.push({
       id: uuid(), type: 'upsert', entityType: 'note', entityId: note.id, updatedAt,
@@ -38,8 +42,12 @@ export function buildSyncOps(
     const updatedAt = folder.updatedAt ?? folder.createdAt ?? new Date().toISOString();
     if (since && new Date(updatedAt) < since) continue;
 
-    // Filter out deleted items
-    if (folder.deletedAt) continue;
+    if (folder.deletedAt) {
+      ops.push({
+        id: uuid(), type: 'delete', entityType: 'folder', entityId: folder.id, updatedAt,
+      });
+      continue;
+    }
 
     ops.push({
       id: uuid(), type: 'upsert', entityType: 'folder', entityId: folder.id, updatedAt,

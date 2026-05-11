@@ -1,7 +1,6 @@
 import { type MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { RefreshCw, Settings } from "lucide-react";
-import { useUiStore } from "@/stores";
 import { cn } from "@shared-utils/cn";
 
 const isDesktop =
@@ -14,8 +13,6 @@ type TitlebarProps = {
 };
 
 export function Titlebar({ syncNow, isSyncing = false, onSettingsOpen }: TitlebarProps) {
-  const activeView = useUiStore((state) => state.activeView);
-  const setActiveView = useUiStore((state) => state.setActiveView);
 
   async function handleStartDrag(event: MouseEvent<HTMLElement>) {
     if (!isDesktop || event.button !== 0) {
@@ -44,17 +41,9 @@ export function Titlebar({ syncNow, isSyncing = false, onSettingsOpen }: Titleba
       <div className="w-[80px]" />
 
       <div className="flex items-center gap-2 no-drag" data-no-drag="true">
-        <button
-          onClick={() => setActiveView("notes")}
-          className={cn(
-            "flex h-6 items-center rounded-lg border px-5 text-[12px] font-bold tracking-tight transition-all",
-            activeView === "notes"
-              ? "bg-accent text-black border-accent"
-              : "text-muted border-border/60 hover:text-text hover:border-border"
-          )}
-        >
+        <span className="text-[12px] font-bold tracking-tight text-text/80">
           Notes
-        </button>
+        </span>
       </div>
 
       <div className="flex items-center gap-1 no-drag" data-no-drag="true">

@@ -280,8 +280,8 @@ pub fn delete_note(app: AppHandle, id: String) -> Result<()> {
     let now = Utc::now().to_rfc3339();
 
     db.execute(
-        "UPDATE notes SET deleted_at = ? WHERE id = ?",
-        params![now, id],
+        "UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?",
+        params![now.clone(), now, id],
     )
     .map_err(|e| crate::error::AppError {
         message: format!("Failed to delete note: {}", e),
