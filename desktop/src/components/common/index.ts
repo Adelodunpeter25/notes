@@ -9,4 +9,3 @@ export * from "./SearchEmptyState";
 export * from "./SidebarItem";
 export * from "./Skeleton";
 export * from "./Textarea";
-export * from "./AppleNotesIcon";
