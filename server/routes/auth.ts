@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { authService } from '@services/index';
-import type { LoginPayload, SignupPayload } from '@types/index';
+import type { LoginPayload, SignupPayload } from '@custom-types/index';
 
 export async function authRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SignupPayload }>('/signup', async (request, reply) => {

@@ -1,7 +1,7 @@
 import { eq, gt, and, isNull, isNotNull } from 'drizzle-orm';
 import { db } from '@db/index';
 import { notes, folders } from '@db/schema';
-import type { SyncRequest, SyncResponse, SyncOperation, SyncTombstone } from '@types/index';
+import type { SyncRequest, SyncResponse, SyncOperation, SyncTombstone } from '@custom-types/index';
 
 export async function syncForce(userId: string): Promise<SyncResponse> {
   const nextCursor = new Date().toISOString();

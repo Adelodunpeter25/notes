@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { authMiddleware } from '@middleware/auth';
 import { sync, syncForce } from '@services/sync';
-import type { SyncRequest } from '@types/index';
+import type { SyncRequest } from '@custom-types/index';
 
 export async function syncRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: SyncRequest }>(

@@ -21,7 +21,7 @@
       "@db/*": ["./db/*"],
       "@services/*": ["./services/*"],
       "@routes/*": ["./routes/*"],
-      "@types/*": ["./types/*"],
+      "@custom-types/*": ["./types/*"],
       "@middleware/*": ["./middleware/*"]
     },
 

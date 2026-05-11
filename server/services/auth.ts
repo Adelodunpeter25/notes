@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '@db/index';
 import { users } from '@db/schema';
-import type { LoginPayload, SignupPayload, AuthResponse } from '@types/index';
+import type { LoginPayload, SignupPayload, AuthResponse } from '@custom-types/index';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -24,6 +24,10 @@ export const authService = {
       password: hashedPassword,
       name: payload.name,
     }).returning();
+
+    if (!user) {
+      throw new Error('Failed to create user');
+    }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
 

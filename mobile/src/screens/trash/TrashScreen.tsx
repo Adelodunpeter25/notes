@@ -44,18 +44,24 @@ export function TrashScreen() {
   return (
     <ScreenContainer>
       <View className="border-b border-border px-4 py-3">
-        <Pressable
-          onPress={() => navigation.goBack()}
-          className="mb-2 flex-row items-center self-start rounded-md px-1 py-1"
-        >
-          <ChevronLeft size={18} color="#eab308" />
-          <Text className="ml-1 text-sm font-medium text-accent">Back</Text>
-        </Pressable>
-        <View className="flex-row items-center justify-between">
-          <Text className="text-lg font-semibold text-text">Trash</Text>
+        <View className="relative flex-row items-center justify-center min-h-[40px]">
+          <Pressable
+            onPress={() => navigation.goBack()}
+            className="absolute left-0 flex-row items-center rounded-md py-1"
+          >
+            <ChevronLeft size={22} color="#eab308" />
+            <Text className="ml-0.5 text-[17px] text-accent">Back</Text>
+          </Pressable>
+
+          <Text className="text-[17px] font-semibold text-text">Trash</Text>
+
           {notes.length > 0 && (
-            <Pressable onPress={() => setConfirmClear(true)} hitSlop={10} className="rounded-md px-2 py-1">
-              <Text className="text-sm font-medium text-red-400">Empty All</Text>
+            <Pressable 
+              onPress={() => setConfirmClear(true)} 
+              hitSlop={15} 
+              className="absolute right-0 rounded-md py-1"
+            >
+              <Text className="text-[15px] font-medium text-red-400">Empty All</Text>
             </Pressable>
           )}
         </View>
