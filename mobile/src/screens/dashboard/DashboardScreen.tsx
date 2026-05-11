@@ -2,7 +2,7 @@ import { Text, View, Animated, Easing, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { WifiOff, RefreshCw, FolderPlus, Settings } from "lucide-react-native";
+import { WifiOff, RotateCcw, FolderPlus, Settings } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useCallback } from "react";
 
@@ -105,10 +105,22 @@ export function DashboardScreen() {
   return (
     <ScreenContainer>
       <View className="flex-row items-center justify-between px-4 py-3 pb-1">
-        <View className="flex-row items-center">
+        <View className="flex-row items-center flex-1">
           <Text className="text-3xl font-bold text-text">
             Folders
           </Text>
+          <Pressable
+            onPress={() => {
+              void syncNow();
+            }}
+            disabled={isSyncing}
+            hitSlop={10}
+            className="ml-2 rounded-full p-1"
+          >
+            <Animated.View style={{ transform: [{ rotate: isSyncing ? spin : "0deg" }] }}>
+              <RotateCcw size={22} color={isSyncing ? colors.textMuted : colors.accent} />
+            </Animated.View>
+          </Pressable>
           {netInfo.isConnected === false && (
             <View className="ml-3 flex-row items-center rounded-full bg-danger/20 px-2 py-1">
               <WifiOff size={12} color={colors.danger} />
@@ -125,18 +137,6 @@ export function DashboardScreen() {
             className="rounded-md p-1.5 mr-1"
           >
             <FolderPlus size={22} color={colors.accent} />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              void syncNow();
-            }}
-            disabled={isSyncing}
-            hitSlop={10}
-            className="rounded-full p-1.5 mr-1"
-          >
-            <Animated.View style={{ transform: [{ rotate: isSyncing ? spin : "0deg" }] }}>
-              <RefreshCw size={20} color={isSyncing ? colors.textMuted : colors.accent} />
-            </Animated.View>
           </Pressable>
           <Pressable
             onPress={() => navigation.navigate("Settings")}

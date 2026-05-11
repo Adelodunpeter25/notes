@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, X, RefreshCw, LogOut } from "lucide-react";
+import { Settings, X, RotateCcw, LogOut } from "lucide-react";
 import { useAuthStore } from "@/stores";
 
 type SettingsModalProps = {
@@ -71,7 +71,7 @@ export function SettingsModal({
               className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-[#2a2a2a] px-3.5 py-3 text-left transition-colors hover:border-border hover:bg-[#333] disabled:opacity-50"
             >
               <div className="flex size-8 items-center justify-center rounded-md bg-accent/15">
-                <RefreshCw
+                <RotateCcw
                   size={14}
                   className={isSyncing ? "animate-spin text-accent" : "text-accent"}
                 />

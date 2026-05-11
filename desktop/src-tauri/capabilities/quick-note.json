@@ -18,6 +18,7 @@
     "core:window:allow-is-visible",
     "shell:allow-open",
     "fs:default",
-    "os:default"
+    "os:default",
+    "dialog:default"
   ]
 }
