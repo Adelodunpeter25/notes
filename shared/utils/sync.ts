@@ -1,7 +1,6 @@
 import type { SyncOperation } from '../types/sync';
 import type { Note } from '../types/notes';
 import type { Folder } from '../types/folders';
-import type { Task } from '../types/tasks';
 
 function uuid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {

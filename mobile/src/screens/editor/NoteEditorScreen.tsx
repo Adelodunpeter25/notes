@@ -178,7 +178,7 @@ export function NoteEditorScreen() {
 
       const currentContent = contentRef.current;
       const derivedTitle = deriveNoteTitleFromHtml(currentContent);
-      const isDraft = isEmptyDraftNote({ title: derivedTitle, content: currentContent, isPinned: note?.isPinned });
+      const isDraft = isEmptyDraftNote({ title: derivedTitle, content: currentContent, isPinned: !!note?.isPinned });
 
       if (isDraft && note) {
         void deleteNoteMutation.mutateAsync(note.id).finally(() => {
@@ -247,7 +247,7 @@ export function NoteEditorScreen() {
 
             const currentContent = contentRef.current;
             const derivedTitle = deriveNoteTitleFromHtml(currentContent);
-            const isDraft = isEmptyDraftNote({ title: derivedTitle, content: currentContent, isPinned: note?.isPinned });
+            const isDraft = isEmptyDraftNote({ title: derivedTitle, content: currentContent, isPinned: !!note?.isPinned });
 
             if (isDraft && note) {
               await deleteNoteMutation.mutateAsync(note.id);

@@ -241,7 +241,6 @@ export function useDashboardData(selection: DashboardSelectionState) {
     allNotesCount,
     trashCount,
     notes,
-    tasks,
     selectedFolderName,
     selectedNote,
     isFoldersLoading: foldersQuery.isLoading,

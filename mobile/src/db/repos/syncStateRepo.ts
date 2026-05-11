@@ -67,7 +67,7 @@ export async function saveSyncCursor(cursor: string, userId?: string | null): Pr
          last_cursor = excluded.last_cursor,
          last_sync_at = excluded.last_sync_at,
          updated_at = excluded.updated_at`,
-      [uuidv4(), userId, deviceId, cursor, now, now]
+      [uuidv4(), userId ?? null, deviceId, cursor, now, now]
     );
   } catch (error) {
     console.error('[syncStateRepo] Failed to save sync cursor:', error);

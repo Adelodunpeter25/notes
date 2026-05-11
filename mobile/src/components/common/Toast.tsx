@@ -24,7 +24,7 @@ const VARIANT_STYLES: Record<ToastVariant, { container: string; text: string }> 
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   const { container, text } = VARIANT_STYLES[toast.variant ?? "info"];
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     timerRef.current = setTimeout(() => {
