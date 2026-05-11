@@ -2,7 +2,7 @@ import { Text, View, Animated, Easing, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { WifiOff, RotateCcw, FolderPlus, Settings } from "lucide-react-native";
+import { WifiOff, RotateCw, FolderPlus, Settings } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useCallback } from "react";
 
@@ -118,7 +118,7 @@ export function DashboardScreen() {
             className="ml-2 rounded-full p-1"
           >
             <Animated.View style={{ transform: [{ rotate: isSyncing ? spin : "0deg" }] }}>
-              <RotateCcw size={22} color={isSyncing ? colors.textMuted : colors.accent} />
+              <RotateCw size={22} color={isSyncing ? colors.textMuted : colors.accent} />
             </Animated.View>
           </Pressable>
           {netInfo.isConnected === false && (

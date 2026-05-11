@@ -1,6 +1,6 @@
 import { type MouseEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { RotateCcw, Settings } from "lucide-react";
+import { RotateCw, Settings } from "lucide-react";
 import { cn } from "@shared-utils/cn";
 
 const isDesktop =
@@ -56,7 +56,7 @@ export function Titlebar({ syncNow, isSyncing = false, onSettingsOpen }: Titleba
           )}
           title="Sync Now"
         >
-          <RotateCcw size={14} />
+          <RotateCw size={14} />
         </button>
         <button
           onClick={() => onSettingsOpen?.()}
