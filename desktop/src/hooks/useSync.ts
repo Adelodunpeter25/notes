@@ -62,7 +62,7 @@ export function useSync(options?: { auto?: boolean }) {
 
   useEffect(() => {
     if (!options?.auto) return;
-    const id = setInterval(() => void syncNow(), 15_000);
+    const id = setInterval(() => void syncNow(), 60_000);
     return () => clearInterval(id);
   }, [options?.auto, syncNow]);
 

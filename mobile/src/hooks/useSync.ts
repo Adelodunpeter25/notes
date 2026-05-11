@@ -11,7 +11,7 @@ import { getSyncCursor, saveSyncCursor, clearSyncCursor } from "@/db/repos/syncS
 import { useAuthStore } from "@/stores/authStore";
 import type { SyncResponse } from "@shared/sync";
 
-const AUTO_SYNC_INTERVAL_MS = 15_000;
+const AUTO_SYNC_INTERVAL_MS = 60_000;
 
 export function useSync(options?: { auto?: boolean }) {
   const queryClient = useQueryClient();
