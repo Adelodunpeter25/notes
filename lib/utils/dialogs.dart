@@ -59,6 +59,43 @@ class DialogUtils {
       ),
     );
   }
+
+  /// Shows a macOS style dialog containing a text field for entering text (e.g. folder name)
+  static Future<String?> showTextInputDialog({
+    required BuildContext context,
+    required String title,
+    required String placeholder,
+    String primaryButtonText = 'OK',
+    String secondaryButtonText = 'Cancel',
+  }) async {
+    final controller = TextEditingController();
+    return showMacosAlertDialog<String>(
+      context: context,
+      builder: (context) => MacosAlertDialog(
+        appIcon: const MacosIcon(CupertinoIcons.folder_badge_plus),
+        title: Text(title),
+        message: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: MacosTextField(
+            controller: controller,
+            placeholder: placeholder,
+            autofocus: true,
+          ),
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () => Navigator.pop(context, controller.text),
+          child: Text(primaryButtonText),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () => Navigator.pop(context, null),
+          child: Text(secondaryButtonText),
+        ),
+      ),
+    );
+  }
 }
 
 class _MoveToFolderDialog extends StatefulWidget {

@@ -6,8 +6,21 @@ import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../models/user.dart';
 
+enum NoteFilterType { all, folder, trash }
+
+class NoteFilter {
+  final NoteFilterType type;
+  final String? folderId;
+
+  const NoteFilter.all() : type = NoteFilterType.all, folderId = null;
+  const NoteFilter.folder(this.folderId) : type = NoteFilterType.folder;
+  const NoteFilter.trash() : type = NoteFilterType.trash, folderId = null;
+}
+
 class NoteListPane extends StatelessWidget {
-  const NoteListPane({super.key});
+  final NoteFilter filter;
+
+  const NoteListPane({super.key, required this.filter});
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +38,22 @@ class NoteListPane extends StatelessWidget {
           return const Center(child: Text('Not logged in'));
         }
 
+        // Determine notes stream based on filter
+        final Stream<List<Note>> notesStream;
+        switch (filter.type) {
+          case NoteFilterType.all:
+            notesStream = services.noteService.watchAllNotes(user.id);
+            break;
+          case NoteFilterType.folder:
+            notesStream = services.noteService.watchNotesInFolder(user.id, filter.folderId!);
+            break;
+          case NoteFilterType.trash:
+            notesStream = services.noteService.watchTrashNotes(user.id);
+            break;
+        }
+
         return StreamBuilder<List<Note>>(
-          stream: services.noteService.watchAllNotes(user.id),
+          stream: notesStream,
           builder: (context, noteSnapshot) {
             if (noteSnapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: ProgressCircle());
