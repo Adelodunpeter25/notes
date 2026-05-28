@@ -17,6 +17,10 @@ class NoteService {
     return noteDao.watchNotesInFolder(userId, folderId);
   }
 
+  Stream<List<Note>> watchTrashNotes(String userId) {
+    return noteDao.watchTrashNotes(userId);
+  }
+
   Future<int> createNote({
     required String title,
     required String content,
@@ -38,7 +42,19 @@ class NoteService {
     return noteDao.updateNote(note);
   }
 
-  Future deleteNote(Note note) {
-    return noteDao.deleteNote(note);
+  Future pinNote(Note note, bool isPinned) {
+    return noteDao.updateNote(note.copyWith(isPinned: isPinned));
+  }
+
+  Future softDeleteNote(Note note) {
+    return noteDao.updateNote(note.copyWith(deletedAt: DateTime.now()));
+  }
+
+  Future restoreNote(Note note) {
+    return noteDao.updateNote(note.copyWith(deletedAt: null));
+  }
+
+  Future moveNoteToFolder(Note note, String? folderId) {
+    return noteDao.updateNote(note.copyWith(folderId: folderId));
   }
 }

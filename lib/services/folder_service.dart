@@ -22,7 +22,15 @@ class FolderService {
     );
   }
 
-  Future deleteFolder(Folder folder) {
-    return folderDao.deleteFolder(folder);
+  Future renameFolder(Folder folder, String newName) {
+    return folderDao.updateFolder(folder.copyWith(name: newName));
+  }
+
+  Future softDeleteFolder(Folder folder) {
+    return folderDao.updateFolder(folder.copyWith(deletedAt: DateTime.now()));
+  }
+
+  Future restoreFolder(Folder folder) {
+    return folderDao.updateFolder(folder.copyWith(deletedAt: null));
   }
 }
