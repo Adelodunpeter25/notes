@@ -5,7 +5,7 @@ part 'daos.g.dart';
 
 @DriftAccessor(tables: [Notes])
 class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
-  NoteDao(AppDatabase db) : super(db);
+  NoteDao(super.db);
 
   Stream<List<Note>> watchAllNotes(String userId) {
     return (select(notes)..where((t) => t.userId.equals(userId))).watch();
@@ -24,13 +24,9 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
 
 @DriftAccessor(tables: [Folders, Notes])
 class FolderDao extends DatabaseAccessor<AppDatabase> with _$FolderDaoMixin {
-  FolderDao(AppDatabase db) : super(db);
+  FolderDao(super.db);
 
   Stream<List<FolderWithCount>> watchFoldersWithCount(String userId) {
-    final countQuery = selectOnly(notes)
-      ..addColumns([notes.folderId.count()])
-      ..where(notes.userId.equals(userId));
-
     return (select(folders)..where((t) => t.userId.equals(userId))).watch().map((rows) {
       return rows.map((folder) => FolderWithCount(folder, 0)).toList(); 
     });

@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../models/user.dart';

@@ -24,7 +24,7 @@ class _EditorViewPaneState extends State<EditorViewPane> {
       children: [
         // macOS Toolbar
         const EditorToolbar(),
-        const Divider(height: 1),
+        Container(height: 1, color: MacosTheme.of(context).dividerColor),
         // The actual editor
         Expanded(
           child: Padding(
@@ -58,7 +58,7 @@ class EditorToolbar extends StatelessWidget {
             onPressed: () {},
           ),
           MacosIconButton(
-            icon: const MacosIcon(CupertinoIcons.square_and_pencil),
+            icon: const MacosIcon(CupertinoIcons.pencil_outline),
             onPressed: () {},
           ),
         ],

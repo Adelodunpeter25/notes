@@ -9,19 +9,8 @@ class AppTheme {
 
   static MacosThemeData get darkTheme {
     return MacosThemeData.dark().copyWith(
-      accentColor: accentColor,
-      primaryColor: accentColor,
-      typography: MacosTypography.dark().copyWith(
-        headline: const TextStyle(
-          color: CupertinoColors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        body: const TextStyle(
-          color: CupertinoColors.systemGrey4,
-          fontSize: 13,
-        ),
-      ),
+      accentColor: AccentColor.yellow,
+      primaryColor: MacosColors.appleYellow,
     );
   }
 }
