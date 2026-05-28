@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../database/database.dart';
+import '../database/database.dart' hide User;
 import '../models/user.dart';
 import 'api_service.dart';
 
@@ -75,6 +75,24 @@ class AuthService {
   Future<String?> getSessionToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_sessionKey);
+  }
+
+  /// Gets the currently logged-in user from the database
+  Future<User?> getCurrentUser() async {
+    final token = await getSessionToken();
+    if (token == null) return null;
+    final usersList = await db.select(db.users).get();
+    if (usersList.isNotEmpty) {
+      final u = usersList.first;
+      return User(
+        id: u.id,
+        email: u.email,
+        name: u.username,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+    return null;
   }
 
   /// Logs out the user
