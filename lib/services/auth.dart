@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
+import '../models/user.dart';
 import 'api_service.dart';
 
 class AuthService {
@@ -11,7 +12,7 @@ class AuthService {
   AuthService(this.db, this.api);
 
   /// Registers a new user via the server
-  Future<void> registerUser(String username, String email, String password) async {
+  Future<AuthResponse> registerUser(String username, String email, String password) async {
     final response = await api.post('/auth/signup', {
       'username': username,
       'email': email,
@@ -19,28 +20,27 @@ class AuthService {
     });
     
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final token = response.data['token'];
-      if (token != null) {
-        await api.saveToken(token);
-      }
+      final authResponse = AuthResponse.fromJson(response.data);
+      await api.saveToken(authResponse.token);
+      await _saveSession(authResponse.token);
+      return authResponse;
     } else {
       throw Exception(response.data['error'] ?? 'Signup failed');
     }
   }
 
   /// Login a user via the server and save their session
-  Future<void> login(String email, String password) async {
+  Future<AuthResponse> login(String email, String password) async {
     final response = await api.post('/auth/login', {
       'email': email,
       'password': password,
     });
 
     if (response.statusCode == 200) {
-      final token = response.data['token'];
-      if (token != null) {
-        await api.saveToken(token);
-        await _saveSession(token); // Mirror to local session key
-      }
+      final authResponse = AuthResponse.fromJson(response.data);
+      await api.saveToken(authResponse.token);
+      await _saveSession(authResponse.token);
+      return authResponse;
     } else {
       throw Exception(response.data['error'] ?? 'Login failed');
     }
