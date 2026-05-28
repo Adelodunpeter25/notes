@@ -22,6 +22,7 @@ class Folders extends Table {
   TextColumn get id => text()(); // Client or Server UUID
   TextColumn get name => text().withLength(min: 1, max: 64)();
   TextColumn get userId => text().references(Users, #id)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -36,6 +37,7 @@ class Notes extends Table {
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
   TextColumn get folderId => text().nullable().references(Folders, #id)();
   TextColumn get userId => text().references(Users, #id)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

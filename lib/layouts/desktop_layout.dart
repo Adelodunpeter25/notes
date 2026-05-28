@@ -17,23 +17,22 @@ class _DesktopLayoutState extends State<DesktopLayout> {
   Widget build(BuildContext context) {
     return MacosWindow(
       sidebar: Sidebar(
-        minWidth: 200,
+        minWidth: 220,
         builder: (context, scrollController) {
           return SidebarItems(
-            currentIndex: 0,
+            currentIndex: _pageIndex,
             onChanged: (index) => setState(() => _pageIndex = index),
+            scrollController: scrollController,
             items: const [
               SidebarItem(
-                leading: MacosIcon(CupertinoIcons.folder),
+                leading: MacosIcon(CupertinoIcons.folder, color: CupertinoColors.systemYellow),
                 label: Text('All Notes'),
+                trailing: Text('35', style: TextStyle(color: CupertinoColors.systemGrey)),
               ),
               SidebarItem(
-                leading: MacosIcon(CupertinoIcons.person_2),
-                label: Text('Shared'),
-              ),
-              SidebarItem(
-                leading: MacosIcon(CupertinoIcons.trash),
+                leading: MacosIcon(CupertinoIcons.trash, color: CupertinoColors.systemYellow),
                 label: Text('Trash'),
+                trailing: Text('1', style: TextStyle(color: CupertinoColors.systemGrey)),
               ),
             ],
           );
@@ -42,13 +41,21 @@ class _DesktopLayoutState extends State<DesktopLayout> {
           children: [
             Container(height: 1, color: MacosTheme.of(context).dividerColor),
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: const [
-                  MacosIcon(CupertinoIcons.add),
-                  SizedBox(width: 8),
-                  Text('New Folder'),
-                ],
+              padding: const EdgeInsets.all(12.0),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    // Logic to create new folder
+                  },
+                  child: Row(
+                    children: const [
+                      MacosIcon(CupertinoIcons.add_circled, size: 20),
+                      SizedBox(width: 8),
+                      Text('New Folder', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],

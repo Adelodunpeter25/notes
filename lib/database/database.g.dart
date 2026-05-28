@@ -259,8 +259,14 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
   @override
-  List<GeneratedColumn> get $columns => [id, name, userId];
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [id, name, userId, deletedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -288,6 +294,10 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
     } else if (isInserting) {
       context.missing(_userIdMeta);
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
     return context;
   }
 
@@ -303,6 +313,8 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       userId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
     );
   }
 
@@ -316,13 +328,21 @@ class Folder extends DataClass implements Insertable<Folder> {
   final String id;
   final String name;
   final String userId;
-  const Folder({required this.id, required this.name, required this.userId});
+  final DateTime? deletedAt;
+  const Folder(
+      {required this.id,
+      required this.name,
+      required this.userId,
+      this.deletedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     return map;
   }
 
@@ -331,6 +351,9 @@ class Folder extends DataClass implements Insertable<Folder> {
       id: Value(id),
       name: Value(name),
       userId: Value(userId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
     );
   }
 
@@ -341,6 +364,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       userId: serializer.fromJson<String>(json['userId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
   }
   @override
@@ -350,19 +374,27 @@ class Folder extends DataClass implements Insertable<Folder> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'userId': serializer.toJson<String>(userId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
   }
 
-  Folder copyWith({String? id, String? name, String? userId}) => Folder(
+  Folder copyWith(
+          {String? id,
+          String? name,
+          String? userId,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
+      Folder(
         id: id ?? this.id,
         name: name ?? this.name,
         userId: userId ?? this.userId,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
       );
   Folder copyWithCompanion(FoldersCompanion data) {
     return Folder(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       userId: data.userId.present ? data.userId.value : this.userId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
   }
 
@@ -371,37 +403,42 @@ class Folder extends DataClass implements Insertable<Folder> {
     return (StringBuffer('Folder(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('userId: $userId')
+          ..write('userId: $userId, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, userId);
+  int get hashCode => Object.hash(id, name, userId, deletedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Folder &&
           other.id == this.id &&
           other.name == this.name &&
-          other.userId == this.userId);
+          other.userId == this.userId &&
+          other.deletedAt == this.deletedAt);
 }
 
 class FoldersCompanion extends UpdateCompanion<Folder> {
   final Value<String> id;
   final Value<String> name;
   final Value<String> userId;
+  final Value<DateTime?> deletedAt;
   final Value<int> rowid;
   const FoldersCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.userId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoldersCompanion.insert({
     required String id,
     required String name,
     required String userId,
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         name = Value(name),
@@ -410,12 +447,14 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? userId,
+    Expression<DateTime>? deletedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (userId != null) 'user_id': userId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -424,11 +463,13 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
       {Value<String>? id,
       Value<String>? name,
       Value<String>? userId,
+      Value<DateTime?>? deletedAt,
       Value<int>? rowid}) {
     return FoldersCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       userId: userId ?? this.userId,
+      deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -445,6 +486,9 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -457,6 +501,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('userId: $userId, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -530,9 +575,24 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, title, content, createdAt, updatedAt, isPinned, folderId, userId];
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        title,
+        content,
+        createdAt,
+        updatedAt,
+        isPinned,
+        folderId,
+        userId,
+        deletedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -582,6 +642,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     } else if (isInserting) {
       context.missing(_userIdMeta);
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
     return context;
   }
 
@@ -607,6 +671,8 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
           .read(DriftSqlType.string, data['${effectivePrefix}folder_id']),
       userId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
     );
   }
 
@@ -625,6 +691,7 @@ class Note extends DataClass implements Insertable<Note> {
   final bool isPinned;
   final String? folderId;
   final String userId;
+  final DateTime? deletedAt;
   const Note(
       {required this.id,
       required this.title,
@@ -633,7 +700,8 @@ class Note extends DataClass implements Insertable<Note> {
       required this.updatedAt,
       required this.isPinned,
       this.folderId,
-      required this.userId});
+      required this.userId,
+      this.deletedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -647,6 +715,9 @@ class Note extends DataClass implements Insertable<Note> {
       map['folder_id'] = Variable<String>(folderId);
     }
     map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     return map;
   }
 
@@ -662,6 +733,9 @@ class Note extends DataClass implements Insertable<Note> {
           ? const Value.absent()
           : Value(folderId),
       userId: Value(userId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
     );
   }
 
@@ -677,6 +751,7 @@ class Note extends DataClass implements Insertable<Note> {
       isPinned: serializer.fromJson<bool>(json['isPinned']),
       folderId: serializer.fromJson<String?>(json['folderId']),
       userId: serializer.fromJson<String>(json['userId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
   }
   @override
@@ -691,6 +766,7 @@ class Note extends DataClass implements Insertable<Note> {
       'isPinned': serializer.toJson<bool>(isPinned),
       'folderId': serializer.toJson<String?>(folderId),
       'userId': serializer.toJson<String>(userId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
   }
 
@@ -702,7 +778,8 @@ class Note extends DataClass implements Insertable<Note> {
           DateTime? updatedAt,
           bool? isPinned,
           Value<String?> folderId = const Value.absent(),
-          String? userId}) =>
+          String? userId,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
       Note(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -712,6 +789,7 @@ class Note extends DataClass implements Insertable<Note> {
         isPinned: isPinned ?? this.isPinned,
         folderId: folderId.present ? folderId.value : this.folderId,
         userId: userId ?? this.userId,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
       );
   Note copyWithCompanion(NotesCompanion data) {
     return Note(
@@ -723,6 +801,7 @@ class Note extends DataClass implements Insertable<Note> {
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
       folderId: data.folderId.present ? data.folderId.value : this.folderId,
       userId: data.userId.present ? data.userId.value : this.userId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
   }
 
@@ -736,14 +815,15 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('updatedAt: $updatedAt, ')
           ..write('isPinned: $isPinned, ')
           ..write('folderId: $folderId, ')
-          ..write('userId: $userId')
+          ..write('userId: $userId, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, title, content, createdAt, updatedAt, isPinned, folderId, userId);
+  int get hashCode => Object.hash(id, title, content, createdAt, updatedAt,
+      isPinned, folderId, userId, deletedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -755,7 +835,8 @@ class Note extends DataClass implements Insertable<Note> {
           other.updatedAt == this.updatedAt &&
           other.isPinned == this.isPinned &&
           other.folderId == this.folderId &&
-          other.userId == this.userId);
+          other.userId == this.userId &&
+          other.deletedAt == this.deletedAt);
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
@@ -767,6 +848,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<bool> isPinned;
   final Value<String?> folderId;
   final Value<String> userId;
+  final Value<DateTime?> deletedAt;
   final Value<int> rowid;
   const NotesCompanion({
     this.id = const Value.absent(),
@@ -777,6 +859,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.isPinned = const Value.absent(),
     this.folderId = const Value.absent(),
     this.userId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NotesCompanion.insert({
@@ -788,6 +871,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.isPinned = const Value.absent(),
     this.folderId = const Value.absent(),
     required String userId,
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         title = Value(title),
@@ -802,6 +886,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<bool>? isPinned,
     Expression<String>? folderId,
     Expression<String>? userId,
+    Expression<DateTime>? deletedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -813,6 +898,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (isPinned != null) 'is_pinned': isPinned,
       if (folderId != null) 'folder_id': folderId,
       if (userId != null) 'user_id': userId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -826,6 +912,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       Value<bool>? isPinned,
       Value<String?>? folderId,
       Value<String>? userId,
+      Value<DateTime?>? deletedAt,
       Value<int>? rowid}) {
     return NotesCompanion(
       id: id ?? this.id,
@@ -836,6 +923,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       isPinned: isPinned ?? this.isPinned,
       folderId: folderId ?? this.folderId,
       userId: userId ?? this.userId,
+      deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -867,6 +955,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (userId.present) {
       map['user_id'] = Variable<String>(userId.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -884,6 +975,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('isPinned: $isPinned, ')
           ..write('folderId: $folderId, ')
           ..write('userId: $userId, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1196,12 +1288,14 @@ typedef $$FoldersTableCreateCompanionBuilder = FoldersCompanion Function({
   required String id,
   required String name,
   required String userId,
+  Value<DateTime?> deletedAt,
   Value<int> rowid,
 });
 typedef $$FoldersTableUpdateCompanionBuilder = FoldersCompanion Function({
   Value<String> id,
   Value<String> name,
   Value<String> userId,
+  Value<DateTime?> deletedAt,
   Value<int> rowid,
 });
 
@@ -1250,6 +1344,9 @@ class $$FoldersTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
 
   $$UsersTableFilterComposer get userId {
     final $$UsersTableFilterComposer composer = $composerBuilder(
@@ -1308,6 +1405,9 @@ class $$FoldersTableOrderingComposer
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
   $$UsersTableOrderingComposer get userId {
     final $$UsersTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -1343,6 +1443,9 @@ class $$FoldersTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   $$UsersTableAnnotationComposer get userId {
     final $$UsersTableAnnotationComposer composer = $composerBuilder(
@@ -1412,24 +1515,28 @@ class $$FoldersTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String> userId = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoldersCompanion(
             id: id,
             name: name,
             userId: userId,
+            deletedAt: deletedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String id,
             required String name,
             required String userId,
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FoldersCompanion.insert(
             id: id,
             name: name,
             userId: userId,
+            deletedAt: deletedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -1506,6 +1613,7 @@ typedef $$NotesTableCreateCompanionBuilder = NotesCompanion Function({
   Value<bool> isPinned,
   Value<String?> folderId,
   required String userId,
+  Value<DateTime?> deletedAt,
   Value<int> rowid,
 });
 typedef $$NotesTableUpdateCompanionBuilder = NotesCompanion Function({
@@ -1517,6 +1625,7 @@ typedef $$NotesTableUpdateCompanionBuilder = NotesCompanion Function({
   Value<bool> isPinned,
   Value<String?> folderId,
   Value<String> userId,
+  Value<DateTime?> deletedAt,
   Value<int> rowid,
 });
 
@@ -1575,6 +1684,9 @@ class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
 
   ColumnFilters<bool> get isPinned => $composableBuilder(
       column: $table.isPinned, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
 
   $$FoldersTableFilterComposer get folderId {
     final $$FoldersTableFilterComposer composer = $composerBuilder(
@@ -1644,6 +1756,9 @@ class $$NotesTableOrderingComposer
   ColumnOrderings<bool> get isPinned => $composableBuilder(
       column: $table.isPinned, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
   $$FoldersTableOrderingComposer get folderId {
     final $$FoldersTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -1711,6 +1826,9 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   $$FoldersTableAnnotationComposer get folderId {
     final $$FoldersTableAnnotationComposer composer = $composerBuilder(
@@ -1784,6 +1902,7 @@ class $$NotesTableTableManager extends RootTableManager<
             Value<bool> isPinned = const Value.absent(),
             Value<String?> folderId = const Value.absent(),
             Value<String> userId = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               NotesCompanion(
@@ -1795,6 +1914,7 @@ class $$NotesTableTableManager extends RootTableManager<
             isPinned: isPinned,
             folderId: folderId,
             userId: userId,
+            deletedAt: deletedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1806,6 +1926,7 @@ class $$NotesTableTableManager extends RootTableManager<
             Value<bool> isPinned = const Value.absent(),
             Value<String?> folderId = const Value.absent(),
             required String userId,
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               NotesCompanion.insert(
@@ -1817,6 +1938,7 @@ class $$NotesTableTableManager extends RootTableManager<
             isPinned: isPinned,
             folderId: folderId,
             userId: userId,
+            deletedAt: deletedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
