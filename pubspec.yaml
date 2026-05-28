@@ -39,8 +39,9 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
   crypt: ^4.4.1
+  shared_preferences: ^2.3.2
 
-dev_dependencies:
+  dev_dependencies:
   flutter_test:
     sdk: flutter
   drift_dev: ^2.20.0
