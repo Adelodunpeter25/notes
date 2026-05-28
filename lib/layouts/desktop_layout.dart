@@ -7,6 +7,7 @@ import '../widgets/service_provider.dart';
 import '../utils/dialogs.dart';
 import '../models/user.dart';
 import '../database/daos.dart';
+import '../database/database.dart' hide User;
 
 class DesktopLayout extends StatefulWidget {
   const DesktopLayout({super.key});
@@ -208,10 +209,25 @@ class _DesktopLayoutState extends State<DesktopLayout> {
   }
 }
 
-class NotesViewPane extends StatelessWidget {
+class NotesViewPane extends StatefulWidget {
   final NoteFilter filter;
 
   const NotesViewPane({super.key, required this.filter});
+
+  @override
+  State<NotesViewPane> createState() => _NotesViewPaneState();
+}
+
+class _NotesViewPaneState extends State<NotesViewPane> {
+  Note? _selectedNote;
+
+  @override
+  void didUpdateWidget(covariant NotesViewPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filter.type != oldWidget.filter.type || widget.filter.folderId != oldWidget.filter.folderId) {
+      _selectedNote = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,11 +239,27 @@ class NotesViewPane extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 300,
-                  child: NoteListPane(filter: filter),
+                  child: NoteListPane(
+                    filter: widget.filter,
+                    selectedNote: _selectedNote,
+                    onNoteSelected: (note) {
+                      setState(() {
+                        _selectedNote = note;
+                      });
+                    },
+                  ),
                 ),
                 Container(width: 1, color: MacosTheme.of(context).dividerColor),
-                const Expanded(
-                  child: EditorViewPane(),
+                Expanded(
+                  child: EditorViewPane(
+                    note: _selectedNote,
+                    onNoteUpdated: (updatedNote) {
+                      // Optional: update locally selected note if content changes
+                      setState(() {
+                        _selectedNote = updatedNote;
+                      });
+                    },
+                  ),
                 ),
               ],
             );

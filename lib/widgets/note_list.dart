@@ -19,8 +19,15 @@ class NoteFilter {
 
 class NoteListPane extends StatelessWidget {
   final NoteFilter filter;
+  final Note? selectedNote;
+  final ValueChanged<Note> onNoteSelected;
 
-  const NoteListPane({super.key, required this.filter});
+  const NoteListPane({
+    super.key,
+    required this.filter,
+    this.selectedNote,
+    required this.onNoteSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -86,10 +93,12 @@ class NoteListPane extends StatelessWidget {
                     itemCount: notes.length,
                     itemBuilder: (context, index) {
                       final note = notes[index];
+                      final isSelected = selectedNote?.id == note.id;
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                         child: GestureDetector(
+                          onTap: () => onNoteSelected(note),
                           onSecondaryTapUp: (details) async {
                             final RelativeRect position = RelativeRect.fromLTRB(
                               details.globalPosition.dx,
@@ -170,16 +179,27 @@ class NoteListPane extends StatelessWidget {
                               }
                             }
                           },
-                          child: MacosListTile(
-                            title: Text(
-                              note.title.isEmpty ? 'Untitled' : note.title,
-                              style: MacosTheme.of(context).typography.headline,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? MacosTheme.of(context).dividerColor.withOpacity(0.4)
+                                  : CupertinoColors.transparent,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            subtitle: Text(
-                              note.content.isEmpty ? 'No content' : note.content,
-                              style: MacosTheme.of(context).typography.subheadline,
+                            child: MacosListTile(
+                              title: Text(
+                                note.title.isEmpty ? 'Untitled' : note.title,
+                                style: MacosTheme.of(context).typography.headline.copyWith(
+                                  color: isSelected ? CupertinoColors.white : null,
+                                  fontWeight: isSelected ? FontWeight.bold : null,
+                                ),
+                              ),
+                              subtitle: Text(
+                                note.content.isEmpty ? 'No content' : note.content,
+                                style: MacosTheme.of(context).typography.subheadline,
+                              ),
+                              onClick: () => onNoteSelected(note),
                             ),
-                            onClick: () {},
                           ),
                         ),
                       );
