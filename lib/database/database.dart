@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'daos.dart';
+
 part 'database.g.dart';
 
 class Users extends Table {
@@ -31,14 +33,12 @@ class Notes extends Table {
   IntColumn get userId => integer().references(Users, #id)();
 }
 
-@DriftDatabase(tables: [Users, Folders, Notes])
+@DriftDatabase(tables: [Users, Folders, Notes], daos: [NoteDao, FolderDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
-
-  // Logic for folder note count will be handled via DAOs or custom queries
 }
 
 LazyDatabase _openConnection() {
