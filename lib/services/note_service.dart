@@ -47,14 +47,14 @@ class NoteService {
   }
 
   Future softDeleteNote(Note note) {
-    return noteDao.updateNote(note.copyWith(deletedAt: DateTime.now()));
+    return noteDao.updateNote(note.copyWith(deletedAt: Value(DateTime.now())));
   }
 
   Future restoreNote(Note note) {
-    return noteDao.updateNote(note.copyWith(deletedAt: null));
+    return noteDao.updateNote(note.copyWith(deletedAt: const Value(null)));
   }
 
   Future moveNoteToFolder(Note note, String? folderId) {
-    return noteDao.updateNote(note.copyWith(folderId: folderId));
+    return noteDao.updateNote(note.copyWith(folderId: Value(folderId)));
   }
 }

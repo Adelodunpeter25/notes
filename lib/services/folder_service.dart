@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
@@ -27,10 +28,10 @@ class FolderService {
   }
 
   Future softDeleteFolder(Folder folder) {
-    return folderDao.updateFolder(folder.copyWith(deletedAt: DateTime.now()));
+    return folderDao.updateFolder(folder.copyWith(deletedAt: Value(DateTime.now())));
   }
 
   Future restoreFolder(Folder folder) {
-    return folderDao.updateFolder(folder.copyWith(deletedAt: null));
+    return folderDao.updateFolder(folder.copyWith(deletedAt: const Value(null)));
   }
 }
