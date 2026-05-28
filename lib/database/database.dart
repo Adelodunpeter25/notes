@@ -10,27 +10,35 @@ import 'daos.dart';
 part 'database.g.dart';
 
 class Users extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text()(); // Server UUID
   TextColumn get username => text().withLength(min: 3, max: 32)();
   TextColumn get email => text().unique()();
-  TextColumn get password => text()(); // For sync; should be hashed in production
+  
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 class Folders extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text()(); // Client or Server UUID
   TextColumn get name => text().withLength(min: 1, max: 64)();
-  IntColumn get userId => integer().references(Users, #id)();
+  TextColumn get userId => text().references(Users, #id)();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 class Notes extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text()(); // Client or Server UUID
   TextColumn get title => text().withLength(min: 0, max: 255)();
   TextColumn get content => text()(); // JSON blob from appflowy_editor
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
-  IntColumn get folderId => integer().nullable().references(Folders, #id)();
-  IntColumn get userId => integer().references(Users, #id)();
+  TextColumn get folderId => text().nullable().references(Folders, #id)();
+  TextColumn get userId => text().references(Users, #id)();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [Users, Folders, Notes], daos: [NoteDao, FolderDao])

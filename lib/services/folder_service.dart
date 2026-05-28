@@ -1,18 +1,24 @@
+import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
 
 class FolderService {
   final FolderDao folderDao;
+  final _uuid = const Uuid();
 
   FolderService(this.folderDao);
 
-  Stream<List<FolderWithCount>> watchFolders(int userId) {
+  Stream<List<FolderWithCount>> watchFolders(String userId) {
     return folderDao.watchFoldersWithNoteCount(userId);
   }
 
-  Future<int> createFolder(String name, int userId) {
+  Future<int> createFolder(String name, String userId) {
     return folderDao.insertFolder(
-      FoldersCompanion.insert(name: name, userId: userId),
+      FoldersCompanion.insert(
+        id: _uuid.v4(),
+        name: name,
+        userId: userId,
+      ),
     );
   }
 

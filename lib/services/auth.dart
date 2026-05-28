@@ -23,6 +23,16 @@ class AuthService {
       final authResponse = AuthResponse.fromJson(response.data);
       await api.saveToken(authResponse.token);
       await _saveSession(authResponse.token);
+      
+      // Save user locally
+      await db.into(db.users).insertOnConflictUpdate(
+        UsersCompanion.insert(
+          id: authResponse.user.id,
+          username: authResponse.user.name ?? username,
+          email: authResponse.user.email,
+        ),
+      );
+      
       return authResponse;
     } else {
       throw Exception(response.data['error'] ?? 'Signup failed');
@@ -40,6 +50,16 @@ class AuthService {
       final authResponse = AuthResponse.fromJson(response.data);
       await api.saveToken(authResponse.token);
       await _saveSession(authResponse.token);
+      
+      // Save user locally
+      await db.into(db.users).insertOnConflictUpdate(
+        UsersCompanion.insert(
+          id: authResponse.user.id,
+          username: authResponse.user.name ?? '',
+          email: authResponse.user.email,
+        ),
+      );
+
       return authResponse;
     } else {
       throw Exception(response.data['error'] ?? 'Login failed');

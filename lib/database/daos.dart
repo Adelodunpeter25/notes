@@ -7,11 +7,11 @@ part 'daos.g.dart';
 class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
   NoteDao(AppDatabase db) : super(db);
 
-  Stream<List<Note>> watchAllNotes(int userId) {
+  Stream<List<Note>> watchAllNotes(String userId) {
     return (select(notes)..where((t) => t.userId.equals(userId))).watch();
   }
 
-  Stream<List<Note>> watchNotesInFolder(int userId, int folderId) {
+  Stream<List<Note>> watchNotesInFolder(String userId, String folderId) {
     return (select(notes)
           ..where((t) => t.userId.equals(userId) & t.folderId.equals(folderId)))
         .watch();
@@ -26,20 +26,18 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
 class FolderDao extends DatabaseAccessor<AppDatabase> with _$FolderDaoMixin {
   FolderDao(AppDatabase db) : super(db);
 
-  Stream<List<FolderWithCount>> watchFoldersWithCount(int userId) {
+  Stream<List<FolderWithCount>> watchFoldersWithCount(String userId) {
     final countQuery = selectOnly(notes)
       ..addColumns([notes.folderId.count()])
       ..where(notes.userId.equals(userId));
 
     return (select(folders)..where((t) => t.userId.equals(userId))).watch().map((rows) {
-      // Note: In a real DAO we might use a join, but for simplicity and reactivity 
-      // with Drift streams, we can aggregate or use a custom query.
       return rows.map((folder) => FolderWithCount(folder, 0)).toList(); 
     });
   }
 
   // Optimized join for folder counts
-  Stream<List<FolderWithCount>> watchFoldersWithNoteCount(int userId) {
+  Stream<List<FolderWithCount>> watchFoldersWithNoteCount(String userId) {
     final noteCount = notes.id.count();
     final query = select(folders).join([
       leftOuterJoin(notes, notes.folderId.equalsExp(folders.id)),
