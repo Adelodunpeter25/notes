@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   late Dio _dio;
-  static const String _baseUrl = 'http://localhost:3000'; // Adjust for your local server
+  static const String _baseUrl = 'https://notes-api.scaleitpro.com/api'; // Production API
   static const String _tokenKey = 'auth_token';
 
   ApiService() {
