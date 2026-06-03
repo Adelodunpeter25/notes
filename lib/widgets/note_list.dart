@@ -16,7 +16,7 @@ class NoteFilter {
 }
 
 /// Mobile-optimized note list with search, swipe actions, and a floating action button.
-class NoteList extends StatelessWidget {
+class NoteList extends StatefulWidget {
   final NoteFilter filter;
   final String folderName;
   final ValueChanged<Note> onNoteSelected;
@@ -33,6 +33,41 @@ class NoteList extends StatelessWidget {
     required this.onNewNote,
     required this.onSync,
   });
+
+  @override
+  State<NoteList> createState() => _NoteListState();
+}
+
+class _NoteListState extends State<NoteList> {
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool _matchesSearch(Note note) {
+    if (_searchQuery.isEmpty) return true;
+    final q = _searchQuery.toLowerCase();
+    if (note.title.toLowerCase().contains(q)) return true;
+    final contentText = _extractText(note.content).toLowerCase();
+    return contentText.contains(q);
+  }
+
+  String _extractText(String content) {
+    if (content.isEmpty) return '';
+    try {
+      return content
+          .replaceAll(RegExp(r'"\$?[a-zA-Z_]*":'), ' ')
+          .replaceAll(RegExp(r'[{}\[\]"]'), ' ')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+    } catch (_) {
+      return content;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,14 +88,13 @@ class NoteList extends StatelessWidget {
           return const Center(child: Text('Not logged in'));
         }
 
-        // Determine notes stream based on filter
         final Stream<List<Note>> notesStream;
-        switch (filter.type) {
+        switch (widget.filter.type) {
           case NoteFilterType.all:
             notesStream = services.noteService.watchAllNotes(user.id);
             break;
           case NoteFilterType.folder:
-            notesStream = services.noteService.watchNotesInFolder(user.id, filter.folderId!);
+            notesStream = services.noteService.watchNotesInFolder(user.id, widget.filter.folderId!);
             break;
           case NoteFilterType.trash:
             notesStream = services.noteService.watchTrashNotes(user.id);
@@ -75,10 +109,10 @@ class NoteList extends StatelessWidget {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(CupertinoIcons.line_horizontal_3),
-              onPressed: onMenuPressed,
+              onPressed: widget.onMenuPressed,
             ),
             title: Text(
-              folderName,
+              widget.folderName,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -89,7 +123,7 @@ class NoteList extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(CupertinoIcons.arrow_2_circlepath),
-                onPressed: onSync,
+                onPressed: widget.onSync,
                 tooltip: 'Sync',
               ),
             ],
@@ -101,28 +135,34 @@ class NoteList extends StatelessWidget {
                 return const Center(child: CupertinoActivityIndicator());
               }
 
-              final allNotes = noteSnapshot.data ?? [];
+              final allNotes = (noteSnapshot.data ?? [])
+                  .where(_matchesSearch)
+                  .toList();
               if (allNotes.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        CupertinoIcons.doc_text,
+                        _searchQuery.isNotEmpty
+                            ? CupertinoIcons.search
+                            : CupertinoIcons.doc_text,
                         size: 64,
                         color: isDark ? Colors.white24 : Colors.black26,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        filter.type == NoteFilterType.trash
-                            ? 'Trash is empty'
-                            : 'No notes yet',
+                        _searchQuery.isNotEmpty
+                            ? 'No notes match "$_searchQuery"'
+                            : widget.filter.type == NoteFilterType.trash
+                                ? 'Trash is empty'
+                                : 'No notes yet',
                         style: TextStyle(
                           fontSize: 18,
                           color: isDark ? Colors.white38 : Colors.black38,
                         ),
                       ),
-                      if (filter.type != NoteFilterType.trash) ...[
+                      if (_searchQuery.isEmpty && widget.filter.type != NoteFilterType.trash) ...[
                         const SizedBox(height: 8),
                         Text(
                           'Tap + to create a new note',
@@ -137,21 +177,19 @@ class NoteList extends StatelessWidget {
                 );
               }
 
-              // Separate pinned and unpinned
               final pinnedNotes = allNotes.where((n) => n.isPinned).toList();
               final unpinnedNotes = allNotes.where((n) => !n.isPinned).toList();
 
-              // Sort by updatedAt descending
               pinnedNotes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
               unpinnedNotes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
               return CustomScrollView(
                 slivers: [
-                  // Search Bar
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: CupertinoSearchTextField(
+                        controller: _searchController,
                         placeholder: 'Search notes',
                         style: TextStyle(
                           color: isDark ? Colors.white : Colors.black,
@@ -159,18 +197,22 @@ class NoteList extends StatelessWidget {
                         backgroundColor: isDark
                             ? const Color(0xFF2C2C2E)
                             : const Color(0xFFE5E5EA),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.trim();
+                          });
+                        },
                       ),
                     ),
                   ),
 
-                  // Pinned section
                   if (pinnedNotes.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
                         child: Row(
                           children: [
-                            Icon(CupertinoIcons.pin_fill, size: 14, color: accentColor),
+                            const Icon(CupertinoIcons.pin_fill, size: 14, color: accentColor),
                             const SizedBox(width: 6),
                             Text(
                               'Pinned',
@@ -189,11 +231,11 @@ class NoteList extends StatelessWidget {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => _NoteCard(
                           note: pinnedNotes[index],
-                          onTap: () => onNoteSelected(pinnedNotes[index]),
+                          onTap: () => widget.onNoteSelected(pinnedNotes[index]),
                           onDelete: () => services.noteService.softDeleteNote(pinnedNotes[index]),
                           onPin: () => services.noteService.pinNote(pinnedNotes[index], !pinnedNotes[index].isPinned),
-                          isTrash: filter.type == NoteFilterType.trash,
-                          onRestore: filter.type == NoteFilterType.trash
+                          isTrash: widget.filter.type == NoteFilterType.trash,
+                          onRestore: widget.filter.type == NoteFilterType.trash
                               ? () => services.noteService.restoreNote(pinnedNotes[index])
                               : null,
                         ),
@@ -202,7 +244,6 @@ class NoteList extends StatelessWidget {
                     ),
                   ],
 
-                  // Notes section
                   if (unpinnedNotes.isNotEmpty) ...[
                     if (pinnedNotes.isNotEmpty)
                       SliverToBoxAdapter(
@@ -223,11 +264,11 @@ class NoteList extends StatelessWidget {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => _NoteCard(
                           note: unpinnedNotes[index],
-                          onTap: () => onNoteSelected(unpinnedNotes[index]),
+                          onTap: () => widget.onNoteSelected(unpinnedNotes[index]),
                           onDelete: () => services.noteService.softDeleteNote(unpinnedNotes[index]),
                           onPin: () => services.noteService.pinNote(unpinnedNotes[index], !unpinnedNotes[index].isPinned),
-                          isTrash: filter.type == NoteFilterType.trash,
-                          onRestore: filter.type == NoteFilterType.trash
+                          isTrash: widget.filter.type == NoteFilterType.trash,
+                          onRestore: widget.filter.type == NoteFilterType.trash
                               ? () => services.noteService.restoreNote(unpinnedNotes[index])
                               : null,
                         ),
@@ -236,15 +277,14 @@ class NoteList extends StatelessWidget {
                     ),
                   ],
 
-                  // Bottom padding
                   const SliverToBoxAdapter(child: SizedBox(height: 80)),
                 ],
               );
             },
           ),
-          floatingActionButton: filter.type != NoteFilterType.trash
+          floatingActionButton: widget.filter.type != NoteFilterType.trash
               ? FloatingActionButton(
-                  onPressed: onNewNote,
+                  onPressed: widget.onNewNote,
                   backgroundColor: accentColor,
                   foregroundColor: Colors.black,
                   elevation: 4,
@@ -374,9 +414,9 @@ class _NoteCard extends StatelessWidget {
                         ),
                       ),
                       if (note.isPinned)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: const Icon(
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Icon(
                             CupertinoIcons.pin_fill,
                             size: 14,
                             color: Color(0xFFFFC107),

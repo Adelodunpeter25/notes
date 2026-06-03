@@ -108,7 +108,7 @@ class _AuthPageState extends State<AuthPage> {
                     color: accentColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     CupertinoIcons.doc_text_fill,
                     size: 40,
                     color: accentColor,
@@ -203,7 +203,7 @@ class _AuthPageState extends State<AuthPage> {
                   onPressed: () => setState(() => _isSignup = !_isSignup),
                   child: Text(
                     _isSignup ? 'Already have an account? Login' : 'Don\'t have an account? Sign up',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: accentColor,
                       fontSize: 14,
                     ),

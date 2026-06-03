@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'database/database.dart';
 import 'database/daos.dart';
@@ -47,49 +46,8 @@ class NoteApp extends StatelessWidget {
     required this.isLoggedIn,
   });
 
-  bool get _isMobile {
-    try {
-      return Platform.isIOS || Platform.isAndroid;
-    } catch (_) {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Mobile-first: use MaterialApp for iOS/Android
-    if (_isMobile) {
-      return MaterialApp(
-        title: 'Note',
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: ThemeData(
-          brightness: Brightness.light,
-          colorSchemeSeed: const Color(0xFFFFC107),
-          useMaterial3: true,
-          fontFamily: 'SF Pro Text',
-        ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          colorSchemeSeed: const Color(0xFFFFC107),
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFF000000),
-          fontFamily: 'SF Pro Text',
-        ),
-        home: isLoggedIn
-            ? const AppLayout()
-            : AuthPage(authService: authService),
-      );
-    }
-
-    // Desktop: use MacosApp (existing behavior)
-    // Import macos_ui conditionally for desktop
-    return _buildDesktopApp();
-  }
-
-  Widget _buildDesktopApp() {
-    // For desktop, we still use MaterialApp but with desktop-optimized layout
-    // This avoids the macos_ui dependency on mobile builds
     return MaterialApp(
       title: 'Note',
       debugShowCheckedModeBanner: false,
@@ -98,15 +56,17 @@ class NoteApp extends StatelessWidget {
         brightness: Brightness.light,
         colorSchemeSeed: const Color(0xFFFFC107),
         useMaterial3: true,
+        fontFamily: 'SF Pro Text',
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         colorSchemeSeed: const Color(0xFFFFC107),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+        scaffoldBackgroundColor: const Color(0xFF000000),
+        fontFamily: 'SF Pro Text',
       ),
       home: isLoggedIn
-          ? const AppLayout() // Use mobile layout everywhere for now (mobile-only focus)
+          ? const AppLayout()
           : AuthPage(authService: authService),
     );
   }

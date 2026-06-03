@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/daos.dart';
+import '../utils/dialogs.dart';
 
 /// A full-screen drawer for mobile showing folders, 'All Notes', and 'Trash'.
 class FolderDrawer extends StatelessWidget {
@@ -44,7 +45,7 @@ class FolderDrawer extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     CupertinoIcons.folder_fill,
                     color: accentColor,
                     size: 28,
@@ -137,7 +138,12 @@ class FolderDrawer extends StatelessWidget {
               padding: const EdgeInsets.all(12.0),
               child: TextButton.icon(
                 onPressed: () async {
-                  final folderName = await _showNewFolderDialog(context);
+                  final folderName = await DialogUtils.showTextInputDialog(
+                    context: context,
+                    title: 'New Folder',
+                    placeholder: 'Enter folder name',
+                    primaryButtonText: 'Create',
+                  );
                   if (folderName != null && folderName.trim().isNotEmpty) {
                     await services.folderService.createFolder(
                       folderName.trim(),
@@ -145,8 +151,8 @@ class FolderDrawer extends StatelessWidget {
                     );
                   }
                 },
-                icon: Icon(CupertinoIcons.add_circled_solid, color: accentColor),
-                label: Text(
+                icon: const Icon(CupertinoIcons.add_circled_solid, color: accentColor),
+                label: const Text(
                   'New Folder',
                   style: TextStyle(
                     color: accentColor,
@@ -157,34 +163,6 @@ class FolderDrawer extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Future<String?> _showNewFolderDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Folder'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter folder name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
@@ -213,30 +191,11 @@ class FolderDrawer extends StatelessWidget {
               title: const Text('Rename Folder'),
               onTap: () async {
                 Navigator.pop(context);
-                final controller = TextEditingController(text: fc.folder.name);
-                final newName = await showDialog<String>(
+                final newName = await DialogUtils.showTextInputDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Rename Folder'),
-                    content: TextField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter new folder name',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, null),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(context, controller.text),
-                        child: const Text('Rename'),
-                      ),
-                    ],
-                  ),
+                  title: 'Rename Folder',
+                  placeholder: fc.folder.name,
+                  primaryButtonText: 'Rename',
                 );
                 if (newName != null && newName.trim().isNotEmpty) {
                   await services.folderService.renameFolder(fc.folder, newName.trim());
@@ -248,25 +207,14 @@ class FolderDrawer extends StatelessWidget {
               title: const Text('Delete Folder', style: TextStyle(color: CupertinoColors.destructiveRed)),
               onTap: () async {
                 Navigator.pop(context);
-                final confirmed = await showDialog<bool>(
+                final confirmed = await DialogUtils.showConfirmation(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Folder?'),
-                    content: const Text('Are you sure you want to delete this folder and all its contents?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: CupertinoColors.destructiveRed),
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
+                  title: 'Delete Folder?',
+                  message: 'Are you sure you want to delete this folder and all its contents?',
+                  primaryButtonText: 'Delete',
+                  isDestructive: true,
                 );
-                if (confirmed == true) {
+                if (confirmed) {
                   await services.folderService.softDeleteFolder(fc.folder);
                 }
               },

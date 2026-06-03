@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
+import '../utils/dialogs.dart';
 import 'editor_toolbar.dart';
 
 /// Full-screen mobile editor with AppFlowy editor, title field,
@@ -143,7 +144,7 @@ class _EditorViewState extends State<EditorView> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Row(
+          icon: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -287,12 +288,19 @@ class _EditorViewState extends State<EditorView> {
               title: const Text('Move to Folder...'),
               onTap: () async {
                 Navigator.pop(context);
-                // Get folders
                 final folders = await services.db
                     .select(services.db.folders)
                     .get();
                 if (context.mounted) {
-                  _showFolderPicker(context, folders, services);
+                  final currentFolder = folders.where((f) => f.id == widget.note.folderId).firstOrNull;
+                  final result = await DialogUtils.showFolderSelectionDialog(
+                    context: context,
+                    folders: folders,
+                    initialFolder: currentFolder,
+                  );
+                  if (result != null && result.confirmed) {
+                    await services.noteService.moveNoteToFolder(widget.note, result.folder?.id);
+                  }
                 }
               },
             ),
@@ -310,86 +318,20 @@ class _EditorViewState extends State<EditorView> {
               title: const Text('Delete Note', style: TextStyle(color: CupertinoColors.destructiveRed)),
               onTap: () async {
                 Navigator.pop(context);
-                final confirmed = await showDialog<bool>(
+                final confirmed = await DialogUtils.showConfirmation(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Delete Note?'),
-                    content: const Text('This note will be moved to Trash.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: CupertinoColors.destructiveRed),
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
+                  title: 'Delete Note?',
+                  message: 'This note will be moved to Trash.',
+                  primaryButtonText: 'Delete',
+                  isDestructive: true,
                 );
-                if (confirmed == true) {
+                if (confirmed) {
                   await services.noteService.softDeleteNote(widget.note);
                   widget.onBack();
                 }
               },
             ),
             const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFolderPicker(BuildContext context, List<Folder> folders, ServiceProvider services) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Move to Folder',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.folder),
-              title: const Text('No Folder (Root)'),
-              trailing: widget.note.folderId == null
-                  ? const Icon(CupertinoIcons.checkmark, color: Color(0xFFFFC107))
-                  : null,
-              onTap: () {
-                Navigator.pop(context);
-                services.noteService.moveNoteToFolder(widget.note, null);
-              },
-            ),
-            ...folders.map((folder) => ListTile(
-                  leading: const Icon(CupertinoIcons.folder_fill, color: Color(0xFFFFC107)),
-                  title: Text(folder.name),
-                  trailing: widget.note.folderId == folder.id
-                      ? const Icon(CupertinoIcons.checkmark, color: Color(0xFFFFC107))
-                      : null,
-                  onTap: () {
-                    Navigator.pop(context);
-                    services.noteService.moveNoteToFolder(widget.note, folder.id);
-                  },
-                )),
-            const SizedBox(height: 16),
           ],
         ),
       ),
