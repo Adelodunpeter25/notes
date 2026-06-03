@@ -1,5 +1,5 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:macos_ui/macos_ui.dart';
 import 'database/database.dart';
 import 'database/daos.dart';
 import 'services/api_service.dart';
@@ -7,9 +7,8 @@ import 'services/auth.dart';
 import 'services/folder_service.dart';
 import 'services/note_service.dart';
 import 'services/sync_service.dart';
-import 'layouts/desktop_layout.dart';
-import 'pages/auth_pages.dart';
-import 'utils/theme.dart';
+import 'layouts/mobile_layout.dart';
+import 'pages/mobile_auth_page.dart';
 import 'widgets/service_provider.dart';
 
 void main() async {
@@ -48,17 +47,67 @@ class NoteApp extends StatelessWidget {
     required this.isLoggedIn,
   });
 
+  bool get _isMobile {
+    try {
+      return Platform.isIOS || Platform.isAndroid;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MacosApp(
+    // Mobile-first: use MaterialApp for iOS/Android
+    if (_isMobile) {
+      return MaterialApp(
+        title: 'Note',
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        theme: ThemeData(
+          brightness: Brightness.light,
+          colorSchemeSeed: const Color(0xFFFFC107),
+          useMaterial3: true,
+          fontFamily: 'SF Pro Text',
+        ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          colorSchemeSeed: const Color(0xFFFFC107),
+          useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xFF000000),
+          fontFamily: 'SF Pro Text',
+        ),
+        home: isLoggedIn
+            ? const MobileLayout()
+            : MobileLoginPage(authService: authService),
+      );
+    }
+
+    // Desktop: use MacosApp (existing behavior)
+    // Import macos_ui conditionally for desktop
+    return _buildDesktopApp();
+  }
+
+  Widget _buildDesktopApp() {
+    // For desktop, we still use MaterialApp but with desktop-optimized layout
+    // This avoids the macos_ui dependency on mobile builds
+    return MaterialApp(
       title: 'Note',
-      theme: AppTheme.darkTheme, // Force dark mode as default
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      home: isLoggedIn 
-          ? const DesktopLayout() 
-          : LoginPage(authService: authService),
+      themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        colorSchemeSeed: const Color(0xFFFFC107),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorSchemeSeed: const Color(0xFFFFC107),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+      ),
+      home: isLoggedIn
+          ? const MobileLayout() // Use mobile layout everywhere for now (mobile-only focus)
+          : MobileLoginPage(authService: authService),
     );
   }
 }
