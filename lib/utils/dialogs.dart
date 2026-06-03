@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:macos_ui/macos_ui.dart';
+import 'package:flutter/material.dart';
 import '../database/database.dart';
 
 class MoveToFolderResult {
@@ -10,7 +10,7 @@ class MoveToFolderResult {
 }
 
 class DialogUtils {
-  /// Shows a native macOS confirmation dialog (Electron-style)
+  /// Shows a confirmation dialog
   static Future<bool> showConfirmation({
     required BuildContext context,
     required String title,
@@ -19,39 +19,37 @@ class DialogUtils {
     String secondaryButtonText = 'Cancel',
     bool isDestructive = false,
   }) async {
-    final result = await showMacosAlertDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => MacosAlertDialog(
-        appIcon: const MacosIcon(CupertinoIcons.question_circle),
+      builder: (context) => AlertDialog(
+        icon: const Icon(CupertinoIcons.question_circle),
         title: Text(title),
-        message: Text(message),
-        primaryButton: PushButton(
-          controlSize: ControlSize.large,
-          secondary: !isDestructive,
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(
-            primaryButtonText,
-            style: isDestructive ? const TextStyle(color: CupertinoColors.destructiveRed) : null,
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(secondaryButtonText),
           ),
-        ),
-        secondaryButton: PushButton(
-          controlSize: ControlSize.large,
-          secondary: true,
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(secondaryButtonText),
-        ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              primaryButtonText,
+              style: isDestructive ? const TextStyle(color: CupertinoColors.destructiveRed) : null,
+            ),
+          ),
+        ],
       ),
     );
     return result ?? false;
   }
 
-  /// Shows a macOS dialog containing a dropdown of folders to choose from
+  /// Shows a dialog containing a dropdown of folders to choose from
   static Future<MoveToFolderResult?> showFolderSelectionDialog({
     required BuildContext context,
     required List<Folder> folders,
     Folder? initialFolder,
   }) async {
-    return showMacosAlertDialog<MoveToFolderResult>(
+    return showDialog<MoveToFolderResult>(
       context: context,
       builder: (context) => _MoveToFolderDialog(
         folders: folders,
@@ -60,7 +58,7 @@ class DialogUtils {
     );
   }
 
-  /// Shows a macOS style dialog containing a text field for entering text (e.g. folder name)
+  /// Shows a dialog containing a text field for entering text (e.g. folder name)
   static Future<String?> showTextInputDialog({
     required BuildContext context,
     required String title,
@@ -69,30 +67,32 @@ class DialogUtils {
     String secondaryButtonText = 'Cancel',
   }) async {
     final controller = TextEditingController();
-    return showMacosAlertDialog<String>(
+    return showDialog<String>(
       context: context,
-      builder: (context) => MacosAlertDialog(
-        appIcon: const MacosIcon(CupertinoIcons.folder_badge_plus),
+      builder: (context) => AlertDialog(
+        icon: const Icon(CupertinoIcons.folder_badge_plus),
         title: Text(title),
-        message: Padding(
+        content: Padding(
           padding: const EdgeInsets.only(top: 8.0),
-          child: MacosTextField(
+          child: TextField(
             controller: controller,
-            placeholder: placeholder,
+            decoration: InputDecoration(
+              hintText: placeholder,
+              border: const OutlineInputBorder(),
+            ),
             autofocus: true,
           ),
         ),
-        primaryButton: PushButton(
-          controlSize: ControlSize.large,
-          onPressed: () => Navigator.pop(context, controller.text),
-          child: Text(primaryButtonText),
-        ),
-        secondaryButton: PushButton(
-          controlSize: ControlSize.large,
-          secondary: true,
-          onPressed: () => Navigator.pop(context, null),
-          child: Text(secondaryButtonText),
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: Text(secondaryButtonText),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(primaryButtonText),
+          ),
+        ],
       ),
     );
   }
@@ -128,64 +128,61 @@ class _MoveToFolderDialogState extends State<_MoveToFolderDialog> {
   @override
   Widget build(BuildContext context) {
     final dropdownItems = [
-      const MacosPopupMenuItem<Folder?>(
+      const DropdownMenuItem<Folder?>(
         value: null,
         child: Text('No Folder (Root)'),
       ),
-      ...widget.folders.map((f) => MacosPopupMenuItem<Folder?>(
+      ...widget.folders.map((f) => DropdownMenuItem<Folder?>(
             value: f,
             child: Text(f.name),
           )),
     ];
 
-    return MacosAlertDialog(
-      appIcon: const MacosIcon(CupertinoIcons.folder),
+    return AlertDialog(
+      icon: const Icon(CupertinoIcons.folder),
       title: const Text('Move to Folder'),
-      message: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Choose a destination folder for this note:'),
-            const SizedBox(height: 16),
-            MacosPopupButton<Folder?>(
-              value: _useNoFolder ? null : _selectedFolder,
-              items: dropdownItems,
-              onChanged: (Folder? value) {
-                setState(() {
-                  if (value == null) {
-                    _useNoFolder = true;
-                    _selectedFolder = null;
-                  } else {
-                    _useNoFolder = false;
-                    _selectedFolder = value;
-                  }
-                });
-              },
-            ),
-          ],
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Choose a destination folder for this note:'),
+          const SizedBox(height: 16),
+          DropdownButton<Folder?>(
+            value: _useNoFolder ? null : _selectedFolder,
+            items: dropdownItems,
+            isExpanded: true,
+            onChanged: (Folder? value) {
+              setState(() {
+                if (value == null) {
+                  _useNoFolder = true;
+                  _selectedFolder = null;
+                } else {
+                  _useNoFolder = false;
+                  _selectedFolder = value;
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, const MoveToFolderResult(confirmed: false)),
+          child: const Text('Cancel'),
         ),
-      ),
-      primaryButton: PushButton(
-        controlSize: ControlSize.large,
-        onPressed: () {
-          Navigator.pop(
-            context,
-            MoveToFolderResult(
-              confirmed: true,
-              folder: _useNoFolder ? null : _selectedFolder,
-            ),
-          );
-        },
-        child: const Text('Move'),
-      ),
-      secondaryButton: PushButton(
-        controlSize: ControlSize.large,
-        secondary: true,
-        onPressed: () => Navigator.pop(context, const MoveToFolderResult(confirmed: false)),
-        child: const Text('Cancel'),
-      ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(
+              context,
+              MoveToFolderResult(
+                confirmed: true,
+                folder: _useNoFolder ? null : _selectedFolder,
+              ),
+            );
+          },
+          child: const Text('Move'),
+        ),
+      ],
     );
   }
 }

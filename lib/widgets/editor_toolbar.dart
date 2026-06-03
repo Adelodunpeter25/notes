@@ -1,125 +1,25 @@
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show MenuAnchor, MenuController, MenuStyle, WidgetStateProperty;
-import 'package:macos_ui/macos_ui.dart';
+import 'package:flutter/material.dart';
 
-class EditorFormattingToolbar extends StatefulWidget {
+/// A mobile-optimized formatting toolbar that docks at the bottom of the editor
+/// above the keyboard. Provides quick access to formatting options.
+class EditorToolbar extends StatefulWidget {
   final EditorState editorState;
-  final bool isPinned;
-  final VoidCallback onPinToggle;
   final VoidCallback onToggleChecklist;
 
-  const EditorFormattingToolbar({
+  const EditorToolbar({
     super.key,
     required this.editorState,
-    required this.isPinned,
-    required this.onPinToggle,
     required this.onToggleChecklist,
   });
 
   @override
-  State<EditorFormattingToolbar> createState() => _EditorFormattingToolbarState();
+  State<EditorToolbar> createState() => _EditorToolbarState();
 }
 
-class _EditorFormattingToolbarState extends State<EditorFormattingToolbar> {
-  final MenuController _menuController = MenuController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-      child: Row(
-        children: [
-          // Left side: Aa dropdown and Checklist
-          MenuAnchor(
-            controller: _menuController,
-            style: MenuStyle(
-              backgroundColor: WidgetStateProperty.all(MacosTheme.of(context).canvasColor),
-              elevation: WidgetStateProperty.all(8.0),
-              padding: WidgetStateProperty.all(EdgeInsets.zero),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: MacosTheme.of(context).dividerColor, width: 0.5),
-                ),
-              ),
-            ),
-            builder: (context, controller, child) {
-              return MacosIconButton(
-                icon: const Text(
-                  'Aa',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                onPressed: () {
-                  if (controller.isOpen) {
-                    controller.close();
-                  } else {
-                    controller.open();
-                  }
-                },
-              );
-            },
-            menuChildren: [
-              AaDropdownContent(
-                editorState: widget.editorState,
-                onClose: () {
-                  _menuController.close();
-                },
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-          MacosIconButton(
-            icon: const MacosIcon(CupertinoIcons.square_list, size: 18),
-            onPressed: widget.onToggleChecklist,
-          ),
-          const Spacer(),
-
-          // Right side: Search, separator, pin
-          MacosIconButton(
-            icon: const MacosIcon(CupertinoIcons.search, size: 18),
-            onPressed: () {},
-          ),
-          Container(
-            width: 1,
-            height: 18,
-            color: MacosTheme.of(context).dividerColor,
-            margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          ),
-          MacosIconButton(
-            icon: MacosIcon(
-              widget.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-              size: 18,
-              color: widget.isPinned ? MacosTheme.of(context).primaryColor : null,
-            ),
-            onPressed: widget.onPinToggle,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-class AaDropdownContent extends StatefulWidget {
-  final EditorState editorState;
-  final VoidCallback onClose;
-
-  const AaDropdownContent({
-    super.key,
-    required this.editorState,
-    required this.onClose,
-  });
-
-  @override
-  State<AaDropdownContent> createState() => _AaDropdownContentState();
-}
-
-class _AaDropdownContentState extends State<AaDropdownContent> {
+class _EditorToolbarState extends State<EditorToolbar> {
+  bool _showFormattingOptions = false;
   bool _isBold = false;
   bool _isItalic = false;
   bool _isUnderline = false;
@@ -144,9 +44,7 @@ class _AaDropdownContentState extends State<AaDropdownContent> {
 
   void _onStateChanged() {
     if (mounted) {
-      setState(() {
-        _updateState();
-      });
+      setState(_updateState);
     }
   }
 
@@ -197,99 +95,188 @@ class _AaDropdownContentState extends State<AaDropdownContent> {
         },
       ),
     );
-    widget.onClose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = MacosTheme.of(context).dividerColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
+    final dividerColor = isDark ? Colors.white12 : Colors.black12;
+    const accentColor = Color(0xFFFFC107);
 
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border(top: BorderSide(color: dividerColor, width: 0.5)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _InlineButton(
-                label: 'B',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                isActive: _isBold,
-                onTap: () => _toggleInline(AppFlowyRichTextKeys.bold),
-              ),
-              _InlineButton(
-                label: 'I',
-                style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15),
-                isActive: _isItalic,
-                onTap: () => _toggleInline(AppFlowyRichTextKeys.italic),
-              ),
-              _InlineButton(
-                label: 'U',
-                style: const TextStyle(decoration: TextDecoration.underline, fontSize: 15),
-                isActive: _isUnderline,
-                onTap: () => _toggleInline(AppFlowyRichTextKeys.underline),
-              ),
-              _InlineButton(
-                label: 'S',
-                style: const TextStyle(decoration: TextDecoration.lineThrough, fontSize: 15),
-                isActive: _isStrikethrough,
-                onTap: () => _toggleInline(AppFlowyRichTextKeys.strikethrough),
+              // Expanded formatting area
+              if (_showFormattingOptions) ...[
+                _buildBlockStyleOptions(context, isDark, accentColor),
+                Divider(height: 1, color: dividerColor),
+              ],
+
+              // Main toolbar row
+              SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    // Aa text style button
+                    _ToolbarButton(
+                      icon: null,
+                      label: 'Aa',
+                      isActive: _showFormattingOptions,
+                      accentColor: accentColor,
+                      onTap: () {
+                        setState(() => _showFormattingOptions = !_showFormattingOptions);
+                      },
+                    ),
+
+                    // Separator
+                    Container(width: 1, height: 24, color: dividerColor),
+
+                    // Bold
+                    _ToolbarButton(
+                      icon: null,
+                      label: 'B',
+                      isActive: _isBold,
+                      isBold: true,
+                      accentColor: accentColor,
+                      onTap: () => _toggleInline(AppFlowyRichTextKeys.bold),
+                    ),
+
+                    // Italic
+                    _ToolbarButton(
+                      icon: null,
+                      label: 'I',
+                      isActive: _isItalic,
+                      isItalic: true,
+                      accentColor: accentColor,
+                      onTap: () => _toggleInline(AppFlowyRichTextKeys.italic),
+                    ),
+
+                    // Underline
+                    _ToolbarButton(
+                      icon: null,
+                      label: 'U',
+                      isActive: _isUnderline,
+                      isUnderline: true,
+                      accentColor: accentColor,
+                      onTap: () => _toggleInline(AppFlowyRichTextKeys.underline),
+                    ),
+
+                    // Strikethrough
+                    _ToolbarButton(
+                      icon: null,
+                      label: 'S',
+                      isActive: _isStrikethrough,
+                      isStrikethrough: true,
+                      accentColor: accentColor,
+                      onTap: () => _toggleInline(AppFlowyRichTextKeys.strikethrough),
+                    ),
+
+                    // Separator
+                    Container(width: 1, height: 24, color: dividerColor),
+
+                    // Checklist
+                    _ToolbarButton(
+                      icon: CupertinoIcons.checkmark_square,
+                      isActive: _activeBlockType == 'todo_list',
+                      accentColor: accentColor,
+                      onTap: widget.onToggleChecklist,
+                    ),
+
+                    // Bullet list
+                    _ToolbarButton(
+                      icon: CupertinoIcons.list_bullet,
+                      isActive: _activeBlockType == 'bulleted_list',
+                      accentColor: accentColor,
+                      onTap: () => _toggleBlock('bulleted_list'),
+                    ),
+
+                    // Numbered list
+                    _ToolbarButton(
+                      icon: CupertinoIcons.list_number,
+                      isActive: _activeBlockType == 'numbered_list',
+                      accentColor: accentColor,
+                      onTap: () => _toggleBlock('numbered_list'),
+                    ),
+
+                    const Spacer(),
+
+                    // Dismiss keyboard
+                    _ToolbarButton(
+                      icon: CupertinoIcons.keyboard_chevron_compact_down,
+                      accentColor: accentColor,
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Container(height: 0.5, color: dividerColor),
-          const SizedBox(height: 6),
-          _BlockStyleItem(
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockStyleOptions(BuildContext context, bool isDark, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          _BlockChip(
             label: 'Title',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 1,
+            accentColor: accentColor,
+            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 1}),
           ),
-          _BlockStyleItem(
+          _BlockChip(
             label: 'Heading',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 2,
+            accentColor: accentColor,
+            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 2}),
           ),
-          _BlockStyleItem(
+          _BlockChip(
             label: 'Subheading',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 3,
+            accentColor: accentColor,
+            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 3}),
           ),
-          _BlockStyleItem(
+          _BlockChip(
             label: 'Body',
-            style: const TextStyle(fontSize: 13),
             isActive: _activeBlockType == ParagraphBlockKeys.type,
+            accentColor: accentColor,
+            isDark: isDark,
             onTap: () => _toggleBlock(ParagraphBlockKeys.type),
           ),
-          _BlockStyleItem(
-            label: 'Monospaced',
-            style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
+          _BlockChip(
+            label: 'Code',
             isActive: _activeBlockType == 'code_block',
+            accentColor: accentColor,
+            isDark: isDark,
             onTap: () => _toggleBlock('code_block'),
           ),
-          _BlockStyleItem(
-            label: 'Bulleted List',
-            style: const TextStyle(fontSize: 13),
-            isActive: _activeBlockType == 'bulleted_list',
-            onTap: () => _toggleBlock('bulleted_list'),
-          ),
-          _BlockStyleItem(
-            label: 'Dashed List',
-            style: const TextStyle(fontSize: 13),
-            isActive: _activeBlockType == 'dashed_list',
-            onTap: () => _toggleBlock('bulleted_list'),
-          ),
-          _BlockStyleItem(
-            label: 'Numbered List',
-            style: const TextStyle(fontSize: 13),
-            isActive: _activeBlockType == 'numbered_list',
-            onTap: () => _toggleBlock('numbered_list'),
+          _BlockChip(
+            label: 'Quote',
+            isActive: _activeBlockType == 'quote',
+            accentColor: accentColor,
+            isDark: isDark,
+            onTap: () => _toggleBlock('quote'),
           ),
         ],
       ),
@@ -297,118 +284,114 @@ class _AaDropdownContentState extends State<AaDropdownContent> {
   }
 }
 
-class _InlineButton extends StatefulWidget {
-  final String label;
-  final TextStyle style;
+class _ToolbarButton extends StatelessWidget {
+  final IconData? icon;
+  final String? label;
   final bool isActive;
+  final bool isBold;
+  final bool isItalic;
+  final bool isUnderline;
+  final bool isStrikethrough;
+  final Color accentColor;
   final VoidCallback onTap;
 
-  const _InlineButton({
-    required this.label,
-    required this.style,
-    required this.isActive,
+  const _ToolbarButton({
+    this.icon,
+    this.label,
+    this.isActive = false,
+    this.isBold = false,
+    this.isItalic = false,
+    this.isUnderline = false,
+    this.isStrikethrough = false,
+    required this.accentColor,
     required this.onTap,
   });
 
   @override
-  State<_InlineButton> createState() => _InlineButtonState();
-}
-
-class _InlineButtonState extends State<_InlineButton> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final activeBg = MacosTheme.of(context).primaryColor;
-    const activeFg = CupertinoColors.white;
-    final hoverBg = CupertinoColors.systemGrey5.withOpacity(0.3);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
+    TextDecoration? textDecoration;
+    if (isUnderline) textDecoration = TextDecoration.underline;
+    if (isStrikethrough) textDecoration = TextDecoration.lineThrough;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
         child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: widget.isActive 
-                ? activeBg 
-                : (_isHovered ? hoverBg : CupertinoColors.transparent),
-            borderRadius: BorderRadius.circular(6),
-          ),
+          width: 40,
+          height: 44,
           alignment: Alignment.center,
-          child: Text(
-            widget.label,
-            style: widget.style.copyWith(
-              color: widget.isActive ? activeFg : MacosTheme.of(context).typography.body.color,
-            ),
+          decoration: BoxDecoration(
+            color: isActive
+                ? accentColor.withOpacity(0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: icon != null
+              ? Icon(
+                  icon,
+                  size: 20,
+                  color: isActive
+                      ? accentColor
+                      : (isDark ? Colors.white70 : Colors.black54),
+                )
+              : Text(
+                  label ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                    fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
+                    decoration: textDecoration,
+                    color: isActive
+                        ? accentColor
+                        : (isDark ? Colors.white70 : Colors.black54),
+                  ),
+                ),
         ),
       ),
     );
   }
 }
 
-class _BlockStyleItem extends StatefulWidget {
+class _BlockChip extends StatelessWidget {
   final String label;
-  final TextStyle style;
   final bool isActive;
+  final Color accentColor;
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _BlockStyleItem({
+  const _BlockChip({
     required this.label,
-    required this.style,
     required this.isActive,
+    required this.accentColor,
+    required this.isDark,
     required this.onTap,
   });
 
   @override
-  State<_BlockStyleItem> createState() => _BlockStyleItemState();
-}
-
-class _BlockStyleItemState extends State<_BlockStyleItem> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    final hoverBg = CupertinoColors.systemGrey5.withOpacity(0.3);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return Material(
+      color: isActive
+          ? accentColor.withOpacity(0.2)
+          : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-          decoration: BoxDecoration(
-            color: _isHovered ? hoverBg : CupertinoColors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 20,
-                child: widget.isActive
-                    ? const Icon(
-                        CupertinoIcons.check_mark,
-                        size: 13,
-                        color: CupertinoColors.systemGrey2,
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: widget.style.copyWith(
-                    color: MacosTheme.of(context).typography.body.color,
-                  ),
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              color: isActive
+                  ? accentColor
+                  : (isDark ? Colors.white70 : Colors.black87),
+            ),
           ),
         ),
       ),

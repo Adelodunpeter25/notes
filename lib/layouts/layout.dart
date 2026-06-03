@@ -1,10 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
-import '../widgets/mobile_note_list.dart';
-import '../widgets/mobile_editor_view.dart';
-import '../widgets/mobile_folder_drawer.dart';
 import '../widgets/note_list.dart';
+import '../widgets/editor_view.dart';
+import '../widgets/folder_drawer.dart';
 
 import '../models/user.dart';
 import '../database/daos.dart';
@@ -13,14 +12,14 @@ import '../database/database.dart' hide User;
 /// The mobile layout is a stack-based navigation:
 /// 1. Note list (home) with a drawer for folders
 /// 2. Editor view (pushed on top when a note is tapped)
-class MobileLayout extends StatefulWidget {
-  const MobileLayout({super.key});
+class AppLayout extends StatefulWidget {
+  const AppLayout({super.key});
 
   @override
-  State<MobileLayout> createState() => _MobileLayoutState();
+  State<AppLayout> createState() => _AppLayoutState();
 }
 
-class _MobileLayoutState extends State<MobileLayout> {
+class _AppLayoutState extends State<AppLayout> {
   int _selectedFolderIndex = 0; // 0 = All Notes
   Note? _selectedNote;
   bool _showEditor = false;
@@ -116,7 +115,7 @@ class _MobileLayoutState extends State<MobileLayout> {
 
             return Scaffold(
               key: _scaffoldKey,
-              drawer: MobileFolderDrawer(
+              drawer: FolderDrawer(
                 folders: folders,
                 selectedIndex: _selectedFolderIndex,
                 onFolderSelected: _onFolderSelected,
@@ -141,7 +140,7 @@ class _MobileLayoutState extends State<MobileLayout> {
                   return FadeTransition(opacity: animation, child: child);
                 },
                 child: _showEditor && _selectedNote != null
-                    ? MobileEditorView(
+                    ? EditorView(
                         key: ValueKey('editor_${_selectedNote!.id}'),
                         note: _selectedNote!,
                         onBack: _onBackFromEditor,
@@ -151,7 +150,7 @@ class _MobileLayoutState extends State<MobileLayout> {
                           });
                         },
                       )
-                    : MobileNoteList(
+                    : NoteList(
                         key: ValueKey('list_${filter.type}_${filter.folderId}'),
                         filter: filter,
                         folderName: currentFolderName,

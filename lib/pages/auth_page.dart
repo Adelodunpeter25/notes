@@ -1,18 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/auth.dart';
-import '../layouts/mobile_layout.dart';
+import '../layouts/layout.dart';
 
-class MobileLoginPage extends StatefulWidget {
+class AuthPage extends StatefulWidget {
   final AuthService authService;
 
-  const MobileLoginPage({super.key, required this.authService});
+  const AuthPage({super.key, required this.authService});
 
   @override
-  State<MobileLoginPage> createState() => _MobileLoginPageState();
+  State<AuthPage> createState() => _AuthPageState();
 }
 
-class _MobileLoginPageState extends State<MobileLoginPage> {
+class _AuthPageState extends State<AuthPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -34,7 +34,7 @@ class _MobileLoginPageState extends State<MobileLoginPage> {
       );
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MobileLayout()),
+          MaterialPageRoute(builder: (_) => const AppLayout()),
         );
       }
     } catch (e) {
@@ -63,7 +63,7 @@ class _MobileLoginPageState extends State<MobileLoginPage> {
       );
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MobileLayout()),
+          MaterialPageRoute(builder: (_) => const AppLayout()),
         );
       }
     } catch (e) {

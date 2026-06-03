@@ -4,13 +4,13 @@ import '../widgets/service_provider.dart';
 import '../database/daos.dart';
 
 /// A full-screen drawer for mobile showing folders, 'All Notes', and 'Trash'.
-class MobileFolderDrawer extends StatelessWidget {
+class FolderDrawer extends StatelessWidget {
   final List<FolderWithCount> folders;
   final int selectedIndex;
   final ValueChanged<int> onFolderSelected;
   final String userId;
 
-  const MobileFolderDrawer({
+  const FolderDrawer({
     super.key,
     required this.folders,
     required this.selectedIndex,

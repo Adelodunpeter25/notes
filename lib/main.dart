@@ -7,8 +7,8 @@ import 'services/auth.dart';
 import 'services/folder_service.dart';
 import 'services/note_service.dart';
 import 'services/sync_service.dart';
-import 'layouts/mobile_layout.dart';
-import 'pages/mobile_auth_page.dart';
+import 'layouts/layout.dart';
+import 'pages/auth_page.dart';
 import 'widgets/service_provider.dart';
 
 void main() async {
@@ -77,8 +77,8 @@ class NoteApp extends StatelessWidget {
           fontFamily: 'SF Pro Text',
         ),
         home: isLoggedIn
-            ? const MobileLayout()
-            : MobileLoginPage(authService: authService),
+            ? const AppLayout()
+            : AuthPage(authService: authService),
       );
     }
 
@@ -106,8 +106,8 @@ class NoteApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF1A1A1A),
       ),
       home: isLoggedIn
-          ? const MobileLayout() // Use mobile layout everywhere for now (mobile-only focus)
-          : MobileLoginPage(authService: authService),
+          ? const AppLayout() // Use mobile layout everywhere for now (mobile-only focus)
+          : AuthPage(authService: authService),
     );
   }
 }
