@@ -145,90 +145,97 @@ class _EditorViewState extends State<EditorView> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppSurfaces.background(context),
-      appBar: AppBar(
-        backgroundColor: AppSurfaces.surface(context),
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                CupertinoIcons.chevron_left,
-                color: AppColors.accent,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: AppSurfaces.background(context),
+        appBar: AppBar(
+          backgroundColor: AppSurfaces.surface(context),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.chevron_left,
+                  color: AppColors.accent,
+                  size: 20,
+                ),
+                Text(
+                  'Notes',
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            onPressed: _handleBack,
+          ),
+          leadingWidth: 100,
+          title: Text(
+            _formatDate(widget.note.createdAt),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTextColors.tertiary(context),
+            ),
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: Icon(
+                widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
+                color: widget.note.isPinned ? AppColors.accent : null,
                 size: 20,
               ),
-              Text(
-                'Notes',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          onPressed: _handleBack,
-        ),
-        leadingWidth: 100,
-        title: Text(
-          _formatDate(widget.note.createdAt),
-          style: TextStyle(
-            fontSize: 13,
-            color: AppTextColors.tertiary(context),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-              color: widget.note.isPinned ? AppColors.accent : null,
-              size: 20,
+              onPressed: () {
+                final services = ServiceProvider.of(context);
+                services.noteService.pinNote(widget.note, !widget.note.isPinned);
+              },
             ),
-            onPressed: () {
-              final services = ServiceProvider.of(context);
-              services.noteService.pinNote(widget.note, !widget.note.isPinned);
-            },
-          ),
-          IconButton(
-            icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
-            onPressed: () => _showMoreActions(context),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: AppFlowyEditor(
-              editorState: _editorState!,
-              editorScrollController: EditorScrollController(
+            IconButton(
+              icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
+              onPressed: () => _showMoreActions(context),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: AppFlowyEditor(
                 editorState: _editorState!,
-                shrinkWrap: true,
-              ),
-              editorStyle: EditorStyle.mobile(
-                cursorColor: AppColors.accent,
-                dragHandleColor: AppColors.accent,
-                selectionColor: AppColors.accent.withOpacity(0.2),
-                textStyleConfiguration: TextStyleConfiguration(
-                  text: TextStyle(
-                    fontSize: 16.0,
-                    color: AppTextColors.primary(context),
-                  ),
-                  code: const TextStyle(
-                    color: Colors.red,
-                    backgroundColor: Color.fromARGB(98, 0, 195, 255),
+                editorScrollController: EditorScrollController(
+                  editorState: _editorState!,
+                  shrinkWrap: true,
+                ),
+                editorStyle: EditorStyle.mobile(
+                  cursorColor: AppColors.accent,
+                  dragHandleColor: AppColors.accent,
+                  selectionColor: AppColors.accent.withOpacity(0.2),
+                  textStyleConfiguration: TextStyleConfiguration(
+                    text: TextStyle(
+                      fontSize: 16.0,
+                      color: AppTextColors.primary(context),
+                    ),
+                    code: const TextStyle(
+                      color: Colors.red,
+                      backgroundColor: Color.fromARGB(98, 0, 195, 255),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          EditorToolbar(
-            editorState: _editorState!,
-            onToggleChecklist: _toggleChecklist,
-          ),
-        ],
+            EditorToolbar(
+              editorState: _editorState!,
+              onToggleChecklist: _toggleChecklist,
+            ),
+          ],
+        ),
       ),
     );
   }
