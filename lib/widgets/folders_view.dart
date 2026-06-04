@@ -129,13 +129,15 @@ class _FoldersViewState extends State<FoldersView> {
                     ),
                   ],
 
-                  // Custom folders (without any folder icon)
+                  // Custom folders (with unified CupertinoIcons.folder)
                   ...List.generate(filteredFolders.length, (index) {
                     final fc = filteredFolders[index];
                     final originalIndex = widget.folders.indexOf(fc);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: _FolderCard(
+                        icon: CupertinoIcons.folder, // Central folder icon for all custom folders
+                        iconColor: AppColors.accent,
                         title: fc.folder.name,
                         count: fc.noteCount,
                         onTap: () => widget.onFolderSelected(originalIndex + 1),
@@ -164,40 +166,64 @@ class _FoldersViewState extends State<FoldersView> {
               ),
             ),
 
-            // Bottom bar: New Folder (left), New Note (right)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              decoration: BoxDecoration(
-                color: AppSurfaces.surface(context),
-                border: Border(top: BorderSide(color: AppSurfaces.divider(context), width: 0.5)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () async {
-                      final folderName = await DialogUtils.showTextInputDialog(
-                        context: context,
-                        title: 'New Folder',
-                        placeholder: 'Enter folder name',
-                        primaryButtonText: 'Create',
-                      );
-                      if (folderName != null && folderName.trim().isNotEmpty) {
-                        await services.folderService.createFolder(
-                          folderName.trim(),
-                          widget.userId,
-                        );
-                      }
-                    },
-                    icon: const Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent, size: 28),
-                    tooltip: 'New Folder',
-                  ),
-                  IconButton(
-                    onPressed: widget.onNewNote,
-                    icon: const Icon(CupertinoIcons.square_pencil, color: AppColors.accent, size: 28),
-                    tooltip: 'New Note',
-                  ),
-                ],
+            // Floating dark card dock bottom bar with reduced height
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
+              child: Container(
+                height: 54, // Reduced height
+                decoration: BoxDecoration(
+                  color: Colors.grey[900], // Dark distinct surface color for dock
+                  borderRadius: BorderRadius.circular(27), // Capsule pill
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: IconButton(
+                        onPressed: () async {
+                          final folderName = await DialogUtils.showTextInputDialog(
+                            context: context,
+                            title: 'New Folder',
+                            placeholder: 'Enter folder name',
+                            primaryButtonText: 'Create',
+                          );
+                          if (folderName != null && folderName.trim().isNotEmpty) {
+                            await services.folderService.createFolder(
+                              folderName.trim(),
+                              widget.userId,
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          CupertinoIcons.folder_badge_plus,
+                          color: AppColors.accent,
+                          size: 24, // Sized perfectly for reduced height
+                        ),
+                        tooltip: 'New Folder',
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: IconButton(
+                        onPressed: widget.onNewNote,
+                        icon: const Icon(
+                          CupertinoIcons.square_pencil,
+                          color: AppColors.accent,
+                          size: 24, // Sized perfectly for reduced height
+                        ),
+                        tooltip: 'New Note',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

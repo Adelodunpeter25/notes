@@ -183,8 +183,7 @@ class _NoteListState extends State<NoteList> {
         centerTitle: true,
         actions: [
           if (isTrashView)
-            IconButton(
-              icon: const Icon(CupertinoIcons.trash_slash, color: AppColors.destructive),
+            TextButton(
               onPressed: () async {
                 final confirmed = await DialogUtils.showConfirmation(
                   context: context,
@@ -197,7 +196,14 @@ class _NoteListState extends State<NoteList> {
                   await services.noteService.emptyTrash(_currentUser!.id);
                 }
               },
-              tooltip: 'Empty Trash',
+              child: const Text(
+                'Empty',
+                style: TextStyle(
+                  color: AppColors.destructive,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             )
           else
             IconButton(
