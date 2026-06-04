@@ -32,7 +32,6 @@ class _EditorViewState extends State<EditorView> {
   final _titleController = TextEditingController();
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
-  final ScrollController _scrollController = ScrollController();
   final bool _showToolbar = true;
 
   @override
@@ -46,7 +45,6 @@ class _EditorViewState extends State<EditorView> {
     _transactionSubscription?.cancel();
     _titleController.dispose();
     _debounceSave?.cancel();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -182,56 +180,56 @@ class _EditorViewState extends State<EditorView> {
       ),
       body: Column(
         children: [
-          // Editor content
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Text(
-                      _formatDate(widget.note.createdAt),
-                      style: TextStyle(
-                        color: AppTextColors.tertiary(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Title
-                  TextField(
-                    controller: _titleController,
-                    onChanged: (_) => _triggerSave(),
+          // Fixed header: date + title
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Text(
+                    _formatDate(widget.note.createdAt),
                     style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: AppTextColors.primary(context),
+                      color: AppTextColors.tertiary(context),
+                      fontSize: 12,
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'New Note',
-                      hintStyle: TextStyle(
-                        color: AppTextColors.quaternary(context),
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    maxLines: null,
                   ),
-                  const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _titleController,
+                  onChanged: (_) => _triggerSave(),
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: AppTextColors.primary(context),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'New Note',
+                    hintStyle: TextStyle(
+                      color: AppTextColors.quaternary(context),
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  maxLines: null,
+                ),
+                const SizedBox(height: 8),
+                Divider(
+                  height: 1,
+                  color: AppSurfaces.divider(context),
+                ),
+              ],
+            ),
+          ),
 
-                  // AppFlowy Editor
-                  AppFlowyEditor(
-                    editorState: _editorState!,
-                    editorScrollController: EditorScrollController(
-                      editorState: _editorState!,
-                      shrinkWrap: true,
-                    ),
-                  ),
-                ],
+          // AppFlowy Editor fills remaining space with its own scrolling
+          Expanded(
+            child: AppFlowyEditor(
+              editorState: _editorState!,
+              editorScrollController: EditorScrollController(
+                editorState: _editorState!,
               ),
             ),
           ),
