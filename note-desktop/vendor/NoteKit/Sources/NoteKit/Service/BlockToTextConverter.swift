@@ -2,12 +2,30 @@ import AppKit
 
 public final class BlockToTextConverter {
     
+    // Cache compiled regular expressions to avoid high compilation overhead during interactive typing
+    private static let linkRegex = try! NSRegularExpression(pattern: "\\[([^\\]]+)\\]\\((https?://[^\\)]+)\\)")
+    private static let boldRegex = try! NSRegularExpression(pattern: "\\*\\*([^*]+)\\*\\*")
+    private static let italicRegex = try! NSRegularExpression(pattern: "\\*([^*]+)\\*")
+    
+    // Thread-safe cache of pre-rendered attributed strings to achieve O(1) typing performance
+    private static let stringCache = NSCache<NSString, NSAttributedString>()
+    
     public static func convert(blocks: [Block]) -> NSAttributedString {
         let result = NSMutableAttributedString()
         
         for (index, block) in blocks.enumerated() {
-            let baseAttributes = buildBlockAttributes(for: block)
-            let blockContent = parseInlineMarkdown(block.content, baseAttributes: baseAttributes)
+            // Generate a composite key representing the exact state of this block
+            let cacheKey = "\(block.id.uuidString)-\(block.type.rawValue)-\(block.isChecked ?? false)-\(block.content.hashValue)" as NSString
+            
+            let blockContent: NSAttributedString
+            if let cached = stringCache.object(forKey: cacheKey) {
+                blockContent = cached
+            } else {
+                let baseAttributes = buildBlockAttributes(for: block)
+                let rendered = parseInlineMarkdown(block.content, baseAttributes: baseAttributes)
+                stringCache.setObject(rendered, forKey: cacheKey)
+                blockContent = rendered
+            }
             
             result.append(blockContent)
             
@@ -22,6 +40,11 @@ public final class BlockToTextConverter {
         }
         
         return result
+    }
+    
+    /// Clears the block rendering cache manually when switching documents or resetting.
+    public static func clearCache() {
+        stringCache.removeAllObjects()
     }
     
     private static func buildBlockAttributes(for block: Block) -> [NSAttributedString.Key: Any] {
@@ -88,11 +111,8 @@ public final class BlockToTextConverter {
     }
     
     private static func parseLinks(_ result: NSMutableAttributedString) {
-        let linkPattern = "\\[([^\\]]+)\\]\\((https?://[^\\)]+)\\)"
-        guard let regex = try? NSRegularExpression(pattern: linkPattern) else { return }
-        
         var offset = 0
-        let matches = regex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
+        let matches = linkRegex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
         
         for match in matches {
             let adjustedRange = NSRange(location: match.range.location + offset, length: match.range.length)
@@ -114,11 +134,8 @@ public final class BlockToTextConverter {
     }
     
     private static func parseBold(_ result: NSMutableAttributedString, baseFont: NSFont) {
-        let boldPattern = "\\*\\*([^*]+)\\*\\*"
-        guard let regex = try? NSRegularExpression(pattern: boldPattern) else { return }
-        
         var offset = 0
-        let matches = regex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
+        let matches = boldRegex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
         
         for match in matches {
             let adjustedRange = NSRange(location: match.range.location + offset, length: match.range.length)
@@ -134,11 +151,8 @@ public final class BlockToTextConverter {
     }
     
     private static func parseItalic(_ result: NSMutableAttributedString, baseFont: NSFont) {
-        let italicPattern = "\\*([^*]+)\\*"
-        guard let regex = try? NSRegularExpression(pattern: italicPattern) else { return }
-        
         var offset = 0
-        let matches = regex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
+        let matches = italicRegex.matches(in: result.string, options: [], range: NSRange(location: 0, length: result.length))
         
         for match in matches {
             let adjustedRange = NSRange(location: match.range.location + offset, length: match.range.length)
