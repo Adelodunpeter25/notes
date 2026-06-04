@@ -93,30 +93,3 @@ cd note-desktop
 swift build
 swift run
 ```
-
-## Project Structure
-
-```
-notes/
-├── lib/
-│   ├── database/        # Drift schema, DAOs, FTS helpers
-│   ├── services/        # Auth, Note, Folder, Sync services
-│   ├── widgets/         # UI components (NoteCard, EditorAppBar, AppBottomSheet, etc.)
-│   ├── pages/           # Screen-level widgets (AuthPage)
-│   ├── layouts/         # App layout shell
-│   ├── models/          # Dart data models
-│   ├── utils/           # Helpers (time formatting, dialogs, note content parsing)
-│   ├── theme.dart       # Dark/light theme definitions
-│   └── main.dart        # App entry, service initialization
-├── server/
-│   ├── routes/          # Fastify route handlers (auth, sync, health)
-│   ├── services/        # Business logic (auth, sync with retry + conflict resolution)
-│   ├── db/schema/       # Drizzle table definitions (users, notes, folders, sync_state)
-│   ├── types/           # TypeScript type definitions
-│   ├── middleware/       # Auth middleware (JWT verification)
-│   └── index.ts         # Server entry point
-├── note-desktop/
-│   ├── Sources/         # Swift app sources
-│   └── vendor/NoteKit/  # TextKit 2 block editor engine
-└── pubspec.yaml
-```
