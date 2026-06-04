@@ -71,7 +71,9 @@ class _NoteListState extends State<NoteList> {
     final services = ServiceProvider.of(context);
     final user = await services.authService.getCurrentUser();
     
-    final foldersList = await services.db.select(services.db.folders).get();
+    final foldersList = await (services.db.select(services.db.folders)
+          ..where((t) => t.deletedAt.isNull()))
+        .get();
     final folderNames = {for (var f in foldersList) f.id: f.name};
 
     if (mounted) {
