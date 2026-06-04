@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../utils/dialogs.dart';
+import '../utils/note.dart';
 import '../theme.dart';
 import 'editor_toolbar.dart';
 
-/// Full-screen mobile editor with AppFlowy editor, title field,
-/// and a bottom formatting toolbar that sits above the keyboard.
+/// Full-screen mobile editor. The entire body is the AppFlowy editor; the
+/// note title is derived from the first non-empty line of content. The
+/// formatting toolbar only appears while the keyboard is visible.
 class EditorView extends StatefulWidget {
   final Note note;
   final VoidCallback onBack;
@@ -29,10 +31,9 @@ class EditorView extends StatefulWidget {
 
 class _EditorViewState extends State<EditorView> {
   EditorState? _editorState;
-  final _titleController = TextEditingController();
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
-  final bool _showToolbar = true;
+  String? _generatedTitle;
 
   @override
   void initState() {
@@ -43,7 +44,6 @@ class _EditorViewState extends State<EditorView> {
   @override
   void dispose() {
     _transactionSubscription?.cancel();
-    _titleController.dispose();
     _debounceSave?.cancel();
     super.dispose();
   }
@@ -52,7 +52,6 @@ class _EditorViewState extends State<EditorView> {
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
 
-    _titleController.text = widget.note.title;
     if (widget.note.content.trim().isNotEmpty) {
       try {
         final docMap = jsonDecode(widget.note.content) as Map<String, dynamic>;
@@ -64,31 +63,49 @@ class _EditorViewState extends State<EditorView> {
       _editorState = EditorState.blank();
     }
 
+    _generatedTitle = widget.note.title.isEmpty
+        ? NoteUtils.titleFromContent(widget.note.content)
+        : widget.note.title;
+
     _transactionSubscription = _editorState!.transactionStream.listen((event) {
       if (event.$1 == TransactionTime.after) {
+        _regenerateTitle();
         _triggerSave();
       }
     });
   }
 
+  void _regenerateTitle() {
+    if (_editorState == null) return;
+    final content = jsonEncode(_editorState!.document.toJson());
+    final derived = NoteUtils.titleFromContent(content);
+    if (derived != _generatedTitle) {
+      _generatedTitle = derived;
+    }
+  }
+
+  Future<void> _saveNow() async {
+    _debounceSave?.cancel();
+    if (_editorState == null) return;
+    _regenerateTitle();
+    final docMap = _editorState!.document.toJson();
+    final newContent = jsonEncode(docMap);
+    final newTitle = _generatedTitle ?? 'Untitled';
+
+    final updated = widget.note.copyWith(
+      title: newTitle,
+      content: newContent,
+      updatedAt: DateTime.now(),
+    );
+
+    final services = ServiceProvider.of(context);
+    await services.noteService.updateNote(updated);
+    widget.onNoteUpdated?.call(updated);
+  }
+
   void _triggerSave() {
     _debounceSave?.cancel();
-    _debounceSave = Timer(const Duration(milliseconds: 500), () async {
-      if (_editorState == null) return;
-      final docMap = _editorState!.document.toJson();
-      final newContent = jsonEncode(docMap);
-      final newTitle = _titleController.text;
-
-      final updated = widget.note.copyWith(
-        title: newTitle,
-        content: newContent,
-        updatedAt: DateTime.now(),
-      );
-
-      final services = ServiceProvider.of(context);
-      await services.noteService.updateNote(updated);
-      widget.onNoteUpdated?.call(updated);
-    });
+    _debounceSave = Timer(const Duration(milliseconds: 500), _saveNow);
   }
 
   void _toggleChecklist() {
@@ -123,6 +140,13 @@ class _EditorViewState extends State<EditorView> {
     return '${date.day} ${months[date.month - 1]} ${date.year} at $hour:$minute $ampm';
   }
 
+  bool get _isKeyboardVisible => MediaQuery.of(context).viewInsets.bottom > 0;
+
+  Future<void> _handleBack() async {
+    await _saveNow();
+    widget.onBack();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_editorState == null) {
@@ -155,11 +179,18 @@ class _EditorViewState extends State<EditorView> {
               ),
             ],
           ),
-          onPressed: widget.onBack,
+          onPressed: _handleBack,
         ),
         leadingWidth: 100,
+        title: Text(
+          _formatDate(widget.note.createdAt),
+          style: TextStyle(
+            fontSize: 13,
+            color: AppTextColors.tertiary(context),
+          ),
+        ),
+        centerTitle: true,
         actions: [
-          // Pin button
           IconButton(
             icon: Icon(
               widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
@@ -171,7 +202,6 @@ class _EditorViewState extends State<EditorView> {
               services.noteService.pinNote(widget.note, !widget.note.isPinned);
             },
           ),
-          // More actions
           IconButton(
             icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
             onPressed: () => _showMoreActions(context),
@@ -180,51 +210,6 @@ class _EditorViewState extends State<EditorView> {
       ),
       body: Column(
         children: [
-          // Fixed header: date + title
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Text(
-                    _formatDate(widget.note.createdAt),
-                    style: TextStyle(
-                      color: AppTextColors.tertiary(context),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _titleController,
-                  onChanged: (_) => _triggerSave(),
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: AppTextColors.primary(context),
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'New Note',
-                    hintStyle: TextStyle(
-                      color: AppTextColors.quaternary(context),
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  maxLines: null,
-                ),
-                const SizedBox(height: 8),
-                Divider(
-                  height: 1,
-                  color: AppSurfaces.divider(context),
-                ),
-              ],
-            ),
-          ),
-
-          // AppFlowy Editor fills remaining space with its own scrolling
           Expanded(
             child: AppFlowyEditor(
               editorState: _editorState!,
@@ -233,13 +218,16 @@ class _EditorViewState extends State<EditorView> {
               ),
             ),
           ),
-
-          // Bottom Toolbar
-          if (_showToolbar)
-            EditorToolbar(
-              editorState: _editorState!,
-              onToggleChecklist: _toggleChecklist,
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            child: _isKeyboardVisible
+                ? EditorToolbar(
+                    editorState: _editorState!,
+                    onToggleChecklist: _toggleChecklist,
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
