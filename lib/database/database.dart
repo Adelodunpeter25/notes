@@ -107,7 +107,11 @@ class AppDatabase extends _$AppDatabase {
       },
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
-        await rebuildNoteFts();
+        // Guard against running before Drift has created the tables
+        // (can happen on fresh install during the first migration cycle).
+        try {
+          await rebuildNoteFts();
+        } catch (_) {}
       },
     );
   }
