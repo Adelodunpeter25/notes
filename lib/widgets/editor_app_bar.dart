@@ -7,32 +7,27 @@ import '../utils/dialogs.dart';
 import 'app_bottom_sheet.dart';
 import 'service_provider.dart';
 
-/// App bar for the note editor. Shows a back button, undo/redo controls, and
-/// a Done button when the document has unsaved changes. The more-actions
-/// bottom sheet (pin, move, checklist, delete) is handled internally.
+/// App bar for the note editor. Shows a back button, undo/redo controls,
+/// and a more-actions bottom sheet (pin, move, checklist, delete).
 class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final EditorState editorState;
   final Note note;
-  final bool isDirty;
   final bool canUndo;
   final bool canRedo;
   final VoidCallback onBack;
   final VoidCallback onUndo;
   final VoidCallback onRedo;
-  final VoidCallback onDone;
   final ValueChanged<Note>? onNoteChanged;
 
   const EditorAppBar({
     super.key,
     required this.editorState,
     required this.note,
-    required this.isDirty,
     required this.canUndo,
     required this.canRedo,
     required this.onBack,
     required this.onUndo,
     required this.onRedo,
-    required this.onDone,
     this.onNoteChanged,
   });
 
@@ -75,35 +70,10 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: const Icon(CupertinoIcons.arrow_uturn_right, size: 20),
           onPressed: canRedo ? onRedo : null,
         ),
-        if (isDirty)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              borderRadius: BorderRadius.circular(18),
-              onPressed: onDone,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.accent, width: 1.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          )
-        else
-          IconButton(
-            icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
-            onPressed: () => _showMoreActions(context),
-          ),
+        IconButton(
+          icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
+          onPressed: () => _showMoreActions(context),
+        ),
       ],
     );
   }

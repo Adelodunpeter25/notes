@@ -177,10 +177,6 @@ class _EditorViewState extends State<EditorView> {
     }
   }
 
-  Future<void> _onDone() async {
-    await _saveNow();
-  }
-
   void _onNoteChanged(Note fresh) {
     widget.onNoteUpdated?.call(fresh);
   }
@@ -204,13 +200,11 @@ class _EditorViewState extends State<EditorView> {
         appBar: EditorAppBar(
           editorState: _editorState!,
           note: widget.note,
-          isDirty: _isDirty,
           canUndo: _canUndo,
           canRedo: _canRedo,
           onBack: _handleBack,
           onUndo: _onUndo,
           onRedo: _onRedo,
-          onDone: _onDone,
           onNoteChanged: _onNoteChanged,
         ),
         body: Column(
