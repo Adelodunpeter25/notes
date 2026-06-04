@@ -33,10 +33,12 @@ class _EditorViewState extends State<EditorView> {
   EditorState? _editorState;
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     _loadNote();
   }
 
@@ -44,6 +46,7 @@ class _EditorViewState extends State<EditorView> {
   void dispose() {
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -131,6 +134,8 @@ class _EditorViewState extends State<EditorView> {
   }
 
   Future<void> _handleBack() async {
+    _focusNode.unfocus();
+    FocusScope.of(context).unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
     await _saveNow();
     widget.onBack();
@@ -208,6 +213,7 @@ class _EditorViewState extends State<EditorView> {
             Expanded(
               child: AppFlowyEditor(
                 editorState: _editorState!,
+                focusNode: _focusNode,
                 editorScrollController: EditorScrollController(
                   editorState: _editorState!,
                   shrinkWrap: true,

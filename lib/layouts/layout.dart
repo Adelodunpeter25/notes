@@ -63,6 +63,8 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   void _onBackFromEditor() {
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _currentScreen = ScreenType.notes;
     });
@@ -76,6 +78,8 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   void _onBackFromNotes() {
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _currentScreen = ScreenType.folders;
       _selectedNote = null;
