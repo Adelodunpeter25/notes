@@ -205,6 +205,7 @@ class _EditorViewState extends State<EditorView> {
               editorState: _editorState!,
               editorScrollController: EditorScrollController(
                 editorState: _editorState!,
+                shrinkWrap: true,
               ),
             ),
           ),
