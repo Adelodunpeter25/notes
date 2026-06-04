@@ -5,6 +5,8 @@ import '../utils/note.dart';
 import '../utils/time.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
+import 'app_bottom_sheet.dart';
+import 'service_provider.dart';
 
 class NoteCard extends StatelessWidget {
   final Note note;
@@ -93,6 +95,7 @@ class NoteCard extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: onTap,
+            onLongPress: () => _showMoreActions(context),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -152,6 +155,84 @@ class NoteCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showMoreActions(BuildContext context) {
+    final services = ServiceProvider.of(context);
+
+    AppBottomSheet.show(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isTrash) ...[
+            ListTile(
+              leading: Icon(
+                note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
+              ),
+              title: Text(note.isPinned ? 'Unpin Note' : 'Pin Note'),
+              onTap: () {
+                Navigator.pop(context);
+                onPin();
+              },
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.folder),
+              title: const Text('Move to Folder...'),
+              onTap: () async {
+                Navigator.pop(context);
+                final folders = await services.db.select(services.db.folders).get();
+                if (context.mounted) {
+                  final currentFolder = folders.where((f) => f.id == note.folderId).firstOrNull;
+                  final result = await DialogUtils.showFolderSelectionSheet(
+                    context: context,
+                    folders: folders,
+                    initialFolder: currentFolder,
+                  );
+                  if (result != null && result.confirmed) {
+                    await services.noteService.moveNoteToFolder(note, result.folder?.id);
+                  }
+                }
+              },
+            ),
+          ] else ...[
+            if (onRestore != null)
+              ListTile(
+                leading: const Icon(CupertinoIcons.arrow_uturn_left),
+                title: const Text('Restore Note'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onRestore!();
+                },
+              ),
+          ],
+          const Divider(),
+          ListTile(
+            leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+            title: Text(
+              isTrash ? 'Delete Permanently' : 'Delete Note',
+              style: const TextStyle(color: AppColors.destructive),
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+              final confirmed = await DialogUtils.showConfirmation(
+                context: context,
+                title: isTrash ? 'Delete Permanently?' : 'Delete Note?',
+                message: isTrash
+                    ? 'Are you sure you want to permanently delete this note?'
+                    : 'This note will be moved to Trash.',
+                primaryButtonText: 'Delete',
+                isDestructive: true,
+              );
+              if (confirmed) {
+                onDelete();
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
