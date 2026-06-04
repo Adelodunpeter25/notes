@@ -9,6 +9,7 @@ import 'services/sync_service.dart';
 import 'layouts/layout.dart';
 import 'pages/auth_page.dart';
 import 'widgets/service_provider.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,19 +53,8 @@ class NoteApp extends StatelessWidget {
       title: 'Note',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        colorSchemeSeed: const Color(0xFFFFC107),
-        useMaterial3: true,
-        fontFamily: 'SF Pro Text',
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFFFFC107),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF000000),
-        fontFamily: 'SF Pro Text',
-      ),
+      theme: buildLightTheme(),
+      darkTheme: buildDarkTheme(),
       home: isLoggedIn
           ? const AppLayout()
           : AuthPage(authService: authService),

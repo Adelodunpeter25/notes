@@ -1,6 +1,7 @@
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../theme.dart';
 
 /// A mobile-optimized formatting toolbar that docks at the bottom of the editor
 /// above the keyboard. Provides quick access to formatting options.
@@ -99,18 +100,12 @@ class _EditorToolbarState extends State<EditorToolbar> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
-    final dividerColor = isDark ? Colors.white12 : Colors.black12;
-    const accentColor = Color(0xFFFFC107);
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       child: Container(
         decoration: BoxDecoration(
-          color: bgColor,
-          border: Border(top: BorderSide(color: dividerColor, width: 0.5)),
+          color: AppSurfaces.surface(context),
+          border: Border(top: BorderSide(color: AppSurfaces.divider(context), width: 0.5)),
         ),
         child: SafeArea(
           top: false,
@@ -119,8 +114,8 @@ class _EditorToolbarState extends State<EditorToolbar> {
             children: [
               // Expanded formatting area
               if (_showFormattingOptions) ...[
-                _buildBlockStyleOptions(context, isDark, accentColor),
-                Divider(height: 1, color: dividerColor),
+                _buildBlockStyleOptions(context),
+                Divider(height: 1, color: AppSurfaces.divider(context)),
               ],
 
               // Main toolbar row
@@ -133,14 +128,14 @@ class _EditorToolbarState extends State<EditorToolbar> {
                       icon: null,
                       label: 'Aa',
                       isActive: _showFormattingOptions,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () {
                         setState(() => _showFormattingOptions = !_showFormattingOptions);
                       },
                     ),
 
                     // Separator
-                    Container(width: 1, height: 24, color: dividerColor),
+                    Container(width: 1, height: 24, color: AppSurfaces.divider(context)),
 
                     // Bold
                     _ToolbarButton(
@@ -148,7 +143,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                       label: 'B',
                       isActive: _isBold,
                       isBold: true,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleInline(AppFlowyRichTextKeys.bold),
                     ),
 
@@ -158,7 +153,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                       label: 'I',
                       isActive: _isItalic,
                       isItalic: true,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleInline(AppFlowyRichTextKeys.italic),
                     ),
 
@@ -168,7 +163,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                       label: 'U',
                       isActive: _isUnderline,
                       isUnderline: true,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleInline(AppFlowyRichTextKeys.underline),
                     ),
 
@@ -178,18 +173,18 @@ class _EditorToolbarState extends State<EditorToolbar> {
                       label: 'S',
                       isActive: _isStrikethrough,
                       isStrikethrough: true,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleInline(AppFlowyRichTextKeys.strikethrough),
                     ),
 
                     // Separator
-                    Container(width: 1, height: 24, color: dividerColor),
+                    Container(width: 1, height: 24, color: AppSurfaces.divider(context)),
 
                     // Checklist
                     _ToolbarButton(
                       icon: CupertinoIcons.checkmark_square,
                       isActive: _activeBlockType == 'todo_list',
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: widget.onToggleChecklist,
                     ),
 
@@ -197,7 +192,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                     _ToolbarButton(
                       icon: CupertinoIcons.list_bullet,
                       isActive: _activeBlockType == 'bulleted_list',
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleBlock('bulleted_list'),
                     ),
 
@@ -205,7 +200,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                     _ToolbarButton(
                       icon: CupertinoIcons.list_number,
                       isActive: _activeBlockType == 'numbered_list',
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () => _toggleBlock('numbered_list'),
                     ),
 
@@ -214,7 +209,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
                     // Dismiss keyboard
                     _ToolbarButton(
                       icon: CupertinoIcons.keyboard_chevron_compact_down,
-                      accentColor: accentColor,
+                      accentColor: AppColors.accent,
                       onTap: () {
                         FocusScope.of(context).unfocus();
                       },
@@ -229,7 +224,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
     );
   }
 
-  Widget _buildBlockStyleOptions(BuildContext context, bool isDark, Color accentColor) {
+  Widget _buildBlockStyleOptions(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Wrap(
@@ -239,43 +234,31 @@ class _EditorToolbarState extends State<EditorToolbar> {
           _BlockChip(
             label: 'Title',
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 1,
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 1}),
           ),
           _BlockChip(
             label: 'Heading',
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 2,
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 2}),
           ),
           _BlockChip(
             label: 'Subheading',
             isActive: _activeBlockType == HeadingBlockKeys.type && _activeHeadingLevel == 3,
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock(HeadingBlockKeys.type, {HeadingBlockKeys.level: 3}),
           ),
           _BlockChip(
             label: 'Body',
             isActive: _activeBlockType == ParagraphBlockKeys.type,
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock(ParagraphBlockKeys.type),
           ),
           _BlockChip(
             label: 'Code',
             isActive: _activeBlockType == 'code_block',
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock('code_block'),
           ),
           _BlockChip(
             label: 'Quote',
             isActive: _activeBlockType == 'quote',
-            accentColor: accentColor,
-            isDark: isDark,
             onTap: () => _toggleBlock('quote'),
           ),
         ],
@@ -359,15 +342,11 @@ class _ToolbarButton extends StatelessWidget {
 class _BlockChip extends StatelessWidget {
   final String label;
   final bool isActive;
-  final Color accentColor;
-  final bool isDark;
   final VoidCallback onTap;
 
   const _BlockChip({
     required this.label,
     required this.isActive,
-    required this.accentColor,
-    required this.isDark,
     required this.onTap,
   });
 
@@ -375,8 +354,8 @@ class _BlockChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: isActive
-          ? accentColor.withOpacity(0.2)
-          : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)),
+          ? AppColors.accent.withOpacity(0.2)
+          : AppSurfaces.elevated(context),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -389,8 +368,8 @@ class _BlockChip extends StatelessWidget {
               fontSize: 14,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               color: isActive
-                  ? accentColor
-                  : (isDark ? Colors.white70 : Colors.black87),
+                  ? AppColors.accent
+                  : AppTextColors.primary(context).withOpacity(0.7),
             ),
           ),
         ),

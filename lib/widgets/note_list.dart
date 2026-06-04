@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../models/user.dart';
+import '../theme.dart';
 
 enum NoteFilterType { all, folder, trash }
 
@@ -72,9 +73,6 @@ class _NoteListState extends State<NoteList> {
   @override
   Widget build(BuildContext context) {
     final services = ServiceProvider.of(context);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    const accentColor = Color(0xFFFFC107);
 
     return FutureBuilder<User?>(
       future: services.authService.getCurrentUser(),
@@ -102,9 +100,9 @@ class _NoteListState extends State<NoteList> {
         }
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
+          backgroundColor: AppSurfaces.background(context),
           appBar: AppBar(
-            backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+            backgroundColor: AppSurfaces.surface(context),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
@@ -116,7 +114,7 @@ class _NoteListState extends State<NoteList> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
-                color: isDark ? Colors.white : Colors.black,
+                color: AppTextColors.primary(context),
               ),
             ),
             centerTitle: true,
@@ -148,7 +146,7 @@ class _NoteListState extends State<NoteList> {
                             ? CupertinoIcons.search
                             : CupertinoIcons.doc_text,
                         size: 64,
-                        color: isDark ? Colors.white24 : Colors.black26,
+                        color: AppTextColors.quaternary(context),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -159,7 +157,7 @@ class _NoteListState extends State<NoteList> {
                                 : 'No notes yet',
                         style: TextStyle(
                           fontSize: 18,
-                          color: isDark ? Colors.white38 : Colors.black38,
+                          color: AppTextColors.tertiary(context),
                         ),
                       ),
                       if (_searchQuery.isEmpty && widget.filter.type != NoteFilterType.trash) ...[
@@ -168,7 +166,7 @@ class _NoteListState extends State<NoteList> {
                           'Tap + to create a new note',
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? Colors.white24 : Colors.black26,
+                            color: AppTextColors.quaternary(context),
                           ),
                         ),
                       ],
@@ -192,11 +190,9 @@ class _NoteListState extends State<NoteList> {
                         controller: _searchController,
                         placeholder: 'Search notes',
                         style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black,
+                          color: AppTextColors.primary(context),
                         ),
-                        backgroundColor: isDark
-                            ? const Color(0xFF2C2C2E)
-                            : const Color(0xFFE5E5EA),
+                        backgroundColor: AppSurfaces.elevated(context),
                         onChanged: (value) {
                           setState(() {
                             _searchQuery = value.trim();
@@ -212,14 +208,14 @@ class _NoteListState extends State<NoteList> {
                         padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
                         child: Row(
                           children: [
-                            const Icon(CupertinoIcons.pin_fill, size: 14, color: accentColor),
+                            const Icon(CupertinoIcons.pin_fill, size: 14, color: AppColors.accent),
                             const SizedBox(width: 6),
                             Text(
                               'Pinned',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white54 : Colors.black54,
+                                color: AppTextColors.secondary(context),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -254,7 +250,7 @@ class _NoteListState extends State<NoteList> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white54 : Colors.black54,
+                              color: AppTextColors.secondary(context),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -285,7 +281,7 @@ class _NoteListState extends State<NoteList> {
           floatingActionButton: widget.filter.type != NoteFilterType.trash
               ? FloatingActionButton(
                   onPressed: widget.onNewNote,
-                  backgroundColor: accentColor,
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.black,
                   elevation: 4,
                   shape: RoundedRectangleBorder(
@@ -348,16 +344,14 @@ class _NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final cardColor = AppSurfaces.surface(context);
 
     return Dismissible(
       key: ValueKey(note.id),
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        color: isTrash ? Colors.green : const Color(0xFFFFC107),
+        color: isTrash ? Colors.green : AppColors.accent,
         child: Icon(
           isTrash ? CupertinoIcons.arrow_uturn_left : CupertinoIcons.pin_fill,
           color: isTrash ? Colors.white : Colors.black,
@@ -366,7 +360,7 @@ class _NoteCard extends StatelessWidget {
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: CupertinoColors.destructiveRed,
+        color: AppColors.destructive,
         child: const Icon(CupertinoIcons.trash_fill, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
@@ -407,7 +401,7 @@ class _NoteCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.black,
+                            color: AppTextColors.primary(context),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -419,7 +413,7 @@ class _NoteCard extends StatelessWidget {
                           child: Icon(
                             CupertinoIcons.pin_fill,
                             size: 14,
-                            color: Color(0xFFFFC107),
+                            color: AppColors.accent,
                           ),
                         ),
                     ],
@@ -431,7 +425,7 @@ class _NoteCard extends StatelessWidget {
                         _formatDate(note.updatedAt),
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? Colors.white38 : Colors.black38,
+                          color: AppTextColors.tertiary(context),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -440,7 +434,7 @@ class _NoteCard extends StatelessWidget {
                           _getPreview(note.content),
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white54 : Colors.black54,
+                            color: AppTextColors.secondary(context),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/auth.dart';
 import '../layouts/layout.dart';
+import '../theme.dart';
 
 class AuthPage extends StatefulWidget {
   final AuthService authService;
@@ -79,7 +80,7 @@ class _AuthPageState extends State<AuthPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: CupertinoColors.destructiveRed,
+        backgroundColor: AppColors.destructive,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -88,128 +89,111 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    const accentColor = Color(0xFFFFC107);
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : Colors.white,
+      backgroundColor: AppSurfaces.background(context),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: AppSurfaces.surface(context),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Note',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTextColors.primary(context),
+                    ),
                   ),
-                  child: const Icon(
-                    CupertinoIcons.doc_text_fill,
-                    size: 40,
-                    color: accentColor,
+                  const SizedBox(height: 4),
+                  Text(
+                    _isSignup ? 'Create your account' : 'Welcome back',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTextColors.secondary(context),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Note',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isSignup ? 'Create your account' : 'Welcome back',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 40),
+                  const SizedBox(height: 28),
 
-                // Username field (signup only)
-                if (_isSignup) ...[
+                  if (_isSignup) ...[
+                    _buildTextField(
+                      controller: _usernameController,
+                      placeholder: 'Username',
+                      icon: CupertinoIcons.person,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   _buildTextField(
-                    controller: _usernameController,
-                    placeholder: 'Username',
-                    icon: CupertinoIcons.person,
-                    isDark: isDark,
+                    controller: _emailController,
+                    placeholder: 'Email',
+                    icon: CupertinoIcons.mail,
+                    keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 16),
-                ],
 
-                // Email field
-                _buildTextField(
-                  controller: _emailController,
-                  placeholder: 'Email',
-                  icon: CupertinoIcons.mail,
-                  isDark: isDark,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-
-                // Password field
-                _buildTextField(
-                  controller: _passwordController,
-                  placeholder: 'Password',
-                  icon: CupertinoIcons.lock,
-                  isDark: isDark,
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
-                      size: 20,
-                      color: isDark ? Colors.white38 : Colors.black38,
+                  _buildTextField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    icon: CupertinoIcons.lock,
+                    obscureText: _obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+                        size: 20,
+                        color: AppTextColors.tertiary(context),
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
-                // Login/Signup button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: _isLoading
-                      ? const Center(child: CupertinoActivityIndicator())
-                      : FilledButton(
-                          onPressed: _isSignup ? _signup : _login,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                  SizedBox(
+                    height: 52,
+                    child: _isLoading
+                        ? const Center(child: CupertinoActivityIndicator())
+                        : FilledButton(
+                            onPressed: _isSignup ? _signup : _login,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              _isSignup ? 'Create Account' : 'Login',
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            _isSignup ? 'Create Account' : 'Login',
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Center(
+                    child: TextButton(
+                      onPressed: () => setState(() => _isSignup = !_isSignup),
+                      child: Text(
+                        _isSignup ? 'Already have an account? Login' : 'Don\'t have an account? Sign up',
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 14,
                         ),
-                ),
-                const SizedBox(height: 20),
-
-                // Toggle login/signup
-                TextButton(
-                  onPressed: () => setState(() => _isSignup = !_isSignup),
-                  child: Text(
-                    _isSignup ? 'Already have an account? Login' : 'Don\'t have an account? Sign up',
-                    style: const TextStyle(
-                      color: accentColor,
-                      fontSize: 14,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -221,7 +205,6 @@ class _AuthPageState extends State<AuthPage> {
     required TextEditingController controller,
     required String placeholder,
     required IconData icon,
-    required bool isDark,
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -232,17 +215,17 @@ class _AuthPageState extends State<AuthPage> {
       obscureText: obscureText,
       style: TextStyle(
         fontSize: 16,
-        color: isDark ? Colors.white : Colors.black,
+        color: AppTextColors.primary(context),
       ),
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: TextStyle(
-          color: isDark ? Colors.white38 : Colors.black38,
+          color: AppTextColors.tertiary(context),
         ),
-        prefixIcon: Icon(icon, size: 20, color: isDark ? Colors.white38 : Colors.black38),
+        prefixIcon: Icon(icon, size: 20, color: AppTextColors.tertiary(context)),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+        fillColor: AppSurfaces.elevated(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,

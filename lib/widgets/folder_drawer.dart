@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
+import '../theme.dart';
 
 /// A full-screen drawer for mobile showing folders, 'All Notes', and 'Trash'.
 class FolderDrawer extends StatelessWidget {
@@ -22,14 +23,9 @@ class FolderDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = ServiceProvider.of(context);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7);
-    final selectedColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
-    const accentColor = Color(0xFFFFC107); // Gold accent
 
     return Drawer(
-      backgroundColor: bgColor,
+      backgroundColor: AppSurfaces.surface(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(20),
@@ -47,13 +43,13 @@ class FolderDrawer extends StatelessWidget {
                 children: [
                   const Icon(
                     CupertinoIcons.folder_fill,
-                    color: accentColor,
+                    color: AppColors.accent,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'Folders',
-                    style: theme.textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -63,7 +59,7 @@ class FolderDrawer extends StatelessWidget {
             const SizedBox(height: 8),
             Divider(
               height: 1,
-              color: isDark ? Colors.white10 : Colors.black12,
+              color: AppSurfaces.divider(context),
               indent: 20,
               endIndent: 20,
             ),
@@ -72,10 +68,9 @@ class FolderDrawer extends StatelessWidget {
             // All Notes
             _FolderTile(
               icon: CupertinoIcons.doc_text_fill,
-              iconColor: accentColor,
+              iconColor: AppColors.accent,
               label: 'All Notes',
               isSelected: selectedIndex == 0,
-              selectedColor: selectedColor,
               onTap: () => onFolderSelected(0),
             ),
 
@@ -89,24 +84,23 @@ class FolderDrawer extends StatelessWidget {
                   final folderIndex = index + 1;
                   return _FolderTile(
                     icon: CupertinoIcons.folder_fill,
-                    iconColor: accentColor,
+                    iconColor: AppColors.accent,
                     label: fc.folder.name,
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                        color: AppSurfaces.divider(context),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         fc.noteCount.toString(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? Colors.white54 : Colors.black45,
+                          color: AppTextColors.secondary(context),
                         ),
                       ),
                     ),
                     isSelected: selectedIndex == folderIndex,
-                    selectedColor: selectedColor,
                     onTap: () => onFolderSelected(folderIndex),
                     onLongPress: () async {
                       _showFolderActions(context, fc, services);
@@ -119,16 +113,15 @@ class FolderDrawer extends StatelessWidget {
             // Trash
             _FolderTile(
               icon: CupertinoIcons.trash_fill,
-              iconColor: CupertinoColors.systemRed,
+              iconColor: AppColors.destructive,
               label: 'Trash',
               isSelected: selectedIndex == folders.length + 1,
-              selectedColor: selectedColor,
               onTap: () => onFolderSelected(folders.length + 1),
             ),
 
             Divider(
               height: 1,
-              color: isDark ? Colors.white10 : Colors.black12,
+              color: AppSurfaces.divider(context),
               indent: 20,
               endIndent: 20,
             ),
@@ -151,11 +144,11 @@ class FolderDrawer extends StatelessWidget {
                     );
                   }
                 },
-                icon: const Icon(CupertinoIcons.add_circled_solid, color: accentColor),
+                icon: const Icon(CupertinoIcons.add_circled_solid, color: AppColors.accent),
                 label: const Text(
                   'New Folder',
                   style: TextStyle(
-                    color: accentColor,
+                    color: AppColors.accent,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -203,8 +196,8 @@ class FolderDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed),
-              title: const Text('Delete Folder', style: TextStyle(color: CupertinoColors.destructiveRed)),
+              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+              title: const Text('Delete Folder', style: TextStyle(color: AppColors.destructive)),
               onTap: () async {
                 Navigator.pop(context);
                 final confirmed = await DialogUtils.showConfirmation(
@@ -233,7 +226,6 @@ class _FolderTile extends StatelessWidget {
   final String label;
   final Widget? trailing;
   final bool isSelected;
-  final Color selectedColor;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
@@ -243,7 +235,6 @@ class _FolderTile extends StatelessWidget {
     required this.label,
     this.trailing,
     required this.isSelected,
-    required this.selectedColor,
     required this.onTap,
     this.onLongPress,
   });
@@ -253,7 +244,7 @@ class _FolderTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
-        color: isSelected ? selectedColor : Colors.transparent,
+        color: isSelected ? AppSurfaces.elevated(context) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),

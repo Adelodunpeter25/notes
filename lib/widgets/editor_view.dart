@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../utils/dialogs.dart';
+import '../theme.dart';
 import 'editor_toolbar.dart';
 
 /// Full-screen mobile editor with AppFlowy editor, title field,
@@ -132,15 +133,10 @@ class _EditorViewState extends State<EditorView> {
       );
     }
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF000000) : Colors.white;
-    const accentColor = Color(0xFFFFC107);
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: AppSurfaces.background(context),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        backgroundColor: AppSurfaces.surface(context),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -149,13 +145,13 @@ class _EditorViewState extends State<EditorView> {
             children: [
               Icon(
                 CupertinoIcons.chevron_left,
-                color: accentColor,
+                color: AppColors.accent,
                 size: 20,
               ),
               Text(
                 'Notes',
                 style: TextStyle(
-                  color: accentColor,
+                  color: AppColors.accent,
                   fontSize: 16,
                 ),
               ),
@@ -169,7 +165,7 @@ class _EditorViewState extends State<EditorView> {
           IconButton(
             icon: Icon(
               widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-              color: widget.note.isPinned ? accentColor : null,
+              color: widget.note.isPinned ? AppColors.accent : null,
               size: 20,
             ),
             onPressed: () {
@@ -194,12 +190,11 @@ class _EditorViewState extends State<EditorView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Date
                   Center(
                     child: Text(
                       _formatDate(widget.note.createdAt),
                       style: TextStyle(
-                        color: isDark ? Colors.white38 : Colors.black38,
+                        color: AppTextColors.tertiary(context),
                         fontSize: 12,
                       ),
                     ),
@@ -213,12 +208,12 @@ class _EditorViewState extends State<EditorView> {
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: AppTextColors.primary(context),
                     ),
                     decoration: InputDecoration(
                       hintText: 'New Note',
                       hintStyle: TextStyle(
-                        color: isDark ? Colors.white24 : Colors.black26,
+                        color: AppTextColors.quaternary(context),
                       ),
                       border: InputBorder.none,
                       isDense: true,
@@ -314,8 +309,8 @@ class _EditorViewState extends State<EditorView> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed),
-              title: const Text('Delete Note', style: TextStyle(color: CupertinoColors.destructiveRed)),
+              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+              title: const Text('Delete Note', style: TextStyle(color: AppColors.destructive)),
               onTap: () async {
                 Navigator.pop(context);
                 final confirmed = await DialogUtils.showConfirmation(
