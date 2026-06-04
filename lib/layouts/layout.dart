@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/note_list.dart';
 import '../widgets/editor_view.dart';
-import '../widgets/folder_drawer.dart';
+import '../widgets/folders_view.dart';
 
 import '../models/user.dart';
 import '../database/daos.dart';
 import '../database/database.dart' hide User;
 
-/// The mobile layout is a stack-based navigation:
-/// 1. Note list (home) with a drawer for folders
-/// 2. Editor view (pushed on top when a note is tapped)
+enum ScreenType { folders, notes, editor }
+
 class AppLayout extends StatefulWidget {
   const AppLayout({super.key});
 
@@ -20,162 +19,182 @@ class AppLayout extends StatefulWidget {
 }
 
 class _AppLayoutState extends State<AppLayout> {
+  ScreenType _currentScreen = ScreenType.folders;
   int _selectedFolderIndex = 0; // 0 = All Notes
   Note? _selectedNote;
-  bool _showEditor = false;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  User? _currentUser;
+  Stream<List<FolderWithCount>>? _foldersStream;
+  bool _isLoading = true;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (_currentUser != null) return;
+    final services = ServiceProvider.of(context);
+    final user = await services.authService.getCurrentUser();
+    if (mounted) {
+      setState(() {
+        _currentUser = user;
+        _isLoading = false;
+        if (user != null) {
+          _foldersStream = services.folderService.watchFolders(user.id);
+        }
+      });
       _performSync();
-    });
+    }
   }
 
   Future<void> _performSync() async {
-    if (!mounted) return;
+    if (!mounted || _currentUser == null) return;
     final services = ServiceProvider.of(context);
-    final user = await services.authService.getCurrentUser();
-    if (user != null) {
-      await services.syncService.syncData(user.id);
-    }
+    await services.syncService.syncData(_currentUser!.id);
   }
 
   void _onNoteSelected(Note note) {
     setState(() {
       _selectedNote = note;
-      _showEditor = true;
+      _currentScreen = ScreenType.editor;
     });
   }
 
   void _onBackFromEditor() {
     setState(() {
-      _showEditor = false;
+      _currentScreen = ScreenType.notes;
     });
   }
 
   void _onFolderSelected(int index) {
     setState(() {
       _selectedFolderIndex = index;
-      _selectedNote = null;
-      _showEditor = false;
+      _currentScreen = ScreenType.notes;
     });
-    Navigator.of(context).pop(); // Close drawer
+  }
+
+  void _onBackFromNotes() {
+    setState(() {
+      _currentScreen = ScreenType.folders;
+      _selectedNote = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CupertinoActivityIndicator()),
+      );
+    }
+
+    if (_currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('Not logged in')),
+      );
+    }
+
     final services = ServiceProvider.of(context);
 
-    return FutureBuilder<User?>(
-      future: services.authService.getCurrentUser(),
-      builder: (context, userSnapshot) {
-        if (userSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CupertinoActivityIndicator()),
-          );
+    return StreamBuilder<List<FolderWithCount>>(
+      stream: _foldersStream,
+      builder: (context, folderSnapshot) {
+        final folders = folderSnapshot.data ?? [];
+
+        // Determine filter
+        final NoteFilter filter;
+        if (_selectedFolderIndex == 0) {
+          filter = const NoteFilter.all();
+        } else if (_selectedFolderIndex == folders.length + 1) {
+          filter = const NoteFilter.trash();
+        } else if (_selectedFolderIndex - 1 < folders.length) {
+          filter = NoteFilter.folder(folders[_selectedFolderIndex - 1].folder.id);
+        } else {
+          filter = const NoteFilter.all();
         }
 
-        final user = userSnapshot.data;
-        if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Not logged in')),
-          );
+        // Get current folder name for app bar
+        String currentFolderName;
+        if (_selectedFolderIndex == 0) {
+          currentFolderName = 'All Notes';
+        } else if (_selectedFolderIndex == folders.length + 1) {
+          currentFolderName = 'Trash';
+        } else if (_selectedFolderIndex - 1 < folders.length) {
+          currentFolderName = folders[_selectedFolderIndex - 1].folder.name;
+        } else {
+          currentFolderName = 'All Notes';
         }
 
-        return StreamBuilder<List<FolderWithCount>>(
-          stream: services.folderService.watchFolders(user.id),
-          builder: (context, folderSnapshot) {
-            final folders = folderSnapshot.data ?? [];
-
-            // Determine filter
-            final NoteFilter filter;
-            if (_selectedFolderIndex == 0) {
-              filter = const NoteFilter.all();
-            } else if (_selectedFolderIndex == folders.length + 1) {
-              filter = const NoteFilter.trash();
-            } else if (_selectedFolderIndex - 1 < folders.length) {
-              filter = NoteFilter.folder(folders[_selectedFolderIndex - 1].folder.id);
-            } else {
-              filter = const NoteFilter.all();
-            }
-
-            // Get current folder name for app bar
-            String currentFolderName;
-            if (_selectedFolderIndex == 0) {
-              currentFolderName = 'All Notes';
-            } else if (_selectedFolderIndex == folders.length + 1) {
-              currentFolderName = 'Trash';
-            } else if (_selectedFolderIndex - 1 < folders.length) {
-              currentFolderName = folders[_selectedFolderIndex - 1].folder.name;
-            } else {
-              currentFolderName = 'All Notes';
-            }
-
-            return Scaffold(
-              key: _scaffoldKey,
-              drawer: FolderDrawer(
-                folders: folders,
-                selectedIndex: _selectedFolderIndex,
-                onFolderSelected: _onFolderSelected,
-                userId: user.id,
-              ),
-              body: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) {
-                  // Slide transition for editor
-                  if (_showEditor) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(1.0, 0.0),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: child,
-                    );
-                  }
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                child: _showEditor && _selectedNote != null
-                    ? EditorView(
-                        key: ValueKey('editor_${_selectedNote!.id}'),
-                        note: _selectedNote!,
-                        onBack: _onBackFromEditor,
-                        onNoteUpdated: (updatedNote) {
-                          setState(() {
-                            _selectedNote = updatedNote;
-                          });
-                        },
-                      )
-                    : NoteList(
-                        key: ValueKey('list_${filter.type}_${filter.folderId}'),
-                        filter: filter,
-                        folderName: currentFolderName,
-                        onNoteSelected: _onNoteSelected,
-                        onMenuPressed: () {
-                          _scaffoldKey.currentState?.openDrawer();
-                        },
-                        onNewNote: () async {
-                          String? folderId;
-                          if (_selectedFolderIndex > 0 && _selectedFolderIndex <= folders.length) {
-                            folderId = folders[_selectedFolderIndex - 1].folder.id;
-                          }
-                          final newNote = await services.noteService.createNote(
-                            title: '',
-                            content: '',
-                            userId: user.id,
-                            folderId: folderId,
-                          );
-                          _onNoteSelected(newNote);
-                        },
-                        onSync: () => _performSync(),
-                      ),
-              ),
+        Widget screen;
+        switch (_currentScreen) {
+          case ScreenType.folders:
+            screen = FoldersView(
+              key: const ValueKey('folders_screen'),
+              folders: folders,
+              onFolderSelected: _onFolderSelected,
+              userId: _currentUser!.id,
             );
-          },
+            break;
+          case ScreenType.notes:
+            screen = NoteList(
+              key: ValueKey('list_${filter.type}_${filter.folderId}'),
+              filter: filter,
+              folderName: currentFolderName,
+              onNoteSelected: _onNoteSelected,
+              onMenuPressed: _onBackFromNotes,
+              onNewNote: () async {
+                String? folderId;
+                if (_selectedFolderIndex > 0 && _selectedFolderIndex <= folders.length) {
+                  folderId = folders[_selectedFolderIndex - 1].folder.id;
+                }
+                final newNote = await services.noteService.createNote(
+                  title: '',
+                  content: '',
+                  userId: _currentUser!.id,
+                  folderId: folderId,
+                );
+                _onNoteSelected(newNote);
+              },
+              onSync: _performSync,
+            );
+            break;
+          case ScreenType.editor:
+            screen = EditorView(
+              key: ValueKey('editor_${_selectedNote!.id}'),
+              note: _selectedNote!,
+              onBack: _onBackFromEditor,
+              onNoteUpdated: (updatedNote) {
+                setState(() {
+                  _selectedNote = updatedNote;
+                });
+              },
+            );
+            break;
+        }
+
+        return Scaffold(
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) {
+              if (child.key == const ValueKey('folders_screen')) {
+                return FadeTransition(opacity: animation, child: child);
+              }
+              // Slide transition for NoteList and Editor
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              );
+            },
+            child: screen,
+          ),
         );
       },
     );
