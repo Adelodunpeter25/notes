@@ -5,6 +5,8 @@ public final class NoteDocumentCoordinator: NSObject, NSTextContentStorageDelega
     public let textContentStorage: NSTextContentStorage
     
     private var isSyncing = false
+    private var syncWorkItem: DispatchWorkItem?
+    private let syncQueue = DispatchQueue(label: "com.notekit.syncQueue", qos: .userInitiated)
     
     public init(store: BlockStore, textContentStorage: NSTextContentStorage) {
         self.store = store
@@ -28,7 +30,7 @@ public final class NoteDocumentCoordinator: NSObject, NSTextContentStorageDelega
         isSyncing = false
     }
     
-    /// Parses the active text layout string back into blocks.
+    /// Synchronously parses the active text layout string back into blocks (useful for tests or force-saves).
     public func syncStorageToStore() {
         guard !isSyncing else { return }
         isSyncing = true
@@ -41,12 +43,40 @@ public final class NoteDocumentCoordinator: NSObject, NSTextContentStorageDelega
         isSyncing = false
     }
     
+    /// Asynchronously parses the text snapshot on a background queue.
+    private func syncStorageToStoreAsync() {
+        guard !isSyncing else { return }
+        
+        // Capture a thread-safe snapshot of the attributed string on the main thread
+        guard let attributedCopy = textContentStorage.attributedString?.copy() as? NSAttributedString else { return }
+        
+        syncQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Perform CPU-heavy markdown formatting/serialization on background queue
+            let updatedBlocks = TextToBlockConverter.parseBlocks(from: attributedCopy)
+            
+            DispatchQueue.main.async {
+                guard !self.isSyncing else { return }
+                self.isSyncing = true
+                self.store.setBlocks(updatedBlocks)
+                self.isSyncing = false
+            }
+        }
+    }
+    
     // MARK: - NSTextContentStorageDelegate
     
     public func textContentStorage(_ textContentStorage: NSTextContentStorage, didProcessEditingRange editedRange: NSRange, changeInLength delta: Int, invalidatedRange: NSRange) {
-        // Enqueue synchronization to avoid mutating during layout transactions
-        DispatchQueue.main.async { [weak self] in
-            self?.syncStorageToStore()
+        // Cancel any pending sync requests to prevent multiple redundant runs
+        syncWorkItem?.cancel()
+        
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.syncStorageToStoreAsync()
         }
+        self.syncWorkItem = workItem
+        
+        // Debounce sync operations for 300ms of typing inactivity
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
     }
 }
