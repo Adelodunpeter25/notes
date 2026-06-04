@@ -21,21 +21,37 @@ class NoteService {
     return noteDao.watchTrashNotes(userId);
   }
 
-  Future<int> createNote({
+  Future<Note> createNote({
     required String title,
     required String content,
     required String userId,
     String? folderId,
-  }) {
-    return noteDao.insertNote(
+  }) async {
+    final noteId = _uuid.v4();
+    final now = DateTime.now();
+    final note = Note(
+      id: noteId,
+      title: title,
+      content: content,
+      createdAt: now,
+      updatedAt: now,
+      isPinned: false,
+      folderId: folderId,
+      userId: userId,
+    );
+    await noteDao.insertNote(
       NotesCompanion.insert(
-        id: _uuid.v4(),
+        id: noteId,
         title: title,
         content: content,
         userId: userId,
         folderId: Value(folderId),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        isPinned: const Value(false),
       ),
     );
+    return note;
   }
 
   Future updateNote(Note note) {
