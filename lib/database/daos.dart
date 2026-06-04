@@ -46,7 +46,11 @@ class FolderDao extends DatabaseAccessor<AppDatabase> with _$FolderDaoMixin {
     final noteCount = notes.id.count();
     final query = select(folders).join([
       leftOuterJoin(notes, notes.folderId.equalsExp(folders.id)),
-    ])
+    ]);
+    
+    query.addColumns([noteCount]);
+    
+    query
       ..where(folders.userId.equals(userId) & folders.deletedAt.isNull())
       ..groupBy([folders.id]);
 
