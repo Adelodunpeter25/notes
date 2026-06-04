@@ -108,6 +108,7 @@ class _NoteListState extends State<NoteList> {
 
   @override
   Widget build(BuildContext context) {
+    final services = ServiceProvider.of(context);
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CupertinoActivityIndicator()),
@@ -326,11 +327,8 @@ class _NoteListState extends State<NoteList> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(CupertinoIcons.add, size: 28),
-                )
               : null,
         );
-      },
-    );
   }
 }
 
