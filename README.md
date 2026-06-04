@@ -67,6 +67,7 @@ Server → Client:  { nextCursor, notes[], folders[], deleted[], processedOpIds[
 - Flutter SDK >= 3.5.4
 - Bun (for the server)
 - PostgreSQL
+- macOS with Xcode Command Line Tools (Swift 5.9+, for the desktop app)
 
 ### Mobile App
 
