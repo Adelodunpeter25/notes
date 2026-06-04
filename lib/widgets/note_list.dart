@@ -43,6 +43,54 @@ class NoteList extends StatefulWidget {
 class _NoteListState extends State<NoteList> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  User? _currentUser;
+  Stream<List<Note>>? _notesStream;
+  bool _isLoading = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(NoteList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filter.type != widget.filter.type || oldWidget.filter.folderId != widget.filter.folderId) {
+      _initNotesStream();
+    }
+  }
+
+  Future<void> _loadData() async {
+    if (_currentUser != null) return;
+    final services = ServiceProvider.of(context);
+    final user = await services.authService.getCurrentUser();
+    if (mounted) {
+      setState(() {
+        _currentUser = user;
+        _isLoading = false;
+        _initNotesStream();
+      });
+    }
+  }
+
+  void _initNotesStream() {
+    if (_currentUser == null) return;
+    final services = ServiceProvider.of(context);
+    setState(() {
+      switch (widget.filter.type) {
+        case NoteFilterType.all:
+          _notesStream = services.noteService.watchAllNotes(_currentUser!.id);
+          break;
+        case NoteFilterType.folder:
+          _notesStream = services.noteService.watchNotesInFolder(_currentUser!.id, widget.filter.folderId!);
+          break;
+        case NoteFilterType.trash:
+          _notesStream = services.noteService.watchTrashNotes(_currentUser!.id);
+          break;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -60,79 +108,64 @@ class _NoteListState extends State<NoteList> {
 
   @override
   Widget build(BuildContext context) {
-    final services = ServiceProvider.of(context);
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CupertinoActivityIndicator()),
+      );
+    }
 
-    return FutureBuilder<User?>(
-      future: services.authService.getCurrentUser(),
-      builder: (context, userSnapshot) {
-        if (userSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CupertinoActivityIndicator());
-        }
+    if (_currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('Not logged in')),
+      );
+    }
 
-        final user = userSnapshot.data;
-        if (user == null) {
-          return const Center(child: Text('Not logged in'));
-        }
-
-        final Stream<List<Note>> notesStream;
-        switch (widget.filter.type) {
-          case NoteFilterType.all:
-            notesStream = services.noteService.watchAllNotes(user.id);
-            break;
-          case NoteFilterType.folder:
-            notesStream = services.noteService.watchNotesInFolder(user.id, widget.filter.folderId!);
-            break;
-          case NoteFilterType.trash:
-            notesStream = services.noteService.watchTrashNotes(user.id);
-            break;
-        }
-
-        return Scaffold(
-          backgroundColor: AppSurfaces.background(context),
-          appBar: AppBar(
-            backgroundColor: AppSurfaces.surface(context),
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    CupertinoIcons.chevron_left,
-                    color: AppColors.accent,
-                    size: 20,
-                  ),
-                  Text(
-                    'Folders',
-                    style: TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: AppSurfaces.background(context),
+      appBar: AppBar(
+        backgroundColor: AppSurfaces.surface(context),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                CupertinoIcons.chevron_left,
+                color: AppColors.accent,
+                size: 20,
               ),
-              onPressed: widget.onMenuPressed,
-            ),
-            leadingWidth: 100,
-            title: Text(
-              widget.folderName,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: AppTextColors.primary(context),
-              ),
-            ),
-            centerTitle: true,
-            actions: [
-              IconButton(
-                icon: const Icon(CupertinoIcons.arrow_2_circlepath),
-                onPressed: widget.onSync,
-                tooltip: 'Sync',
+              Text(
+                'Folders',
+                style: TextStyle(
+                  color: AppColors.accent,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
-          body: StreamBuilder<List<Note>>(
-            stream: notesStream,
+          onPressed: widget.onMenuPressed,
+        ),
+        leadingWidth: 100,
+        title: Text(
+          widget.folderName,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppTextColors.primary(context),
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.arrow_2_circlepath),
+            onPressed: widget.onSync,
+            tooltip: 'Sync',
+          ),
+        ],
+      ),
+      body: StreamBuilder<List<Note>>(
+        stream: _notesStream,
             builder: (context, noteSnapshot) {
               if (noteSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CupertinoActivityIndicator());
