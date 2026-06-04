@@ -332,7 +332,7 @@ fileprivate final class NoteCellView: NSTableCellView {
         
         pinImageView.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "Pinned")
         pinImageView.imageScaling = .scaleProportionallyDown
-        pinImageView.contentTintColor = .systemOrange
+        pinImageView.contentTintColor = AppColors.accent
         addSubview(pinImageView)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

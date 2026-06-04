@@ -19,27 +19,25 @@ public enum FolderSelection: Equatable {
     case trash
 }
 
-public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutlineViewDelegate {
+public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutlineViewDelegate, NSTextFieldDelegate {
     
     // MARK: - Sidebar Item Representation
     private final class SidebarNode: NSObject {
         let type: NodeType
-        let name: String
-        let folder: DBFolder?
-        let children: [SidebarNode]
+        var name: String
+        var folder: DBFolder?
         
         enum NodeType {
-            case header
             case allNotes
             case folder
+            case divider
             case trash
         }
         
-        init(type: NodeType, name: String, folder: DBFolder? = nil, children: [SidebarNode] = []) {
+        init(type: NodeType, name: String, folder: DBFolder? = nil) {
             self.type = type
             self.name = name
             self.folder = folder
-            self.children = children
         }
     }
     
@@ -50,6 +48,9 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     
     private let outlineView = NSOutlineView()
     private let scrollView = NSScrollView()
+    private let bottomBar = NSView()
+    private let newFolderButton = NSButton()
+    
     private var data: [SidebarNode] = []
     
     public var onSelectionChanged: ((FolderSelection) -> Void)?
@@ -77,42 +78,18 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         
-        // 1. Sidebar Header / Title + Button Stack
-        let headerStack = NSStackView()
-        headerStack.orientation = .horizontal
-        headerStack.alignment = .centerY
-        headerStack.spacing = 8
-        
-        let titleLabel = NSTextField(labelWithString: "NOTES")
-        titleLabel.font = NSFont.systemFont(ofSize: 11, weight: .bold)
-        titleLabel.textColor = .secondaryLabelColor
-        
-        let addButton = NSButton()
-        addButton.isBordered = false
-        addButton.imagePosition = .imageOnly
-        addButton.bezelStyle = .texturedRounded
-        addButton.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: "Add Folder")
-        addButton.target = self
-        addButton.action = #selector(addFolderTapped)
-        addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        addButton.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        
-        headerStack.addArrangedSubview(titleLabel)
-        headerStack.addArrangedSubview(NSView()) // spacer
-        headerStack.addArrangedSubview(addButton)
-        
-        // 2. Setup Outline View
+        // 1. Setup Outline View
         outlineView.dataSource = self
         outlineView.delegate = self
         outlineView.headerView = nil
+        outlineView.floatsGroupRows = false
+        outlineView.rowHeight = 28
+        
         if #available(macOS 12.0, *) {
             outlineView.style = .sourceList
         } else {
             outlineView.selectionHighlightStyle = .sourceList
         }
-        outlineView.floatsGroupRows = false
-        outlineView.rowHeight = 28
         
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("SidebarColumn"))
         column.resizingMask = .autoresizingMask
@@ -123,50 +100,62 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         scrollView.drawsBackground = false
         scrollView.documentView = outlineView
         
-        // Add layouts
-        view.addSubview(headerStack)
-        view.addSubview(scrollView)
+        // 2. Setup Bottom "New Folder" Bar
+        bottomBar.wantsLayer = true
+        bottomBar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         
-        headerStack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        newFolderButton.isBordered = false
+        newFolderButton.title = "New Folder"
+        newFolderButton.image = NSImage(systemSymbolName: "plus.circle", accessibilityDescription: nil)
+        newFolderButton.imagePosition = .imageLeft
+        newFolderButton.contentTintColor = AppColors.accent
+        newFolderButton.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        newFolderButton.target = self
+        newFolderButton.action = #selector(newFolderButtonTapped)
         
+        bottomBar.addSubview(newFolderButton)
+        newFolderButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            headerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            headerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            headerStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
-            headerStack.heightAnchor.constraint(equalToConstant: 28),
-            
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            newFolderButton.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: 16),
+            newFolderButton.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
+            newFolderButton.trailingAnchor.constraint(lessThanOrEqualTo: bottomBar.trailingAnchor, constant: -16)
         ])
         
-        // Context menu
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Rename Folder", action: #selector(contextRenameTapped), keyEquivalent: "")
-        menu.addItem(withTitle: "Delete Folder", action: #selector(contextDeleteTapped), keyEquivalent: "")
-        outlineView.menu = menu
+        // Add layouts
+        view.addSubview(scrollView)
+        view.addSubview(bottomBar)
+        
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        bottomBar.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            scrollView.bottomAnchor.constraint(equalTo: bottomBar.topAnchor),
+            
+            bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bottomBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bottomBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            bottomBar.heightAnchor.constraint(equalToConstant: 44)
+        ])
     }
     
     // MARK: - Data Management
     public func reloadData() {
         let activeFolders = storage.listActiveFolders(userId: userId)
         
-        let libraryNode = SidebarNode(type: .header, name: "LIBRARY", children: [
-            SidebarNode(type: .allNotes, name: "All Notes")
-        ])
+        var nodes: [SidebarNode] = []
+        nodes.append(SidebarNode(type: .allNotes, name: "All Notes"))
         
-        let folderNodes = activeFolders.map {
-            SidebarNode(type: .folder, name: $0.name, folder: $0)
+        for folder in activeFolders {
+            nodes.append(SidebarNode(type: .folder, name: folder.name, folder: folder))
         }
-        let foldersHeader = SidebarNode(type: .header, name: "FOLDERS", children: folderNodes)
         
-        let trashNode = SidebarNode(type: .header, name: "TRASH", children: [
-            SidebarNode(type: .trash, name: "Trash")
-        ])
+        nodes.append(SidebarNode(type: .divider, name: ""))
+        nodes.append(SidebarNode(type: .trash, name: "Trash"))
         
-        self.data = [libraryNode, foldersHeader, trashNode]
+        self.data = nodes
         outlineView.reloadData()
         outlineView.expandItem(nil, expandChildren: true)
     }
@@ -186,61 +175,48 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     }
     
     // MARK: - Actions
-    @objc private func addFolderTapped() {
-        RenameDialog.show(
-            title: "New Folder",
-            message: "Enter the name for your new folder:",
-            initialValue: "",
-            placeholder: "Folder Name"
-        ) { [weak self] name in
-            guard let self = self else { return }
-            if let folder = self.folderService.createFolder(name: name, userId: self.userId) {
-                self.reloadData()
-                // Select the new folder
-                self.selectFolder(folder)
+    @objc private func newFolderButtonTapped() {
+        if let folder = folderService.createFolder(name: "Untitled Folder", userId: userId) {
+            reloadData()
+            selectFolder(folder)
+            
+            // Initiate inline editing immediately on the new folder row
+            DispatchQueue.main.async { [weak self] in
+                self?.contextRenameTapped()
             }
         }
     }
     
     private func selectFolder(_ folder: DBFolder) {
-        for header in data {
-            for child in header.children {
-                if child.folder?.id == folder.id {
-                    let row = outlineView.row(forItem: child)
-                    if row != -1 {
-                        outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-                    }
-                    return
+        for node in data {
+            if node.folder?.id == folder.id {
+                let row = outlineView.row(forItem: node)
+                if row != -1 {
+                    outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
                 }
+                return
             }
         }
     }
     
     @objc private func contextRenameTapped() {
-        let clickedRow = outlineView.clickedRow
-        guard clickedRow != -1,
-              let node = outlineView.item(atRow: clickedRow) as? SidebarNode,
-              node.type == .folder,
-              let folder = node.folder else { return }
+        let row = outlineView.selectedRow
+        guard row != -1,
+              let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: false) as? SidebarCellView,
+              let node = outlineView.item(atRow: row) as? SidebarNode,
+              node.type == SidebarNode.NodeType.folder else { return }
         
-        RenameDialog.show(
-            title: "Rename Folder",
-            message: "Enter new name for the folder:",
-            initialValue: folder.name,
-            placeholder: "Folder Name"
-        ) { [weak self] newName in
-            guard let self = self else { return }
-            if self.folderService.renameFolder(folder, newName: newName) {
-                self.reloadData()
-            }
-        }
+        cell.nameField.isEditable = true
+        cell.nameField.isEnabled = true
+        outlineView.window?.makeFirstResponder(cell.nameField)
+        cell.nameField.currentEditor()?.selectAll(nil)
     }
     
     @objc private func contextDeleteTapped() {
-        let clickedRow = outlineView.clickedRow
-        guard clickedRow != -1,
-              let node = outlineView.item(atRow: clickedRow) as? SidebarNode,
-              node.type == .folder,
+        let row = outlineView.selectedRow
+        guard row != -1,
+              let node = outlineView.item(atRow: row) as? SidebarNode,
+              node.type == SidebarNode.NodeType.folder,
               let folder = node.folder else { return }
         
         ConfirmDialog.show(
@@ -256,12 +232,31 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         }
     }
     
+    // MARK: - NSTextFieldDelegate
+    public func controlTextDidEndEditing(_ obj: Notification) {
+        guard let textField = obj.object as? NSTextField else { return }
+        let row = outlineView.row(for: textField)
+        guard row != -1,
+              let node = outlineView.item(atRow: row) as? SidebarNode,
+              node.type == SidebarNode.NodeType.folder,
+              let folder = node.folder else { return }
+        
+        let newName = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !newName.isEmpty && newName != folder.name {
+            if folderService.renameFolder(folder, newName: newName) {
+                node.folder?.name = newName
+                reloadData()
+            }
+        } else {
+            textField.stringValue = folder.name
+        }
+        textField.isEditable = false
+    }
+    
     // MARK: - NSOutlineViewDataSource
     public func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
         if item == nil {
             return data.count
-        } else if let node = item as? SidebarNode {
-            return node.children.count
         }
         return 0
     }
@@ -269,43 +264,65 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     public func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
         if item == nil {
             return data[index]
-        } else if let node = item as? SidebarNode {
-            return node.children[index]
         }
-        fatalError("Invalid node hierarchy index requested")
+        fatalError("No nested children allowed in flat sidebar design")
     }
     
     public func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
-        guard let node = item as? SidebarNode else { return false }
-        return !node.children.isEmpty
+        return false
     }
     
     // MARK: - NSOutlineViewDelegate
-    public func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
-        guard let node = item as? SidebarNode else { return false }
-        return node.type == .header
-    }
-    
     public func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
         guard let node = item as? SidebarNode else { return false }
-        return node.type != .header
+        return node.type != SidebarNode.NodeType.divider
+    }
+    
+    public func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
+        guard let node = item as? SidebarNode else { return 28 }
+        if node.type == SidebarNode.NodeType.divider {
+            return 12
+        }
+        return 28
+    }
+    
+    public func outlineView(_ outlineView: NSOutlineView, menuFor item: Any?) -> NSMenu? {
+        guard let node = item as? SidebarNode else { return nil }
+        if node.type == SidebarNode.NodeType.folder {
+            return FolderContextMenu(target: self, renameAction: #selector(contextRenameTapped), deleteAction: #selector(contextDeleteTapped))
+        }
+        return nil
     }
     
     public func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? SidebarNode else { return nil }
         
-        if node.type == .header {
-            let view = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("HeaderCell"), owner: self) as? NSTextField ?? NSTextField(labelWithString: "")
-            view.stringValue = node.name
-            view.font = NSFont.systemFont(ofSize: 10, weight: .bold)
-            view.textColor = .secondaryLabelColor
-            view.identifier = NSUserInterfaceItemIdentifier("HeaderCell")
-            return view
+        if node.type == SidebarNode.NodeType.divider {
+            let container = NSView()
+            let line = NSView()
+            line.wantsLayer = true
+            let isDark = outlineView.effectiveAppearance.name.rawValue.contains("Dark")
+            line.layer?.backgroundColor = AppColors.divider(isDark: isDark).cgColor
+            
+            container.addSubview(line)
+            line.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                line.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+                line.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+                line.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+                line.heightAnchor.constraint(equalToConstant: 1)
+            ])
+            return container
         }
         
-        let cell = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("SidebarCell"), owner: self) as? SidebarCellView ?? SidebarCellView(frame: .zero)
-        cell.identifier = NSUserInterfaceItemIdentifier("SidebarCell")
-        cell.textField?.stringValue = node.name
+        var cell = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("SidebarCell"), owner: self) as? SidebarCellView
+        if cell == nil {
+            cell = SidebarCellView(frame: .zero)
+            cell?.identifier = NSUserInterfaceItemIdentifier("SidebarCell")
+        }
+        
+        cell?.nameField.stringValue = node.name
+        cell?.nameField.delegate = self
         
         let iconName: String
         switch node.type {
@@ -319,10 +336,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
             iconName = "folder"
         }
         
-        cell.imageView?.image = NSImage(systemSymbolName: iconName, accessibilityDescription: nil)
+        cell?.iconView.image = NSImage(systemSymbolName: iconName, accessibilityDescription: nil)
         
         let count = getCount(for: node)
-        cell.badgeField.stringValue = count > 0 ? "\(count)" : ""
+        cell?.badgeField.stringValue = count > 0 ? "\(count)" : ""
         
         return cell
     }
@@ -349,6 +366,8 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
 
 // MARK: - Sidebar Cell View
 fileprivate final class SidebarCellView: NSTableCellView {
+    let iconView = NSImageView()
+    let nameField = NSTextField()
     let badgeField = NSTextField(labelWithString: "")
     
     override init(frame frameRect: NSRect) {
@@ -361,17 +380,19 @@ fileprivate final class SidebarCellView: NSTableCellView {
     }
     
     private func setupViews() {
-        let iconView = NSImageView()
         iconView.imageScaling = .scaleProportionallyDown
-        self.imageView = iconView
+        iconView.contentTintColor = AppColors.accent
         addSubview(iconView)
         
-        let titleField = NSTextField(labelWithString: "")
-        titleField.lineBreakMode = .byTruncatingTail
-        titleField.font = NSFont.systemFont(ofSize: 12)
-        titleField.textColor = .labelColor
-        self.textField = titleField
-        addSubview(titleField)
+        nameField.isBordered = false
+        nameField.drawsBackground = false
+        nameField.isEditable = false
+        nameField.isSelectable = true
+        nameField.font = NSFont.systemFont(ofSize: 12)
+        nameField.textColor = .labelColor
+        nameField.lineBreakMode = .byTruncatingTail
+        self.textField = nameField
+        addSubview(nameField)
         
         badgeField.textColor = .secondaryLabelColor
         badgeField.font = NSFont.systemFont(ofSize: 11)
@@ -379,7 +400,7 @@ fileprivate final class SidebarCellView: NSTableCellView {
         addSubview(badgeField)
         
         iconView.translatesAutoresizingMaskIntoConstraints = false
-        titleField.translatesAutoresizingMaskIntoConstraints = false
+        nameField.translatesAutoresizingMaskIntoConstraints = false
         badgeField.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
@@ -388,9 +409,9 @@ fileprivate final class SidebarCellView: NSTableCellView {
             iconView.widthAnchor.constraint(equalToConstant: 16),
             iconView.heightAnchor.constraint(equalToConstant: 16),
             
-            titleField.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-            titleField.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleField.trailingAnchor.constraint(lessThanOrEqualTo: badgeField.leadingAnchor, constant: -8),
+            nameField.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+            nameField.centerYAnchor.constraint(equalTo: centerYAnchor),
+            nameField.trailingAnchor.constraint(lessThanOrEqualTo: badgeField.leadingAnchor, constant: -8),
             
             badgeField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
             badgeField.centerYAnchor.constraint(equalTo: centerYAnchor),

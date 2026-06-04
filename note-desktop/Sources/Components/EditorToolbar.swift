@@ -64,6 +64,7 @@ public final class EditorToolbar: NSView {
         
         // 4. Delete button on the right
         configureButton(deleteButton, iconName: "trash", action: #selector(deleteTapped))
+        deleteButton.contentTintColor = AppColors.destructive
         stackView.addView(deleteButton, in: .trailing)
     }
     
@@ -74,6 +75,7 @@ public final class EditorToolbar: NSView {
         button.target = self
         button.action = action
         button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: nil)
+        button.contentTintColor = AppColors.accent
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: 28),

@@ -80,7 +80,7 @@ public final class LoginPage: NSViewController {
         switchButton.title = "Don't have an account? Sign Up"
         switchButton.isBordered = false
         switchButton.font = NSFont.systemFont(ofSize: 12)
-        switchButton.contentTintColor = .linkColor
+        switchButton.contentTintColor = AppColors.accent
         switchButton.target = self
         switchButton.action = #selector(switchToSignup)
         
