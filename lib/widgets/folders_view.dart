@@ -161,6 +161,33 @@ class _FoldersViewState extends State<FoldersView> {
                                 );
                               }),
 
+                              if (_searchQuery.isNotEmpty &&
+                                  filteredFolders.isEmpty &&
+                                  !'all notes'.contains(_searchQuery.toLowerCase()) &&
+                                  !'trash'.contains(_searchQuery.toLowerCase())) ...[
+                                const SizedBox(height: 48),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.search,
+                                        size: 64,
+                                        color: AppTextColors.quaternary(context),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No folders match "$_searchQuery"',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: AppTextColors.tertiary(context),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
                               if (_searchQuery.isEmpty || 'trash'.contains(_searchQuery.toLowerCase())) ...[
                                 const SizedBox(height: 16),
                                 _FolderCard(

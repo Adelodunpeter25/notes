@@ -222,25 +222,40 @@ class _NoteListState extends State<NoteList> {
             ),
         ],
       ),
-      body: _searchQuery.isNotEmpty
-          ? FutureBuilder<List<Note>>(
-              future: _searchFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CupertinoActivityIndicator());
-                }
-                return _buildNoteListView(snapshot.data ?? [], isTrashView);
-              },
-            )
-          : StreamBuilder<List<Note>>(
-              stream: _notesStream,
-              builder: (context, noteSnapshot) {
-                if (noteSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CupertinoActivityIndicator());
-                }
-                return _buildNoteListView(noteSnapshot.data ?? [], isTrashView);
-              },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: CustomSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              placeholder: 'Search notes',
+              onChanged: _onSearchChanged,
             ),
+          ),
+          Expanded(
+            child: _searchQuery.isNotEmpty
+                ? FutureBuilder<List<Note>>(
+                    future: _searchFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CupertinoActivityIndicator());
+                      }
+                      return _buildNoteListView(snapshot.data ?? [], isTrashView);
+                    },
+                  )
+                : StreamBuilder<List<Note>>(
+                    stream: _notesStream,
+                    builder: (context, noteSnapshot) {
+                      if (noteSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CupertinoActivityIndicator());
+                      }
+                      return _buildNoteListView(noteSnapshot.data ?? [], isTrashView);
+                    },
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: !isTrashView
           ? FloatingActionButton(
               onPressed: widget.onNewNote,
@@ -259,59 +274,41 @@ class _NoteListState extends State<NoteList> {
     final services = ServiceProvider.of(context);
 
     if (allNotes.isEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: CustomSearchBar(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                placeholder: 'Search notes',
-                onChanged: _onSearchChanged,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _searchQuery.isNotEmpty
+                  ? CupertinoIcons.search
+                  : CupertinoIcons.doc_text,
+              size: 64,
+              color: AppTextColors.quaternary(context),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? 'No notes match "$_searchQuery"'
+                  : isTrashView
+                      ? 'Trash is empty'
+                      : 'No notes yet',
+              style: TextStyle(
+                fontSize: 18,
+                color: AppTextColors.tertiary(context),
               ),
             ),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _searchQuery.isNotEmpty
-                        ? CupertinoIcons.search
-                        : CupertinoIcons.doc_text,
-                    size: 64,
-                    color: AppTextColors.quaternary(context),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _searchQuery.isNotEmpty
-                        ? 'No notes match "$_searchQuery"'
-                        : isTrashView
-                            ? 'Trash is empty'
-                            : 'No notes yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppTextColors.tertiary(context),
-                    ),
-                  ),
-                  if (_searchQuery.isEmpty && !isTrashView) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap + to create a new note',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTextColors.quaternary(context),
-                      ),
-                    ),
-                  ],
-                ],
+            if (_searchQuery.isEmpty && !isTrashView) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tap + to create a new note',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTextColors.quaternary(context),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       );
     }
 
@@ -323,18 +320,6 @@ class _NoteListState extends State<NoteList> {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: CustomSearchBar(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              placeholder: 'Search notes',
-              onChanged: _onSearchChanged,
-            ),
-          ),
-        ),
-
         if (pinnedNotes.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
