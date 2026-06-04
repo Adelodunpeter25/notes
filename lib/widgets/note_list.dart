@@ -4,9 +4,9 @@ import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../models/user.dart';
 import '../theme.dart';
-import '../utils/note.dart';
 import '../utils/time.dart';
 import '../utils/dialogs.dart';
+import 'note_card.dart';
 import 'search_bar.dart';
 
 enum NoteFilterType { all, folder, trash }
@@ -49,6 +49,7 @@ class _NoteListState extends State<NoteList> {
   final _searchFocusNode = FocusNode();
   User? _currentUser;
   Stream<List<Note>>? _notesStream;
+  Future<List<Note>>? _searchFuture;
   bool _isLoading = true;
 
   @override
@@ -103,12 +104,18 @@ class _NoteListState extends State<NoteList> {
     super.dispose();
   }
 
-  bool _matchesSearch(Note note) {
-    if (_searchQuery.isEmpty) return true;
-    final q = _searchQuery.toLowerCase();
-    if (note.title.toLowerCase().contains(q)) return true;
-    final body = NoteUtils.extractLines(note.content).join(' ').toLowerCase();
-    return body.contains(q);
+  void _onSearchChanged(String value) {
+    final q = value.trim();
+    setState(() {
+      _searchQuery = q;
+      _searchFuture = q.isEmpty ? null : _performFtsSearch(q);
+    });
+    if (q.isEmpty) _searchFocusNode.unfocus();
+  }
+
+  Future<List<Note>> _performFtsSearch(String query) async {
+    final services = ServiceProvider.of(context);
+    return services.noteService.searchNotes(_currentUser!.id, query);
   }
 
   Map<String, List<Note>> _groupNotes(List<Note> notesList) {
@@ -215,193 +222,25 @@ class _NoteListState extends State<NoteList> {
             ),
         ],
       ),
-      body: StreamBuilder<List<Note>>(
-        stream: _notesStream,
-        builder: (context, noteSnapshot) {
-          if (noteSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CupertinoActivityIndicator());
-          }
-
-          final allNotes = (noteSnapshot.data ?? [])
-              .where(_matchesSearch)
-              .toList();
-
-          if (allNotes.isEmpty) {
-            return CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: CustomSearchBar(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      placeholder: 'Search notes',
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.trim();
-                        });
-                        if (value.isEmpty) _searchFocusNode.unfocus();
-                      },
-                    ),
-                  ),
-                ),
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _searchQuery.isNotEmpty
-                              ? CupertinoIcons.search
-                              : CupertinoIcons.doc_text,
-                          size: 64,
-                          color: AppTextColors.quaternary(context),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isNotEmpty
-                              ? 'No notes match "$_searchQuery"'
-                              : isTrashView
-                                  ? 'Trash is empty'
-                                  : 'No notes yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: AppTextColors.tertiary(context),
-                          ),
-                        ),
-                        if (_searchQuery.isEmpty && !isTrashView) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Tap + to create a new note',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppTextColors.quaternary(context),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-
-          // Sort by creation date descending
-          allNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-          final pinnedNotes = allNotes.where((n) => n.isPinned).toList();
-          final unpinnedNotes = allNotes.where((n) => !n.isPinned).toList();
-
-          final groupedUnpinned = _groupNotes(unpinnedNotes);
-
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: CustomSearchBar(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    placeholder: 'Search notes',
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.trim();
-                      });
-                      if (value.isEmpty) _searchFocusNode.unfocus();
-                    },
-                  ),
-                ),
-              ),
-
-              if (pinnedNotes.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
-                    child: Row(
-                      children: [
-                        const Icon(CupertinoIcons.pin_fill, size: 14, color: AppColors.accent),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Pinned',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTextColors.secondary(context),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final note = pinnedNotes[index];
-                      return _NoteCard(
-                        note: note,
-                        onTap: () => widget.onNoteSelected(note),
-                        onDelete: isTrashView
-                            ? () => services.noteService.deleteNotePermanently(note)
-                            : () => services.noteService.softDeleteNote(note),
-                        onPin: () => services.noteService.pinNote(note, !note.isPinned),
-                        isTrash: isTrashView,
-                        onRestore: isTrashView
-                            ? () => services.noteService.restoreNote(note)
-                            : null,
-                      );
-                    },
-                    childCount: pinnedNotes.length,
-                  ),
-                ),
-              ],
-
-              ...groupedUnpinned.entries.expand((entry) {
-                return [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
-                      child: Text(
-                        entry.key,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTextColors.secondary(context),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final note = entry.value[index];
-                        return _NoteCard(
-                          note: note,
-                          onTap: () => widget.onNoteSelected(note),
-                          onDelete: isTrashView
-                              ? () => services.noteService.deleteNotePermanently(note)
-                              : () => services.noteService.softDeleteNote(note),
-                          onPin: () => services.noteService.pinNote(note, !note.isPinned),
-                          isTrash: isTrashView,
-                          onRestore: isTrashView
-                              ? () => services.noteService.restoreNote(note)
-                              : null,
-                        );
-                      },
-                      childCount: entry.value.length,
-                    ),
-                  ),
-                ];
-              }),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
-          );
-        },
-      ),
+      body: _searchQuery.isNotEmpty
+          ? FutureBuilder<List<Note>>(
+              future: _searchFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CupertinoActivityIndicator());
+                }
+                return _buildNoteListView(snapshot.data ?? [], isTrashView);
+              },
+            )
+          : StreamBuilder<List<Note>>(
+              stream: _notesStream,
+              builder: (context, noteSnapshot) {
+                if (noteSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CupertinoActivityIndicator());
+                }
+                return _buildNoteListView(noteSnapshot.data ?? [], isTrashView);
+              },
+            ),
       floatingActionButton: !isTrashView
           ? FloatingActionButton(
               onPressed: widget.onNewNote,
@@ -416,154 +255,170 @@ class _NoteListState extends State<NoteList> {
           : null,
     );
   }
-}
+  Widget _buildNoteListView(List<Note> allNotes, bool isTrashView) {
+    final services = ServiceProvider.of(context);
 
-class _NoteCard extends StatelessWidget {
-  final Note note;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-  final VoidCallback onPin;
-  final bool isTrash;
-  final VoidCallback? onRestore;
-
-  const _NoteCard({
-    required this.note,
-    required this.onTap,
-    required this.onDelete,
-    required this.onPin,
-    this.isTrash = false,
-    this.onRestore,
-  });
-
-  String _formatDate(DateTime date) {
-    return TimeUtils.formatCardTime(date);
-  }
-
-  String _getPreview(String content) {
-    final lines = NoteUtils.extractLines(content);
-    if (lines.isEmpty) return 'No additional text';
-    final body = lines.skip(1).where((l) => l.trim().isNotEmpty).join(' ').trim();
-    final text = body.isEmpty ? lines.join(' ').trim() : body;
-    if (text.isEmpty) return 'No additional text';
-    if (text.length > 100) return '${text.substring(0, 100)}…';
-    return text;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cardColor = AppSurfaces.surface(context);
-
-    return Dismissible(
-      key: ValueKey(note.id),
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        color: isTrash ? AppColors.success : AppColors.accent,
-        child: Icon(
-          isTrash ? CupertinoIcons.arrow_uturn_left : CupertinoIcons.pin_fill,
-          color: isTrash ? AppColors.onDestructive : AppColors.onAccent,
-        ),
-      ),
-      secondaryBackground: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        color: AppColors.destructive,
-        child: const Icon(CupertinoIcons.trash_fill, color: AppColors.onDestructive),
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          if (isTrash && onRestore != null) {
-            onRestore!();
-          } else {
-            onPin();
-          }
-          return false;
-        } else {
-          final confirmed = await DialogUtils.showConfirmation(
-            context: context,
-            title: isTrash ? 'Delete Permanently?' : 'Delete Note?',
-            message: isTrash
-                ? 'Are you sure you want to permanently delete this note?'
-                : 'This note will be moved to Trash.',
-            primaryButtonText: 'Delete',
-            isDestructive: true,
-          );
-          return confirmed;
-        }
-      },
-      onDismissed: (direction) {
-        if (direction == DismissDirection.endToStart) {
-          onDelete();
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-        child: Material(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: onTap,
+    if (allNotes.isEmpty) {
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: CustomSearchBar(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                placeholder: 'Search notes',
+                onChanged: _onSearchChanged,
+              ),
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          note.title.isEmpty ? 'Untitled' : note.title,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: AppTextColors.primary(context),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (note.isPinned)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(
-                            CupertinoIcons.pin_fill,
-                            size: 14,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                    ],
+                  Icon(
+                    _searchQuery.isNotEmpty
+                        ? CupertinoIcons.search
+                        : CupertinoIcons.doc_text,
+                    size: 64,
+                    color: AppTextColors.quaternary(context),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        _formatDate(note.createdAt),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTextColors.tertiary(context),
-                        ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isNotEmpty
+                        ? 'No notes match "$_searchQuery"'
+                        : isTrashView
+                            ? 'Trash is empty'
+                            : 'No notes yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: AppTextColors.tertiary(context),
+                    ),
+                  ),
+                  if (_searchQuery.isEmpty && !isTrashView) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap + to create a new note',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTextColors.quaternary(context),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _getPreview(note.content),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTextColors.secondary(context),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    allNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final pinnedNotes = allNotes.where((n) => n.isPinned).toList();
+    final unpinnedNotes = allNotes.where((n) => !n.isPinned).toList();
+    final groupedUnpinned = _groupNotes(unpinnedNotes);
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: CustomSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              placeholder: 'Search notes',
+              onChanged: _onSearchChanged,
+            ),
+          ),
+        ),
+
+        if (pinnedNotes.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.pin_fill, size: 14, color: AppColors.accent),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Pinned',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTextColors.secondary(context),
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final note = pinnedNotes[index];
+                return NoteCard(
+                  note: note,
+                  onTap: () => widget.onNoteSelected(note),
+                  onDelete: isTrashView
+                      ? () => services.noteService.deleteNotePermanently(note)
+                      : () => services.noteService.softDeleteNote(note),
+                  onPin: () => services.noteService.pinNote(note, !note.isPinned),
+                  isTrash: isTrashView,
+                  onRestore: isTrashView
+                      ? () => services.noteService.restoreNote(note)
+                      : null,
+                );
+              },
+              childCount: pinnedNotes.length,
+            ),
+          ),
+        ],
+
+        ...groupedUnpinned.entries.expand((entry) {
+          return [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
+                child: Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTextColors.secondary(context),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final note = entry.value[index];
+                  return NoteCard(
+                    note: note,
+                    onTap: () => widget.onNoteSelected(note),
+                    onDelete: isTrashView
+                        ? () => services.noteService.deleteNotePermanently(note)
+                        : () => services.noteService.softDeleteNote(note),
+                    onPin: () => services.noteService.pinNote(note, !note.isPinned),
+                    isTrash: isTrashView,
+                    onRestore: isTrashView
+                        ? () => services.noteService.restoreNote(note)
+                        : null,
+                  );
+                },
+                childCount: entry.value.length,
+              ),
+            ),
+          ];
+        }),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      ],
     );
   }
 }
