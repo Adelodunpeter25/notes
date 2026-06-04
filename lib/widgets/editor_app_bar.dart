@@ -146,7 +146,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                     .get();
                 if (context.mounted) {
                   final currentFolder = folders.where((f) => f.id == note.folderId).firstOrNull;
-                  final result = await DialogUtils.showFolderSelectionDialog(
+                  final result = await DialogUtils.showFolderSelectionSheet(
                     context: context,
                     folders: folders,
                     initialFolder: currentFolder,

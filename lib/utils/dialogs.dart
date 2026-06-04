@@ -62,15 +62,18 @@ class DialogUtils {
     return result ?? false;
   }
 
-  /// Shows a dialog containing a dropdown of folders to choose from
-  static Future<MoveToFolderResult?> showFolderSelectionDialog({
+  /// Shows a bottom sheet with a list of folders to choose from.
+  static Future<MoveToFolderResult?> showFolderSelectionSheet({
     required BuildContext context,
     required List<Folder> folders,
     Folder? initialFolder,
-  }) async {
-    return showDialog<MoveToFolderResult>(
+  }) {
+    return showModalBottomSheet<MoveToFolderResult>(
       context: context,
-      builder: (context) => _MoveToFolderDialog(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _MoveToFolderSheet(
         folders: folders,
         initialFolder: initialFolder,
       ),
@@ -117,91 +120,62 @@ class DialogUtils {
   }
 }
 
-class _MoveToFolderDialog extends StatefulWidget {
+class _MoveToFolderSheet extends StatelessWidget {
   final List<Folder> folders;
   final Folder? initialFolder;
 
-  const _MoveToFolderDialog({
+  const _MoveToFolderSheet({
     required this.folders,
     this.initialFolder,
   });
 
   @override
-  State<_MoveToFolderDialog> createState() => _MoveToFolderDialogState();
-}
-
-class _MoveToFolderDialogState extends State<_MoveToFolderDialog> {
-  Folder? _selectedFolder;
-  bool _useNoFolder = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialFolder == null) {
-      _useNoFolder = true;
-    } else {
-      _selectedFolder = widget.initialFolder;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final dropdownItems = [
-      const DropdownMenuItem<Folder?>(
-        value: null,
-        child: Text('No Folder (Root)'),
-      ),
-      ...widget.folders.map((f) => DropdownMenuItem<Folder?>(
-            value: f,
-            child: Text(f.name),
-          )),
-    ];
-
-    return AlertDialog(
-      icon: const Icon(CupertinoIcons.folder),
-      title: const Text('Move to Folder'),
-      content: Column(
+    return SafeArea(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Choose a destination folder for this note:'),
-          const SizedBox(height: 16),
-          DropdownButton<Folder?>(
-            value: _useNoFolder ? null : _selectedFolder,
-            items: dropdownItems,
-            isExpanded: true,
-            onChanged: (Folder? value) {
-              setState(() {
-                if (value == null) {
-                  _useNoFolder = true;
-                  _selectedFolder = null;
-                } else {
-                  _useNoFolder = false;
-                  _selectedFolder = value;
-                }
-              });
-            },
+          const BottomSheetHandle(),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Move to Folder',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: AppTextColors.primary(context),
+              ),
+            ),
           ),
+          ListTile(
+            leading: Icon(
+              CupertinoIcons.folder,
+              color: initialFolder == null ? AppColors.accent : AppTextColors.tertiary(context),
+            ),
+            title: const Text('No Folder (Root)'),
+            trailing: initialFolder == null
+                ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
+                : null,
+            onTap: () => Navigator.pop(context, const MoveToFolderResult(confirmed: true)),
+          ),
+          const Divider(height: 1),
+          ...folders.map((f) => ListTile(
+                leading: Icon(
+                  CupertinoIcons.folder_fill,
+                  color: f.id == initialFolder?.id ? AppColors.accent : AppTextColors.tertiary(context),
+                ),
+                title: Text(f.name),
+                trailing: f.id == initialFolder?.id
+                    ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
+                    : null,
+                onTap: () => Navigator.pop(
+                  context,
+                  MoveToFolderResult(confirmed: true, folder: f),
+                ),
+              )),
+          const SizedBox(height: 8),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, const MoveToFolderResult(confirmed: false)),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(
-              context,
-              MoveToFolderResult(
-                confirmed: true,
-                folder: _useNoFolder ? null : _selectedFolder,
-              ),
-            );
-          },
-          child: const Text('Move'),
-        ),
-      ],
     );
   }
 }
