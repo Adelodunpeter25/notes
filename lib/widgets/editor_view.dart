@@ -131,6 +131,7 @@ class _EditorViewState extends State<EditorView> {
   }
 
   Future<void> _handleBack() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     await _saveNow();
     widget.onBack();
   }
