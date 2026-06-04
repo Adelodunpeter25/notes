@@ -221,7 +221,6 @@ class _EditorViewState extends State<EditorView> {
                 focusNode: _focusNode,
                 editorScrollController: EditorScrollController(
                   editorState: _editorState!,
-                  shrinkWrap: true,
                 ),
                 editorStyle: EditorStyle.mobile(
                   cursorColor: AppColors.accent,

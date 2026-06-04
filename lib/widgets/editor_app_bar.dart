@@ -57,7 +57,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
               'Notes',
               style: TextStyle(
                 color: AppColors.accent,
-                fontSize: 16,
+                fontSize: 18,
               ),
             ),
           ],

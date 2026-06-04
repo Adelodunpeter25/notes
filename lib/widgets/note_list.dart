@@ -166,7 +166,7 @@ class _NoteListState extends State<NoteList> {
                 'Folders',
                 style: TextStyle(
                   color: AppColors.accent,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
             ],
