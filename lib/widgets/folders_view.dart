@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/search_bar.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
@@ -220,52 +221,46 @@ class _FoldersViewState extends State<FoldersView> {
   }
 
   void _showFolderActions(BuildContext context, FolderWithCount fc, ServiceProvider services) {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BottomSheetHandle(),
-            ListTile(
-              leading: const Icon(CupertinoIcons.pencil),
-              title: const Text('Rename Folder'),
-              onTap: () async {
-                Navigator.pop(context);
-                final newName = await DialogUtils.showTextInputDialog(
-                  context: context,
-                  title: 'Rename Folder',
-                  placeholder: fc.folder.name,
-                  primaryButtonText: 'Rename',
-                );
-                if (newName != null && newName.trim().isNotEmpty) {
-                  await services.folderService.renameFolder(fc.folder, newName.trim());
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
-              title: const Text('Delete Folder', style: TextStyle(color: AppColors.destructive)),
-              onTap: () async {
-                Navigator.pop(context);
-                final confirmed = await DialogUtils.showConfirmation(
-                  context: context,
-                  title: 'Delete Folder?',
-                  message: 'Are you sure you want to delete this folder? Notes inside will be moved back to All Notes.',
-                  primaryButtonText: 'Delete',
-                  isDestructive: true,
-                );
-                if (confirmed) {
-                  await services.folderService.softDeleteFolder(fc.folder);
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(CupertinoIcons.pencil),
+            title: const Text('Rename Folder'),
+            onTap: () async {
+              Navigator.pop(context);
+              final newName = await DialogUtils.showTextInputDialog(
+                context: context,
+                title: 'Rename Folder',
+                placeholder: fc.folder.name,
+                primaryButtonText: 'Rename',
+              );
+              if (newName != null && newName.trim().isNotEmpty) {
+                await services.folderService.renameFolder(fc.folder, newName.trim());
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+            title: const Text('Delete Folder', style: TextStyle(color: AppColors.destructive)),
+            onTap: () async {
+              Navigator.pop(context);
+              final confirmed = await DialogUtils.showConfirmation(
+                context: context,
+                title: 'Delete Folder?',
+                message: 'Are you sure you want to delete this folder? Notes inside will be moved back to All Notes.',
+                primaryButtonText: 'Delete',
+                isDestructive: true,
+              );
+              if (confirmed) {
+                await services.folderService.softDeleteFolder(fc.folder);
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

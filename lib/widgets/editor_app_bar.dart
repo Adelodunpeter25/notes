@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../database/database.dart' hide User;
 import '../theme.dart';
 import '../utils/dialogs.dart';
+import 'app_bottom_sheet.dart';
 import 'service_provider.dart';
 
 /// App bar for the note editor. Shows a back button, undo/redo controls, and
@@ -110,89 +111,83 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   void _showMoreActions(BuildContext context) {
     final services = ServiceProvider.of(context);
 
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BottomSheetHandle(),
-            ListTile(
-              leading: Icon(
-                note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
-              ),
-              title: Text(note.isPinned ? 'Unpin Note' : 'Pin Note'),
-              onTap: () async {
-                Navigator.pop(context);
-                await services.noteService.pinNote(note, !note.isPinned);
-                if (onNoteChanged != null) {
-                  final fresh = await (services.db.select(services.db.notes)
-                        ..where((t) => t.id.equals(note.id)))
-                      .getSingle();
-                  onNoteChanged!(fresh);
-                }
-              },
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(
+              note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
             ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.folder),
-              title: const Text('Move to Folder...'),
-              onTap: () async {
-                Navigator.pop(context);
-                final folders = await services.db
-                    .select(services.db.folders)
-                    .get();
-                if (context.mounted) {
-                  final currentFolder = folders.where((f) => f.id == note.folderId).firstOrNull;
-                  final result = await DialogUtils.showFolderSelectionSheet(
-                    context: context,
-                    folders: folders,
-                    initialFolder: currentFolder,
-                  );
-                  if (result != null && result.confirmed) {
-                    await services.noteService.moveNoteToFolder(note, result.folder?.id);
-                    if (onNoteChanged != null) {
-                      final fresh = await (services.db.select(services.db.notes)
-                            ..where((t) => t.id.equals(note.id)))
-                          .getSingle();
-                      onNoteChanged!(fresh);
-                    }
+            title: Text(note.isPinned ? 'Unpin Note' : 'Pin Note'),
+            onTap: () async {
+              Navigator.pop(context);
+              await services.noteService.pinNote(note, !note.isPinned);
+              if (onNoteChanged != null) {
+                final fresh = await (services.db.select(services.db.notes)
+                      ..where((t) => t.id.equals(note.id)))
+                    .getSingle();
+                onNoteChanged!(fresh);
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(CupertinoIcons.folder),
+            title: const Text('Move to Folder...'),
+            onTap: () async {
+              Navigator.pop(context);
+              final folders = await services.db
+                  .select(services.db.folders)
+                  .get();
+              if (context.mounted) {
+                final currentFolder = folders.where((f) => f.id == note.folderId).firstOrNull;
+                final result = await DialogUtils.showFolderSelectionSheet(
+                  context: context,
+                  folders: folders,
+                  initialFolder: currentFolder,
+                );
+                if (result != null && result.confirmed) {
+                  await services.noteService.moveNoteToFolder(note, result.folder?.id);
+                  if (onNoteChanged != null) {
+                    final fresh = await (services.db.select(services.db.notes)
+                          ..where((t) => t.id.equals(note.id)))
+                        .getSingle();
+                    onNoteChanged!(fresh);
                   }
                 }
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.square_list),
-              title: const Text('Toggle Checklist'),
-              onTap: () {
-                Navigator.pop(context);
-                _toggleChecklist(context);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
-              title: const Text('Delete Note', style: TextStyle(color: AppColors.destructive)),
-              onTap: () async {
-                Navigator.pop(context);
-                final confirmed = await DialogUtils.showConfirmation(
-                  context: context,
-                  title: 'Delete Note?',
-                  message: 'This note will be moved to Trash.',
-                  primaryButtonText: 'Delete',
-                  isDestructive: true,
-                );
-                if (confirmed) {
-                  await services.noteService.softDeleteNote(note);
-                  onBack();
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(CupertinoIcons.square_list),
+            title: const Text('Toggle Checklist'),
+            onTap: () {
+              Navigator.pop(context);
+              _toggleChecklist(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+            title: const Text('Delete Note', style: TextStyle(color: AppColors.destructive)),
+            onTap: () async {
+              Navigator.pop(context);
+              final confirmed = await DialogUtils.showConfirmation(
+                context: context,
+                title: 'Delete Note?',
+                message: 'This note will be moved to Trash.',
+                primaryButtonText: 'Delete',
+                isDestructive: true,
+              );
+              if (confirmed) {
+                await services.noteService.softDeleteNote(note);
+                onBack();
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

@@ -2,30 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../theme.dart';
+import '../widgets/app_bottom_sheet.dart';
 
 class MoveToFolderResult {
   final bool confirmed;
   final Folder? folder;
 
   const MoveToFolderResult({required this.confirmed, this.folder});
-}
-
-/// The small grab handle shown at the top of modal bottom sheets.
-class BottomSheetHandle extends StatelessWidget {
-  const BottomSheetHandle({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 4,
-      margin: const EdgeInsets.only(top: 12, bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.handle,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
 }
 
 class DialogUtils {
@@ -68,11 +51,8 @@ class DialogUtils {
     required List<Folder> folders,
     Folder? initialFolder,
   }) {
-    return showModalBottomSheet<MoveToFolderResult>(
+    return AppBottomSheet.show<MoveToFolderResult>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => _MoveToFolderSheet(
         folders: folders,
         initialFolder: initialFolder,
@@ -131,51 +111,48 @@ class _MoveToFolderSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const BottomSheetHandle(),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'Move to Folder',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: AppTextColors.primary(context),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Move to Folder',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: AppTextColors.primary(context),
+            ),
+          ),
+        ),
+        ListTile(
+          leading: Icon(
+            CupertinoIcons.folder,
+            color: initialFolder == null ? AppColors.accent : AppTextColors.tertiary(context),
+          ),
+          title: const Text('No Folder (Root)'),
+          trailing: initialFolder == null
+              ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
+              : null,
+          onTap: () => Navigator.pop(context, const MoveToFolderResult(confirmed: true)),
+        ),
+        const Divider(height: 1),
+        ...folders.map((f) => ListTile(
+              leading: Icon(
+                CupertinoIcons.folder_fill,
+                color: f.id == initialFolder?.id ? AppColors.accent : AppTextColors.tertiary(context),
               ),
-            ),
-          ),
-          ListTile(
-            leading: Icon(
-              CupertinoIcons.folder,
-              color: initialFolder == null ? AppColors.accent : AppTextColors.tertiary(context),
-            ),
-            title: const Text('No Folder (Root)'),
-            trailing: initialFolder == null
-                ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
-                : null,
-            onTap: () => Navigator.pop(context, const MoveToFolderResult(confirmed: true)),
-          ),
-          const Divider(height: 1),
-          ...folders.map((f) => ListTile(
-                leading: Icon(
-                  CupertinoIcons.folder_fill,
-                  color: f.id == initialFolder?.id ? AppColors.accent : AppTextColors.tertiary(context),
-                ),
-                title: Text(f.name),
-                trailing: f.id == initialFolder?.id
-                    ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
-                    : null,
-                onTap: () => Navigator.pop(
-                  context,
-                  MoveToFolderResult(confirmed: true, folder: f),
-                ),
-              )),
-          const SizedBox(height: 8),
-        ],
-      ),
+              title: Text(f.name),
+              trailing: f.id == initialFolder?.id
+                  ? const Icon(CupertinoIcons.checkmark, color: AppColors.accent)
+                  : null,
+              onTap: () => Navigator.pop(
+                context,
+                MoveToFolderResult(confirmed: true, folder: f),
+              ),
+            )),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }
