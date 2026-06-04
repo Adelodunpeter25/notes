@@ -107,13 +107,17 @@ class _EditorViewState extends State<EditorView> {
     final newContent = jsonEncode(docMap);
     final newTitle = _deriveTitle();
 
-    final updated = widget.note.copyWith(
+    final services = ServiceProvider.of(context);
+    final fresh = await (services.db.select(services.db.notes)
+          ..where((t) => t.id.equals(widget.note.id)))
+        .getSingle();
+
+    final updated = fresh.copyWith(
       title: newTitle,
       content: newContent,
       updatedAt: DateTime.now(),
     );
 
-    final services = ServiceProvider.of(context);
     await services.noteService.updateNote(updated);
     _initialDocJson = jsonEncode(_editorState!.document.toJson());
     if (mounted) setState(() => _isDirty = false);
@@ -177,6 +181,10 @@ class _EditorViewState extends State<EditorView> {
     await _saveNow();
   }
 
+  void _onNoteChanged(Note fresh) {
+    widget.onNoteUpdated?.call(fresh);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_editorState == null) {
@@ -203,6 +211,7 @@ class _EditorViewState extends State<EditorView> {
           onUndo: _onUndo,
           onRedo: _onRedo,
           onDone: _onDone,
+          onNoteChanged: _onNoteChanged,
         ),
         body: Column(
           children: [

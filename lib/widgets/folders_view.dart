@@ -100,6 +100,58 @@ class _FoldersViewState extends State<FoldersView> {
                                 ),
                               ),
 
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        borderRadius: BorderRadius.circular(10),
+                                        onPressed: () async {
+                                          final folderName = await DialogUtils.showTextInputDialog(
+                                            context: context,
+                                            title: 'New Folder',
+                                            placeholder: 'Enter folder name',
+                                            primaryButtonText: 'Create',
+                                          );
+                                          if (folderName != null && folderName.trim().isNotEmpty) {
+                                            await services.folderService.createFolder(
+                                              folderName.trim(),
+                                              widget.userId,
+                                            );
+                                          }
+                                        },
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('New Folder', style: TextStyle(color: AppColors.accent, fontSize: 15, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        borderRadius: BorderRadius.circular(10),
+                                        onPressed: widget.onNewNote,
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(CupertinoIcons.square_pencil, color: AppColors.accent, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('New Note', style: TextStyle(color: AppColors.accent, fontSize: 15, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                               if (_searchQuery.isEmpty || 'all notes'.contains(_searchQuery.toLowerCase())) ...[
                                 _FolderCard(
                                   icon: CupertinoIcons.folder,
@@ -157,65 +209,6 @@ class _FoldersViewState extends State<FoldersView> {
                           ),
                         ),
 
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
-                          child: Container(
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: AppSurfaces.elevated(context),
-                              borderRadius: BorderRadius.circular(27),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: IconButton(
-                                    onPressed: () async {
-                                      final folderName = await DialogUtils.showTextInputDialog(
-                                        context: context,
-                                        title: 'New Folder',
-                                        placeholder: 'Enter folder name',
-                                        primaryButtonText: 'Create',
-                                      );
-                                      if (folderName != null && folderName.trim().isNotEmpty) {
-                                        await services.folderService.createFolder(
-                                          folderName.trim(),
-                                          widget.userId,
-                                        );
-                                      }
-                                    },
-                                    icon: const Icon(
-                                      CupertinoIcons.folder_badge_plus,
-                                      color: AppColors.accent,
-                                      size: 24,
-                                    ),
-                                    tooltip: 'New Folder',
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: IconButton(
-                                    onPressed: widget.onNewNote,
-                                    icon: const Icon(
-                                      CupertinoIcons.square_pencil,
-                                      color: AppColors.accent,
-                                      size: 24,
-                                    ),
-                                    tooltip: 'New Note',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
                     );
                   },

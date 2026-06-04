@@ -46,6 +46,7 @@ class NoteList extends StatefulWidget {
 class _NoteListState extends State<NoteList> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   User? _currentUser;
   Stream<List<Note>>? _notesStream;
   bool _isLoading = true;
@@ -98,6 +99,7 @@ class _NoteListState extends State<NoteList> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -225,41 +227,64 @@ class _NoteListState extends State<NoteList> {
               .toList();
 
           if (allNotes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _searchQuery.isNotEmpty
-                        ? CupertinoIcons.search
-                        : CupertinoIcons.doc_text,
-                    size: 64,
-                    color: AppTextColors.quaternary(context),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _searchQuery.isNotEmpty
-                        ? 'No notes match "$_searchQuery"'
-                        : isTrashView
-                            ? 'Trash is empty'
-                            : 'No notes yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppTextColors.tertiary(context),
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: CustomSearchBar(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      placeholder: 'Search notes',
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.trim();
+                        });
+                        if (value.isEmpty) _searchFocusNode.unfocus();
+                      },
                     ),
                   ),
-                  if (_searchQuery.isEmpty && !isTrashView) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap + to create a new note',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTextColors.quaternary(context),
-                      ),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _searchQuery.isNotEmpty
+                              ? CupertinoIcons.search
+                              : CupertinoIcons.doc_text,
+                          size: 64,
+                          color: AppTextColors.quaternary(context),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'No notes match "$_searchQuery"'
+                              : isTrashView
+                                  ? 'Trash is empty'
+                                  : 'No notes yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: AppTextColors.tertiary(context),
+                          ),
+                        ),
+                        if (_searchQuery.isEmpty && !isTrashView) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap + to create a new note',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTextColors.quaternary(context),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
+                  ),
+                ),
+              ],
             );
           }
 
@@ -278,11 +303,13 @@ class _NoteListState extends State<NoteList> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: CustomSearchBar(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
                     placeholder: 'Search notes',
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value.trim();
                       });
+                      if (value.isEmpty) _searchFocusNode.unfocus();
                     },
                   ),
                 ),

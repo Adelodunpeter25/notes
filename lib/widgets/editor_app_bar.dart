@@ -19,6 +19,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onUndo;
   final VoidCallback onRedo;
   final VoidCallback onDone;
+  final ValueChanged<Note>? onNoteChanged;
 
   const EditorAppBar({
     super.key,
@@ -31,6 +32,7 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onUndo,
     required this.onRedo,
     required this.onDone,
+    this.onNoteChanged,
   });
 
   @override
@@ -123,9 +125,15 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
               ),
               title: Text(note.isPinned ? 'Unpin Note' : 'Pin Note'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                services.noteService.pinNote(note, !note.isPinned);
+                await services.noteService.pinNote(note, !note.isPinned);
+                if (onNoteChanged != null) {
+                  final fresh = await (services.db.select(services.db.notes)
+                        ..where((t) => t.id.equals(note.id)))
+                      .getSingle();
+                  onNoteChanged!(fresh);
+                }
               },
             ),
             ListTile(
@@ -145,6 +153,12 @@ class EditorAppBar extends StatelessWidget implements PreferredSizeWidget {
                   );
                   if (result != null && result.confirmed) {
                     await services.noteService.moveNoteToFolder(note, result.folder?.id);
+                    if (onNoteChanged != null) {
+                      final fresh = await (services.db.select(services.db.notes)
+                            ..where((t) => t.id.equals(note.id)))
+                          .getSingle();
+                      onNoteChanged!(fresh);
+                    }
                   }
                 }
               },

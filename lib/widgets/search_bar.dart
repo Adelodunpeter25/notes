@@ -3,12 +3,14 @@ import '../theme.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String placeholder;
   final ValueChanged<String>? onChanged;
 
   const CustomSearchBar({
     super.key,
     this.controller,
+    this.focusNode,
     required this.placeholder,
     this.onChanged,
   });
@@ -17,6 +19,7 @@ class CustomSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoSearchTextField(
       controller: controller,
+      focusNode: focusNode,
       placeholder: placeholder,
       style: TextStyle(
         color: AppTextColors.primary(context),
