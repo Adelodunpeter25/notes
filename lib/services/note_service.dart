@@ -77,4 +77,8 @@ class NoteService {
   Future<int> emptyTrash(String userId) {
     return noteDao.emptyTrash(userId);
   }
+
+  Future<int> deleteNotePermanently(Note note) {
+    return noteDao.deleteNotePermanently(note);
+  }
 }
