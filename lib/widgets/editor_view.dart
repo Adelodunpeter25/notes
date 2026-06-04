@@ -130,8 +130,6 @@ class _EditorViewState extends State<EditorView> {
     return '${date.day} ${months[date.month - 1]} ${date.year} at $hour:$minute $ampm';
   }
 
-  bool get _isKeyboardVisible => MediaQuery.of(context).viewInsets.bottom > 0;
-
   Future<void> _handleBack() async {
     await _saveNow();
     widget.onBack();
