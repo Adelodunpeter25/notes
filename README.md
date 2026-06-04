@@ -7,13 +7,13 @@ A minimal, offline-first note-taking app with real-time sync across devices.
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │  Flutter App  │◄───►│  Fastify API  │◄───►│  PostgreSQL   │
-│  (Drift/FTS5) │     │  (Bun + Drizzle)│    │              │
+│ (Drift / FTS5)│     │  (Bun + Drizzle)│    │              │
 └──────────────┘     └──────────────┘     └──────────────┘
-       ▲
-       │  (planned)
-┌──────┴───────┐
-│  macOS App    │
-│  (Swift/SwiftUI)│
+       ▲                     ▲
+       │                     │
+┌──────┴───────┐             │
+│  macOS App    │◄────────────┘
+│ (SQLite/FTS5) │
 └──────────────┘
 ```
 
