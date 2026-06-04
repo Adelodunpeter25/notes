@@ -327,6 +327,7 @@ class _NoteListState extends State<NoteList> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(CupertinoIcons.add, size: 28),
+                )
               : null,
         );
   }
