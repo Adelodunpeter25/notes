@@ -52,6 +52,11 @@ public final class StorageService {
         return mapFolder(row)
     }
     
+    public func deleteFolder(id: String) -> Bool {
+        let sql = "DELETE FROM folders WHERE id = ?;"
+        return db.execute(sql: sql, params: [id])
+    }
+    
     // MARK: - Notes
     
     public func insertNote(_ note: DBNote) -> Bool {

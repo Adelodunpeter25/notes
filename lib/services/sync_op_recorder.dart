@@ -46,6 +46,8 @@ class SyncOpRecorder {
   Future<void> folderRenamed(Folder f) => _upsertFolder(f);
   Future<void> folderSoftDeleted(Folder f) => _upsertFolder(f);
   Future<void> folderRestored(Folder f) => _upsertFolder(f);
+  Future<void> folderHardDeleted(Folder f) =>
+      _record('delete', 'folder', f.id, jsonEncode({'id': f.id, 'userId': f.userId, 'hard': true}), DateTime.now());
 
   Future<void> _upsertFolder(Folder f) =>
       _record('upsert', 'folder', f.id, _folderPayload(f), DateTime.now());

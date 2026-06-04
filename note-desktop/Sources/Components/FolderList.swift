@@ -225,7 +225,7 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
             actionTitle: "Delete"
         ) { [weak self] in
             guard let self = self else { return }
-            if self.folderService.softDeleteFolder(folder) {
+            if self.folderService.deleteFolder(folder) {
                 self.reloadData()
                 self.onSelectionChanged?(.allNotes)
             }

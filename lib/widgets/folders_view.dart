@@ -282,7 +282,7 @@ class _FoldersViewState extends State<FoldersView> {
                 isDestructive: true,
               );
               if (confirmed) {
-                await services.folderService.softDeleteFolder(fc.folder);
+                await services.folderService.deleteFolder(fc.folder);
               }
             },
           ),

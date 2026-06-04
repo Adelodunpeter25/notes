@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
@@ -37,18 +36,10 @@ class FolderService {
     await _recorder.folderRenamed(updated);
   }
 
-  Future softDeleteFolder(Folder folder) async {
+  Future deleteFolder(Folder folder) async {
     // Move child notes back to root first, otherwise they'd be invisible
-    // (still referencing a folder that's now marked deleted).
     await noteService.clearFolderFromNotes(folder.id);
-    final updated = folder.copyWith(deletedAt: Value(DateTime.now()));
-    await folderDao.updateFolder(updated);
-    await _recorder.folderSoftDeleted(updated);
-  }
-
-  Future restoreFolder(Folder folder) async {
-    final updated = folder.copyWith(deletedAt: const Value(null));
-    await folderDao.updateFolder(updated);
-    await _recorder.folderRestored(updated);
+    await folderDao.deleteFolder(folder);
+    await _recorder.folderHardDeleted(folder);
   }
 }

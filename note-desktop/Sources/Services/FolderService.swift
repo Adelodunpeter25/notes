@@ -28,22 +28,11 @@ public final class FolderService {
         return true
     }
     
-    public func softDeleteFolder(_ folder: DBFolder) -> Bool {
-        // Move child notes back to root first, otherwise they'd be invisible
+    public func deleteFolder(_ folder: DBFolder) -> Bool {
+        // Move child notes back to root first
         _ = storage.clearFolderFromNotes(folderId: folder.id)
-        
-        var updated = folder
-        updated.deletedAt = Date()
-        guard storage.updateFolder(updated) else { return false }
-        _ = recorder.folderSoftDeleted(updated)
-        return true
-    }
-    
-    public func restoreFolder(_ folder: DBFolder) -> Bool {
-        var updated = folder
-        updated.deletedAt = nil
-        guard storage.updateFolder(updated) else { return false }
-        _ = recorder.folderRestored(updated)
+        guard storage.deleteFolder(id: folder.id) else { return false }
+        _ = recorder.folderHardDeleted(folder)
         return true
     }
 }

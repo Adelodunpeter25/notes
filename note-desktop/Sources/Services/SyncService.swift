@@ -127,10 +127,8 @@ public final class SyncService {
                                     _ = self.storage.updateNote(note)
                                 }
                             } else if entityType == "folder" {
-                                if var folder = self.storage.getFolder(id: entityId) {
-                                    folder.deletedAt = deletedAt
-                                    _ = self.storage.updateFolder(folder)
-                                }
+                                _ = self.storage.clearFolderFromNotes(folderId: entityId)
+                                _ = self.storage.deleteFolder(id: entityId)
                             }
                         }
                     }

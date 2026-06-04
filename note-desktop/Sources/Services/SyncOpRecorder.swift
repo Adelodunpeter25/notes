@@ -71,6 +71,16 @@ public final class SyncOpRecorder {
         return record(opType: "upsert", entityType: "folder", entityId: folder.id, payload: try? JSONEncoder().encode(folder), updatedAt: Date())
     }
     
+    public func folderHardDeleted(_ folder: DBFolder) -> Bool {
+        struct DeletePayload: Codable {
+            let id: String
+            let userId: String
+            let hard: Bool
+        }
+        let payload = DeletePayload(id: folder.id, userId: folder.userId, hard: true)
+        return record(opType: "delete", entityType: "folder", entityId: folder.id, payload: try? JSONEncoder().encode(payload), updatedAt: Date())
+    }
+    
     // MARK: - Helpers
     
     private func record(opType: String, entityType: String, entityId: String, payload: Data?, updatedAt: Date) -> Bool {

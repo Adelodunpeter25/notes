@@ -202,9 +202,7 @@ class NoteCard extends StatelessWidget {
               title: const Text('Move to Folder...'),
               onTap: () async {
                 Navigator.pop(context);
-                final folders = await (services.db.select(services.db.folders)
-                      ..where((t) => t.deletedAt.isNull()))
-                    .get();
+                final folders = await services.db.select(services.db.folders).get();
                 if (context.mounted) {
                   final currentFolder = folders.where((f) => f.id == note.folderId).firstOrNull;
                   final result = await DialogUtils.showFolderSelectionSheet(

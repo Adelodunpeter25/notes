@@ -160,6 +160,7 @@ class FolderDao extends DatabaseAccessor<AppDatabase> with _$FolderDaoMixin {
 
   Future<int> insertFolder(FoldersCompanion entry) => into(folders).insert(entry);
   Future updateFolder(Folder entry) => update(folders).replace(entry);
+  Future<int> deleteFolder(Folder entry) => (delete(folders)..where((t) => t.id.equals(entry.id))).go();
 }
 
 class FolderWithCount {

@@ -131,9 +131,10 @@ class SyncService {
           );
           await db.deleteNoteFts(entityId);
         } else if (entityType == 'folder') {
-          await (db.update(db.folders)..where((t) => t.id.equals(entityId))).write(
-            FoldersCompanion(deletedAt: Value(deletedAt)),
+          await (db.update(db.notes)..where((t) => t.folderId.equals(entityId))).write(
+            const NotesCompanion(folderId: Value(null)),
           );
+          await (db.delete(db.folders)..where((t) => t.id.equals(entityId))).go();
         }
       }
     } catch (e, stackTrace) {
