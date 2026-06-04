@@ -12,7 +12,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     private let noteService: NoteService
     private let storage: StorageService
     
-    private let searchField = NSSearchField()
+    private let searchField = SearchField()
     private let tableView = NSTableView()
     private let scrollView = NSScrollView()
     private let headerLabel = NSTextField(labelWithString: "All Notes")
@@ -23,6 +23,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     private var rowItems: [RowItem] = []
     
     private var userId: String = ""
+    private var isTrashSelected = false
     
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
@@ -72,10 +73,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         titleStack.addArrangedSubview(addNoteButton)
         
         // 2. Search Field
-        searchField.placeholderString = "Search notes"
         searchField.delegate = self
-        searchField.sendsWholeSearchString = false
-        searchField.sendsSearchStringImmediately = true
         
         // 3. Table View
         tableView.dataSource = self
@@ -128,7 +126,19 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         self.allNotes = notes
         self.userId = userId
         self.headerLabel.stringValue = title
+        self.isTrashSelected = (title == "Trash")
+        updateHeaderButtonState()
         filterNotes()
+    }
+    
+    private func updateHeaderButtonState() {
+        if isTrashSelected {
+            addNoteButton.image = NSImage(systemSymbolName: "trash.slash", accessibilityDescription: "Empty Trash")
+            addNoteButton.toolTip = "Empty Trash"
+        } else {
+            addNoteButton.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
+            addNoteButton.toolTip = "New Note"
+        }
     }
     
     public func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -194,7 +204,20 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     // MARK: - Actions
     @objc private func addButtonTapped() {
-        onAddNoteTapped?()
+        if isTrashSelected {
+            ConfirmDialog.show(
+                title: "Empty Trash",
+                message: "Are you sure you want to permanently delete all notes in the Trash?",
+                actionTitle: "Empty Trash"
+            ) { [weak self] in
+                guard let self = self else { return }
+                if self.noteService.emptyTrash(userId: self.userId) {
+                    self.onNoteSelected?(nil)
+                }
+            }
+        } else {
+            onAddNoteTapped?()
+        }
     }
     
     @objc private func contextPinTapped() {
