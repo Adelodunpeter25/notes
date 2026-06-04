@@ -2,25 +2,16 @@ import Foundation
 
 public final class SyncService {
     private let storage: StorageService
-    private let baseUrl: URL
-    private var token: String?
+    private let api: ApiService
     
     private let cursorKey = "sync_cursor"
     
-    public init(storage: StorageService, baseUrlString: String, token: String? = nil) {
+    public init(storage: StorageService, api: ApiService) {
         self.storage = storage
-        guard let url = URL(string: baseUrlString) else {
-            fatalError("Invalid API base URL")
-        }
-        self.baseUrl = url
-        self.token = token
+        self.api = api
     }
     
-    public func setToken(_ token: String?) {
-        self.token = token
-    }
-    
-    /// Synchronizes the local database with the remote sync server using URLSession.
+    /// Synchronizes the local database with the remote sync server using ApiService.
     public func syncData(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
         // 1. Retrieve the last sync cursor from UserDefaults
         let cursor = UserDefaults.standard.string(forKey: cursorKey)
@@ -53,120 +44,102 @@ public final class SyncService {
             "ops": opsPayload
         ]
         
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: requestBody, options: []) else {
-            completion(.failure(NSError(domain: "SyncService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to encode sync request body"])))
-            return
-        }
-        
-        let syncURL = baseUrl.appendingPathComponent("sync")
-        var request = URLRequest(url: syncURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = bodyData
-        
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        api.post(path: "sync", body: requestBody) { [weak self] result in
             guard let self = self else { return }
             
-            if let error = error {
+            switch result {
+            case .failure(let error):
                 completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200, let data = data else {
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                completion(.failure(NSError(domain: "SyncService", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Sync request failed with status code: \(statusCode)"])))
-                return
-            }
-            
-            do {
-                guard let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-                    completion(.failure(NSError(domain: "SyncService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON response from server"])))
+            case .success(let (statusCode, data)):
+                guard statusCode == 200 else {
+                    completion(.failure(NSError(domain: "SyncService", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Sync request failed with status code: \(statusCode)"])))
                     return
                 }
                 
-                // 3. Clear processed local mutations returned by the server
-                if let processedIds = jsonResponse["processedOpIds"] as? [String], !processedIds.isEmpty {
-                    _ = self.storage.deleteSyncOps(ids: processedIds)
-                }
-                
-                // 4. Update the sync cursor in UserDefaults
-                if let nextCursor = jsonResponse["nextCursor"] as? String {
-                    UserDefaults.standard.set(nextCursor, forKey: self.cursorKey)
-                }
-                
-                // 5. Apply incoming folder modifications (folders first due to FK constraints)
-                if let folders = jsonResponse["folders"] as? [[String: Any]] {
-                    for f in folders {
-                        guard let id = f["id"] as? String,
-                              let name = f["name"] as? String,
-                              let uid = f["userId"] as? String else { continue }
-                        let deletedAt = (f["deletedAt"] as? String).flatMap { TimeUtils.dateFromString($0) }
-                        let folder = DBFolder(id: id, name: name, userId: uid, deletedAt: deletedAt)
-                        _ = self.storage.insertFolder(folder)
+                do {
+                    guard let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                        completion(.failure(NSError(domain: "SyncService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON response from server"])))
+                        return
                     }
-                }
-                
-                // 6. Apply incoming note modifications
-                if let notes = jsonResponse["notes"] as? [[String: Any]] {
-                    for n in notes {
-                        guard let id = n["id"] as? String,
-                              let uid = n["userId"] as? String else { continue }
-                        let title = n["title"] as? String ?? ""
-                        let content = n["content"] as? String ?? ""
-                        let isPinned = (n["isPinned"] as? Bool) ?? ((n["isPinned"] as? Int) != 0)
-                        let folderId = n["folderId"] as? String
-                        
-                        let createdAt = (n["createdAt"] as? String).flatMap { TimeUtils.dateFromString($0) } ?? Date()
-                        let updatedAt = (n["updatedAt"] as? String).flatMap { TimeUtils.dateFromString($0) } ?? Date()
-                        let deletedAt = (n["deletedAt"] as? String).flatMap { TimeUtils.dateFromString($0) }
-                        
-                        let note = DBNote(
-                            id: id,
-                            title: title,
-                            content: content,
-                            createdAt: createdAt,
-                            updatedAt: updatedAt,
-                            isPinned: isPinned,
-                            folderId: folderId,
-                            userId: uid,
-                            deletedAt: deletedAt
-                        )
-                        _ = self.storage.insertNote(note)
+                    
+                    // 3. Clear processed local mutations returned by the server
+                    if let processedIds = jsonResponse["processedOpIds"] as? [String], !processedIds.isEmpty {
+                        _ = self.storage.deleteSyncOps(ids: processedIds)
                     }
-                }
-                
-                // 7. Process hard/soft delete tombstones
-                if let deleted = jsonResponse["deleted"] as? [[String: Any]] {
-                    for d in deleted {
-                        guard let entityId = d["entityId"] as? String,
-                              let entityType = d["entityType"] as? String,
-                              let deletedAtStr = d["deletedAt"] as? String,
-                              let deletedAt = TimeUtils.dateFromString(deletedAtStr) else { continue }
-                        
-                        if entityType == "note" {
-                            if var note = self.storage.getNote(id: entityId) {
-                                note.deletedAt = deletedAt
-                                _ = self.storage.updateNote(note)
-                            }
-                        } else if entityType == "folder" {
-                            if var folder = self.storage.getFolder(id: entityId) {
-                                folder.deletedAt = deletedAt
-                                _ = self.storage.updateFolder(folder)
+                    
+                    // 4. Update the sync cursor in UserDefaults
+                    if let nextCursor = jsonResponse["nextCursor"] as? String {
+                        UserDefaults.standard.set(nextCursor, forKey: self.cursorKey)
+                    }
+                    
+                    // 5. Apply incoming folder modifications (folders first due to FK constraints)
+                    if let folders = jsonResponse["folders"] as? [[String: Any]] {
+                        for f in folders {
+                            guard let id = f["id"] as? String,
+                                  let name = f["name"] as? String,
+                                  let uid = f["userId"] as? String else { continue }
+                            let deletedAt = (f["deletedAt"] as? String).flatMap { TimeUtils.dateFromString($0) }
+                            let folder = DBFolder(id: id, name: name, userId: uid, deletedAt: deletedAt)
+                            _ = self.storage.insertFolder(folder)
+                        }
+                    }
+                    
+                    // 6. Apply incoming note modifications
+                    if let notes = jsonResponse["notes"] as? [[String: Any]] {
+                        for n in notes {
+                            guard let id = n["id"] as? String,
+                                  let uid = n["userId"] as? String else { continue }
+                            let title = n["title"] as? String ?? ""
+                            let content = n["content"] as? String ?? ""
+                            let isPinned = (n["isPinned"] as? Bool) ?? ((n["isPinned"] as? Int) != 0)
+                            let folderId = n["folderId"] as? String
+                            
+                            let createdAt = (n["createdAt"] as? String).flatMap { TimeUtils.dateFromString($0) } ?? Date()
+                            let updatedAt = (n["updatedAt"] as? String).flatMap { TimeUtils.dateFromString($0) } ?? Date()
+                            let deletedAt = (n["deletedAt"] as? String).flatMap { TimeUtils.dateFromString($0) }
+                            
+                            let note = DBNote(
+                                id: id,
+                                title: title,
+                                content: content,
+                                createdAt: createdAt,
+                                updatedAt: updatedAt,
+                                isPinned: isPinned,
+                                folderId: folderId,
+                                userId: uid,
+                                deletedAt: deletedAt
+                            )
+                            _ = self.storage.insertNote(note)
+                        }
+                    }
+                    
+                    // 7. Process hard/soft delete tombstones
+                    if let deleted = jsonResponse["deleted"] as? [[String: Any]] {
+                        for d in deleted {
+                            guard let entityId = d["entityId"] as? String,
+                                  let entityType = d["entityType"] as? String,
+                                  let deletedAtStr = d["deletedAt"] as? String,
+                                  let deletedAt = TimeUtils.dateFromString(deletedAtStr) else { continue }
+                            
+                            if entityType == "note" {
+                                if var note = self.storage.getNote(id: entityId) {
+                                    note.deletedAt = deletedAt
+                                    _ = self.storage.updateNote(note)
+                                }
+                            } else if entityType == "folder" {
+                                if var folder = self.storage.getFolder(id: entityId) {
+                                    folder.deletedAt = deletedAt
+                                    _ = self.storage.updateFolder(folder)
+                                }
                             }
                         }
                     }
+                    
+                    completion(.success(()))
+                } catch {
+                    completion(.failure(error))
                 }
-                
-                completion(.success(()))
-            } catch {
-                completion(.failure(error))
             }
         }
-        
-        task.resume()
     }
 }
