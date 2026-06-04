@@ -102,7 +102,7 @@ class _FoldersViewState extends State<FoldersView> {
                       builder: (context, snapshot) {
                         final count = snapshot.data ?? 0;
                         return _FolderCard(
-                          icon: CupertinoIcons.doc_text_fill,
+                          icon: CupertinoIcons.folder,
                           iconColor: AppColors.accent,
                           title: 'All Notes',
                           count: count,
@@ -153,7 +153,7 @@ class _FoldersViewState extends State<FoldersView> {
                       builder: (context, snapshot) {
                         final count = snapshot.data ?? 0;
                         return _FolderCard(
-                          icon: CupertinoIcons.trash_fill,
+                          icon: CupertinoIcons.trash,
                           iconColor: AppColors.destructive,
                           title: 'Trash',
                           count: count,
@@ -320,7 +320,7 @@ class _FolderCard extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
               if (icon != null) ...[
