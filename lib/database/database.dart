@@ -43,12 +43,36 @@ class Notes extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Users, Folders, Notes], daos: [NoteDao, FolderDao])
+/// Queue of local mutations waiting to be pushed to the server.
+/// Each row is one op; the sync service drains the table on a successful push.
+class SyncOps extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get opType => text()();        // create | update | delete
+  TextColumn get entityType => text()();    // note | folder
+  TextColumn get entityId => text()();
+  TextColumn get payload => text()();       // JSON-serialized entity snapshot
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [Users, Folders, Notes, SyncOps], daos: [NoteDao, FolderDao, SyncOpDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onUpgrade: (m, from, to) async {
+        // Drop-and-recreate is fine for a local-only cache DB. Any ops that
+        // hadn't been pushed yet are lost, but the local entities remain.
+        if (from < 2) {
+          await m.createTable(syncOps);
+        }
+      },
+    );
+  }
 }
 
 LazyDatabase _openConnection() {

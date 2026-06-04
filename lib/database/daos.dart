@@ -118,3 +118,45 @@ class FolderWithCount {
 
   FolderWithCount(this.folder, this.noteCount);
 }
+
+/// Queue for local mutations pending push to the server.
+///
+/// Each row is one op; rows are drained FIFO by [pullPending] and removed by
+/// [deleteOps] once the server acks them.
+@DriftAccessor(tables: [SyncOps])
+class SyncOpDao extends DatabaseAccessor<AppDatabase> with _$SyncOpDaoMixin {
+  SyncOpDao(super.db);
+
+  Future<int> insertOp({
+    required String opType,
+    required String entityType,
+    required String entityId,
+    required String payload,
+  }) {
+    return into(syncOps).insert(SyncOpsCompanion.insert(
+      opType: opType,
+      entityType: entityType,
+      entityId: entityId,
+      payload: payload,
+    ));
+  }
+
+  /// Returns all pending ops ordered by insertion time.
+  Future<List<SyncOp>> pullPending() {
+    return (select(syncOps)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .get();
+  }
+
+  /// Remove the ops whose ids were acked by the server.
+  Future<int> deleteOps(List<int> ids) {
+    if (ids.isEmpty) return Future.value(0);
+    return (delete(syncOps)..where((t) => t.id.isIn(ids))).go();
+  }
+
+  Future<int> countPending() {
+    return customSelect(
+      'SELECT COUNT(*) AS cnt FROM sync_ops',
+      readsFrom: {syncOps},
+    ).get().then((rows) => rows.first.read<int>('cnt'));
+  }
+}

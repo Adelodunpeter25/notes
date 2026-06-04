@@ -6,6 +6,7 @@ import 'services/auth.dart';
 import 'services/folder_service.dart';
 import 'services/note_service.dart';
 import 'services/sync_service.dart';
+import 'services/sync_op_recorder.dart';
 import 'layouts/layout.dart';
 import 'pages/auth_page.dart';
 import 'widgets/service_provider.dart';
@@ -17,9 +18,11 @@ void main() async {
   final db = AppDatabase();
   final api = ApiService();
   final auth = AuthService(db, api);
-  final noteService = NoteService(NoteDao(db));
-  final folderService = FolderService(FolderDao(db), noteService);
-  final syncService = SyncService(db, api);
+  final syncOpDao = SyncOpDao(db);
+  final recorder = SyncOpRecorder(syncOpDao);
+  final noteService = NoteService(NoteDao(db), recorder);
+  final folderService = FolderService(FolderDao(db), noteService, recorder);
+  final syncService = SyncService(db, api, syncOpDao);
   
   // Check session persistence
   final token = await auth.getSessionToken();

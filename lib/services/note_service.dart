@@ -2,12 +2,14 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
+import 'sync_op_recorder.dart';
 
 class NoteService {
   final NoteDao noteDao;
+  final SyncOpRecorder _recorder;
   final _uuid = const Uuid();
 
-  NoteService(this.noteDao);
+  NoteService(this.noteDao, this._recorder);
 
   Stream<List<Note>> watchAllNotes(String userId) {
     return noteDao.watchAllNotes(userId);
@@ -67,34 +69,50 @@ class NoteService {
         isPinned: const Value(false),
       ),
     );
+    await _recorder.noteCreated(note);
     return note;
   }
 
-  Future updateNote(Note note) {
-    return noteDao.updateNote(note);
+  Future updateNote(Note note) async {
+    await noteDao.updateNote(note);
+    await _recorder.noteUpdated(note);
   }
 
-  Future pinNote(Note note, bool isPinned) {
-    return noteDao.updateNote(note.copyWith(isPinned: isPinned));
+  Future pinNote(Note note, bool isPinned) async {
+    final updated = note.copyWith(isPinned: isPinned);
+    await noteDao.updateNote(updated);
+    await _recorder.notePinned(updated);
   }
 
-  Future softDeleteNote(Note note) {
-    return noteDao.updateNote(note.copyWith(deletedAt: Value(DateTime.now())));
+  Future softDeleteNote(Note note) async {
+    final updated = note.copyWith(deletedAt: Value(DateTime.now()));
+    await noteDao.updateNote(updated);
+    await _recorder.noteSoftDeleted(updated);
   }
 
-  Future restoreNote(Note note) {
-    return noteDao.updateNote(note.copyWith(deletedAt: const Value(null)));
+  Future restoreNote(Note note) async {
+    final updated = note.copyWith(deletedAt: const Value(null));
+    await noteDao.updateNote(updated);
+    await _recorder.noteRestored(updated);
   }
 
-  Future moveNoteToFolder(Note note, String? folderId) {
-    return noteDao.updateNote(note.copyWith(folderId: Value(folderId)));
+  Future moveNoteToFolder(Note note, String? folderId) async {
+    final updated = note.copyWith(folderId: Value(folderId));
+    await noteDao.updateNote(updated);
+    await _recorder.noteMoved(updated);
   }
 
-  Future<int> emptyTrash(String userId) {
-    return noteDao.emptyTrash(userId);
+  Future<int> emptyTrash(String userId) async {
+    final count = await noteDao.emptyTrash(userId);
+    if (count > 0) {
+      await _recorder.noteEmptyTrash(userId);
+    }
+    return count;
   }
 
-  Future<int> deleteNotePermanently(Note note) {
-    return noteDao.deleteNotePermanently(note);
+  Future<int> deleteNotePermanently(Note note) async {
+    final count = await noteDao.deleteNotePermanently(note);
+    await _recorder.noteHardDeleted(note);
+    return count;
   }
 }
