@@ -11,7 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let recorder = SyncOpRecorder(storage: storageService)
         let apiService = ApiService()
         let authService = AuthService(storage: storageService, api: apiService)
-        let noteService = NoteService(storage: storageService, recorder: recorder)
+        let searchService = SearchService(database: database)
+        let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
         
         // 2. Setup macOS Window
@@ -55,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
         
         setupMenu()
     }
@@ -94,6 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 // Start NSApplication runloop
 let app = NSApplication.shared
+app.setActivationPolicy(.regular)
 let delegate = AppDelegate()
 app.delegate = delegate
 app.run()

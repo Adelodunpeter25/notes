@@ -3,10 +3,16 @@ import Foundation
 public final class NoteService {
     private let storage: StorageService
     private let recorder: SyncOpRecorder
+    private let searchService: SearchService
     
-    public init(storage: StorageService, recorder: SyncOpRecorder) {
+    public init(storage: StorageService, recorder: SyncOpRecorder, searchService: SearchService) {
         self.storage = storage
         self.recorder = recorder
+        self.searchService = searchService
+    }
+    
+    public func searchNotes(query: String, userId: String) -> [DBNote] {
+        return searchService.searchNotes(query: query, userId: userId)
     }
     
     public func createNote(title: String, content: String, userId: String, folderId: String? = nil) -> DBNote? {

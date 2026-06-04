@@ -124,7 +124,7 @@ public final class MainSplitViewController: NSSplitViewController {
             title = "Trash"
         }
         
-        noteList.setNotes(notes, title: title)
+        noteList.setNotes(notes, title: title, userId: userId)
         
         if let selectedId = retainSelectedNoteId {
             if let matchedNote = notes.first(where: { $0.id == selectedId }) {

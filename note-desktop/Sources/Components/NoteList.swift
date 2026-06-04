@@ -22,6 +22,8 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     private var filteredNotes: [DBNote] = []
     private var rowItems: [RowItem] = []
     
+    private var userId: String = ""
+    
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
     
@@ -124,8 +126,9 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     // MARK: - Public Interface
-    public func setNotes(_ notes: [DBNote], title: String) {
+    public func setNotes(_ notes: [DBNote], title: String, userId: String) {
         self.allNotes = notes
+        self.userId = userId
         self.headerLabel.stringValue = title
         filterNotes()
     }
@@ -146,15 +149,11 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     // MARK: - Search
     private func filterNotes() {
-        let query = searchField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let query = searchField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         if query.isEmpty {
             filteredNotes = allNotes
         } else {
-            filteredNotes = allNotes.filter { note in
-                let titleMatch = note.title.lowercased().contains(query)
-                let contentMatch = note.content.lowercased().contains(query)
-                return titleMatch || contentMatch
-            }
+            filteredNotes = noteService.searchNotes(query: query, userId: userId)
         }
         updateRowItems()
     }
