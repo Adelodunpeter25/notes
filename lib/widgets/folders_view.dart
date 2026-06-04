@@ -28,6 +28,24 @@ class _FoldersViewState extends State<FoldersView> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
+  Stream<int>? _allCountStream;
+  Stream<int>? _trashCountStream;
+  Stream<Map<String, int>>? _perFolderStream;
+  String? _cachedUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final userId = widget.userId;
+    if (_cachedUserId != userId) {
+      _cachedUserId = userId;
+      final services = ServiceProvider.of(context);
+      _allCountStream = services.noteService.watchAllNotesCount(userId);
+      _trashCountStream = services.noteService.watchTrashNotesCount(userId);
+      _perFolderStream = services.noteService.watchPerFolderCounts(userId);
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -43,10 +61,9 @@ class _FoldersViewState extends State<FoldersView> {
       return fc.folder.name.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    // Reactive counts: single SQL COUNT(*) each, emitted only when notes change.
-    final allCountStream = services.noteService.watchAllNotesCount(widget.userId);
-    final trashCountStream = services.noteService.watchTrashNotesCount(widget.userId);
-    final perFolderStream = services.noteService.watchPerFolderCounts(widget.userId);
+    final allCountStream = _allCountStream!;
+    final trashCountStream = _trashCountStream!;
+    final perFolderStream = _perFolderStream!;
 
     return Scaffold(
       backgroundColor: AppSurfaces.background(context),
