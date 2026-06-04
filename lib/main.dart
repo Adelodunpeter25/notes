@@ -16,7 +16,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   final db = AppDatabase();
-  await db.rebuildNoteFts();
   final api = ApiService();
   final auth = AuthService(db, api);
   final syncOpDao = SyncOpDao(db);

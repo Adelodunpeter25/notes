@@ -13,7 +13,7 @@ A minimal, offline-first note-taking app with real-time sync across devices.
        │                     │
 ┌──────┴───────┐             │
 │  macOS App    │◄────────────┘
-│ (SQLite/FTS5) │
+│ (Swift/SQLite) │
 └──────────────┘
 ```
 
@@ -39,7 +39,7 @@ A minimal, offline-first note-taking app with real-time sync across devices.
 - Three-pane split view (folders / note list / editor) with context menus, search, and inline rename
 - Local SQLite persistence with FTS5 search (same schema as the mobile app)
 - Shared AppFlowy JSON content format — notes are cross-compatible with the mobile app
-- Auth, note/folder CRUD, trash, pin, and sync op recording — all wired up end-to-end
+- Auth, note/folder CRUD, trash, pin, and sync op recording
 
 ## Sync Protocol
 
