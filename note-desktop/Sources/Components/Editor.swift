@@ -17,7 +17,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
     private var store: BlockStore?
     private var coordinator: NoteDocumentCoordinator?
     
-    public var onNoteUpdated: ((DBNote) -> Void)?
+    public var onNoteUpdated: ((DBNote?) -> Void)?
     
     public init(noteService: NoteService) {
         self.noteService = noteService
@@ -169,9 +169,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
                 self?.coordinator = nil
                 self?.textView.string = ""
                 self?.headerLabel.stringValue = ""
-                if let active = self?.activeNote {
-                    self?.onNoteUpdated?(active)
-                }
+                self?.onNoteUpdated?(nil)
             }
         }
     }

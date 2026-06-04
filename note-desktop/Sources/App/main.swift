@@ -1,5 +1,6 @@
 import AppKit
 import NoteKit
+import NoteCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow!

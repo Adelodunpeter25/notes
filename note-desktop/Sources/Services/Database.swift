@@ -16,6 +16,13 @@ public final class Database {
     }
     
     private func openDatabase(name: String) {
+        if name == ":memory:" {
+            if sqlite3_open(":memory:", &dbPointer) != SQLITE_OK {
+                fatalError("Unable to open in-memory database")
+            }
+            return
+        }
+        
         let fileManager = FileManager.default
         guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             fatalError("Unable to access Application Support directory")
@@ -111,11 +118,12 @@ public final class Database {
     }
     
     private func bind(params: [Any], to statement: OpaquePointer?) {
+        let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
         for (index, param) in params.enumerated() {
             let bindIndex = Int32(index + 1)
             
             if let string = param as? String {
-                sqlite3_bind_text(statement, bindIndex, string, -1, nil)
+                sqlite3_bind_text(statement, bindIndex, string, -1, SQLITE_TRANSIENT)
             } else if let int = param as? Int {
                 sqlite3_bind_int64(statement, bindIndex, Int64(int))
             } else if let double = param as? Double {
@@ -125,7 +133,7 @@ public final class Database {
             } else if param is NSNull {
                 sqlite3_bind_null(statement, bindIndex)
             } else {
-                sqlite3_bind_text(statement, bindIndex, "\(param)", -1, nil)
+                sqlite3_bind_text(statement, bindIndex, "\(param)", -1, SQLITE_TRANSIENT)
             }
         }
     }

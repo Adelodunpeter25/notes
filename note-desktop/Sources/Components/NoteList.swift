@@ -27,6 +27,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
+    public var onNoteUpdated: ((DBNote?) -> Void)?
     
     // MARK: - Initializer
     public init(noteService: NoteService, storage: StorageService) {
@@ -213,6 +214,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
                 guard let self = self else { return }
                 if self.noteService.emptyTrash(userId: self.userId) {
                     self.onNoteSelected?(nil)
+                    self.onNoteUpdated?(nil)
                 }
             }
         } else {
@@ -225,9 +227,12 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         guard clickedRow != -1,
               case .note(let note) = rowItems[clickedRow] else { return }
         
-        _ = noteService.pinNote(note, isPinned: !note.isPinned)
-        // Parent view controller will reload data through model sync
-        onNoteSelected?(note)
+        let newPinState = !note.isPinned
+        if noteService.pinNote(note, isPinned: newPinState) {
+            var updated = note
+            updated.isPinned = newPinState
+            onNoteUpdated?(updated)
+        }
     }
     
     @objc private func contextDeleteTapped() {
@@ -238,14 +243,19 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         if note.deletedAt != nil {
             // Hard delete
             ConfirmDialog.show(title: "Delete Permanently", message: "Are you sure you want to permanently delete this note?") { [weak self] in
-                if self?.noteService.deleteNotePermanently(note) == true {
-                    self?.onNoteSelected?(nil)
+                guard let self = self else { return }
+                if self.noteService.deleteNotePermanently(note) {
+                    self.onNoteSelected?(nil)
+                    self.onNoteUpdated?(nil)
                 }
             }
         } else {
             // Soft delete
             if noteService.softDeleteNote(note) {
-                onNoteSelected?(nil)
+                self.onNoteSelected?(nil)
+                var updated = note
+                updated.deletedAt = Date()
+                onNoteUpdated?(updated)
             }
         }
     }
@@ -257,7 +267,10 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
               note.deletedAt != nil else { return }
         
         if noteService.restoreNote(note) {
-            onNoteSelected?(note)
+            var updated = note
+            updated.deletedAt = nil
+            onNoteSelected?(updated)
+            onNoteUpdated?(updated)
         }
     }
     

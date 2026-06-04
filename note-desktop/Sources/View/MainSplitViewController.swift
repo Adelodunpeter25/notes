@@ -96,8 +96,15 @@ public final class MainSplitViewController: NSSplitViewController {
         editor.onNoteUpdated = { [weak self] updatedNote in
             guard let self = self else { return }
             // Reload list items to refresh title/snippet in real-time
-            self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote.id)
+            self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             // Update folder badge counts since note counts changed
+            self.folderList.reloadData()
+        }
+        
+        // Note List update events (pin, delete, restore, empty trash)
+        noteList.onNoteUpdated = { [weak self] updatedNote in
+            guard let self = self else { return }
+            self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             self.folderList.reloadData()
         }
     }
