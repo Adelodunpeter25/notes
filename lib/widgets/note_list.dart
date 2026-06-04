@@ -94,9 +94,26 @@ class _NoteListState extends State<NoteList> {
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(CupertinoIcons.line_horizontal_3),
+              icon: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    CupertinoIcons.chevron_left,
+                    color: AppColors.accent,
+                    size: 20,
+                  ),
+                  Text(
+                    'Folders',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
               onPressed: widget.onMenuPressed,
             ),
+            leadingWidth: 100,
             title: Text(
               widget.folderName,
               style: TextStyle(
