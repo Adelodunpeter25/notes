@@ -118,10 +118,8 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         ])
         
         // Context menu setup
-        let menu = NSMenu()
-        menu.addItem(withTitle: "Pin / Unpin Note", action: #selector(contextPinTapped), keyEquivalent: "")
-        menu.addItem(withTitle: "Move to Trash", action: #selector(contextDeleteTapped), keyEquivalent: "")
-        menu.addItem(withTitle: "Restore Note", action: #selector(contextRestoreTapped), keyEquivalent: "")
+        let menu = NoteContextMenu(note: nil, target: self, pinAction: #selector(contextPinTapped), deleteAction: #selector(contextDeleteTapped), restoreAction: #selector(contextRestoreTapped))
+        menu.delegate = self
         tableView.menu = menu
     }
     
@@ -131,6 +129,15 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         self.userId = userId
         self.headerLabel.stringValue = title
         filterNotes()
+    }
+    
+    public func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        var rowView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("ThemeRowView"), owner: self) as? ThemeTableRowView
+        if rowView == nil {
+            rowView = ThemeTableRowView(frame: .zero)
+            rowView?.identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
+        }
+        return rowView
     }
     
     public func selectNote(_ note: DBNote?) {
@@ -366,5 +373,28 @@ fileprivate final class NoteCellView: NSTableCellView {
             return "No additional text"
         }
         return remaining.joined(separator: " ")
+    }
+}
+
+extension NoteList: NSMenuDelegate {
+    public func menuNeedsUpdate(_ menu: NSMenu) {
+        let clickedRow = tableView.clickedRow
+        guard clickedRow != -1,
+              case .note(let note) = rowItems[clickedRow],
+              let contextMenu = menu as? NoteContextMenu else {
+            menu.removeAllItems()
+            return
+        }
+        
+        // Dynamically select the right-clicked row for feedback
+        tableView.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
+        
+        contextMenu.update(
+            note: note,
+            target: self,
+            pinAction: #selector(contextPinTapped),
+            deleteAction: #selector(contextDeleteTapped),
+            restoreAction: #selector(contextRestoreTapped)
+        )
     }
 }

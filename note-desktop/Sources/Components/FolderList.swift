@@ -326,11 +326,11 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         
         let iconName: String
         switch node.type {
-        case .allNotes:
-            iconName = "tray"
-        case .folder:
+        case SidebarNode.NodeType.allNotes:
             iconName = "folder"
-        case .trash:
+        case SidebarNode.NodeType.folder:
+            iconName = "folder"
+        case SidebarNode.NodeType.trash:
             iconName = "trash"
         default:
             iconName = "folder"
@@ -342,6 +342,15 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell?.badgeField.stringValue = count > 0 ? "\(count)" : ""
         
         return cell
+    }
+    
+    public func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
+        var rowView = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier("ThemeRowView"), owner: self) as? ThemeTableRowView
+        if rowView == nil {
+            rowView = ThemeTableRowView(frame: .zero)
+            rowView?.identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
+        }
+        return rowView
     }
     
     public func outlineViewSelectionDidChange(_ notification: Notification) {

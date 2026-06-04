@@ -50,6 +50,8 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         textView.isRichText = false
         textView.importsGraphics = false
         textView.allowsUndo = true
+        textView.isEditable = true
+        textView.isSelectable = true
         textView.autoresizingMask = [.width, .height]
         textView.font = NSFont.systemFont(ofSize: 14)
         
@@ -81,6 +83,12 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
     
     /// Loads a specific database note inside the editor view.
     public func loadNote(_ note: DBNote) {
+        if self.activeNote?.id == note.id {
+            headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
+            toolbar.isPinned = note.isPinned
+            return
+        }
+        
         self.activeNote = note
         
         // Update header & toolbar states

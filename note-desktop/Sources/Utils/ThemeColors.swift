@@ -36,3 +36,13 @@ public struct AppColors {
         return isDark ? NSColor(white: 1.0, alpha: 0.12) : NSColor(white: 0.0, alpha: 0.12)
     }
 }
+
+public final class ThemeTableRowView: NSTableRowView {
+    public override func drawSelection(in dirtyRect: NSRect) {
+        if isSelected {
+            AppColors.accent.withAlphaComponent(0.18).setFill()
+            let path = NSBezierPath(rect: bounds)
+            path.fill()
+        }
+    }
+}
