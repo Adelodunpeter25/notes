@@ -207,6 +207,21 @@ class _EditorViewState extends State<EditorView> {
                 editorState: _editorState!,
                 shrinkWrap: true,
               ),
+              editorStyle: EditorStyle.mobile(
+                cursorColor: AppColors.accent,
+                dragHandleColor: AppColors.accent,
+                selectionColor: AppColors.accent.withOpacity(0.2),
+                textStyleConfiguration: TextStyleConfiguration(
+                  text: TextStyle(
+                    fontSize: 16.0,
+                    color: AppTextColors.primary(context),
+                  ),
+                  code: const TextStyle(
+                    color: Colors.red,
+                    backgroundColor: Color.fromARGB(98, 0, 195, 255),
+                  ),
+                ),
+              ),
             ),
           ),
           if (_isKeyboardVisible)
