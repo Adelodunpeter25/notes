@@ -99,7 +99,6 @@ public final class BlockToTextConverter {
             let labelRange = NSRange(location: match.range(at: 1).location + offset, length: match.range(at: 1).length)
             let urlRange = NSRange(location: match.range(at: 2).location + offset, length: match.range(at: 2).length)
             
-            let label = result.attributedSubstring(from: labelRange).string
             let urlString = result.attributedSubstring(from: urlRange).string
             
             if let url = URL(string: urlString) {
