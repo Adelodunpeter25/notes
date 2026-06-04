@@ -1,8 +1,12 @@
 import Foundation
 
 public enum BlockType: String, Codable {
+    case title
     case heading
+    case subheading
     case text
-    case checklist
-    case code
+    case bulletList
+    case numberedList
+    case dashedList
+    case todo
 }
