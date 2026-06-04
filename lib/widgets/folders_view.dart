@@ -162,9 +162,9 @@ class _FoldersViewState extends State<FoldersView> {
                               top: BorderSide(color: AppSurfaces.divider(context), width: 0.5),
                             ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 8),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
                                 onPressed: () async {
