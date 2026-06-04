@@ -69,6 +69,10 @@ class _AppLayoutState extends State<AppLayout> {
     setState(() {
       _currentScreen = ScreenType.notes;
     });
+    if (_currentUser != null) {
+      final services = ServiceProvider.of(context);
+      services.noteService.autoDeleteEmptyNotes(_currentUser!.id);
+    }
   }
 
   void _onFolderSelected(int index) {

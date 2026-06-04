@@ -116,4 +116,12 @@ class NoteService {
     await _recorder.noteHardDeleted(note);
     return count;
   }
+
+  Future<void> autoDeleteEmptyNotes(String userId) async {
+    final emptyNotes = await noteDao.findEmptyNotes(userId);
+    for (final note in emptyNotes) {
+      await noteDao.deleteNotePermanently(note);
+      await _recorder.noteHardDeleted(note);
+    }
+  }
 }

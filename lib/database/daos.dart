@@ -90,6 +90,16 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
     return (update(notes)..where((t) => t.folderId.equals(folderId)))
         .write(const NotesCompanion(folderId: Value(null)));
   }
+
+  Future<List<Note>> findEmptyNotes(String userId) {
+    return (select(notes)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              t.title.equals('') &
+              t.content.equals('') &
+              t.deletedAt.isNull()))
+        .get();
+  }
 }
 
 @DriftAccessor(tables: [Folders, Notes])
