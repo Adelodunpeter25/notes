@@ -33,7 +33,6 @@ class _EditorViewState extends State<EditorView> {
   EditorState? _editorState;
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
-  String? _generatedTitle;
 
   @override
   void initState() {
@@ -63,34 +62,25 @@ class _EditorViewState extends State<EditorView> {
       _editorState = EditorState.blank();
     }
 
-    _generatedTitle = widget.note.title.isEmpty
-        ? NoteUtils.titleFromContent(widget.note.content)
-        : widget.note.title;
-
     _transactionSubscription = _editorState!.transactionStream.listen((event) {
       if (event.$1 == TransactionTime.after) {
-        _regenerateTitle();
         _triggerSave();
       }
     });
   }
 
-  void _regenerateTitle() {
-    if (_editorState == null) return;
+  String _deriveTitle() {
+    if (_editorState == null) return widget.note.title;
     final content = jsonEncode(_editorState!.document.toJson());
-    final derived = NoteUtils.titleFromContent(content);
-    if (derived != _generatedTitle) {
-      _generatedTitle = derived;
-    }
+    return NoteUtils.titleFromContent(content);
   }
 
   Future<void> _saveNow() async {
     _debounceSave?.cancel();
     if (_editorState == null) return;
-    _regenerateTitle();
     final docMap = _editorState!.document.toJson();
     final newContent = jsonEncode(docMap);
-    final newTitle = _generatedTitle ?? 'Untitled';
+    final newTitle = _deriveTitle();
 
     final updated = widget.note.copyWith(
       title: newTitle,
@@ -218,16 +208,11 @@ class _EditorViewState extends State<EditorView> {
               ),
             ),
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            child: _isKeyboardVisible
-                ? EditorToolbar(
-                    editorState: _editorState!,
-                    onToggleChecklist: _toggleChecklist,
-                  )
-                : const SizedBox.shrink(),
-          ),
+          if (_isKeyboardVisible)
+            EditorToolbar(
+              editorState: _editorState!,
+              onToggleChecklist: _toggleChecklist,
+            ),
         ],
       ),
     );

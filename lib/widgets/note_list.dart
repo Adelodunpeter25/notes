@@ -4,6 +4,7 @@ import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../models/user.dart';
 import '../theme.dart';
+import '../utils/note.dart';
 
 enum NoteFilterType { all, folder, trash }
 
@@ -53,21 +54,8 @@ class _NoteListState extends State<NoteList> {
     if (_searchQuery.isEmpty) return true;
     final q = _searchQuery.toLowerCase();
     if (note.title.toLowerCase().contains(q)) return true;
-    final contentText = _extractText(note.content).toLowerCase();
-    return contentText.contains(q);
-  }
-
-  String _extractText(String content) {
-    if (content.isEmpty) return '';
-    try {
-      return content
-          .replaceAll(RegExp(r'"\$?[a-zA-Z_]*":'), ' ')
-          .replaceAll(RegExp(r'[{}\[\]"]'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
-    } catch (_) {
-      return content;
-    }
+    final body = NoteUtils.extractLines(note.content).join(' ').toLowerCase();
+    return body.contains(q);
   }
 
   @override
@@ -327,19 +315,14 @@ class _NoteCard extends StatelessWidget {
   }
 
   String _getPreview(String content) {
-    if (content.isEmpty) return 'No additional text';
-    // Try to extract plain text from JSON content
-    try {
-      // Simple extraction - just show first portion
-      final cleaned = content
-          .replaceAll(RegExp(r'[{}\[\]":]'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
-      if (cleaned.length > 100) return '${cleaned.substring(0, 100)}...';
-      return cleaned.isEmpty ? 'No additional text' : cleaned;
-    } catch (_) {
-      return content.length > 100 ? '${content.substring(0, 100)}...' : content;
-    }
+    final lines = NoteUtils.extractLines(content);
+    if (lines.isEmpty) return 'No additional text';
+    // Skip the first line — that's the title.
+    final body = lines.skip(1).where((l) => l.trim().isNotEmpty).join(' ').trim();
+    final text = body.isEmpty ? lines.join(' ').trim() : body;
+    if (text.isEmpty) return 'No additional text';
+    if (text.length > 100) return '${text.substring(0, 100)}…';
+    return text;
   }
 
   @override
