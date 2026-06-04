@@ -14,19 +14,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let noteService = NoteService(storage: storageService, recorder: recorder)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
         
-        // Setup local fallback session so the app functions instantly offline
-        let activeUserId: String
-        if authService.getSessionToken() != nil,
-           let firstUserRow = database.query(sql: "SELECT id FROM users LIMIT 1;").first,
-           let id = firstUserRow["id"] as? String {
-            activeUserId = id
-        } else {
-            let fallbackId = "local_user_id"
-            let localUser = DBUser(id: fallbackId, username: "Local User", email: "local@notes.com")
-            _ = storageService.insertUser(localUser)
-            activeUserId = fallbackId
-        }
-        
         // 2. Setup macOS Window
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
@@ -38,15 +25,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.titlebarAppearsTransparent = true
         window.center()
         
-        // 3. Setup Split Layout Content View
-        let mainSplitViewController = MainSplitViewController(
-            storage: storageService,
-            folderService: folderService,
-            noteService: noteService,
-            userId: activeUserId
-        )
+        // 3. Conditional routing based on active session
+        if authService.getSessionToken() != nil,
+           let firstUserRow = database.query(sql: "SELECT id FROM users LIMIT 1;").first,
+           let activeUserId = firstUserRow["id"] as? String {
+            // Already logged in: directly mount Main Split Editor
+            let mainVC = MainSplitViewController(
+                storage: storageService,
+                folderService: folderService,
+                noteService: noteService,
+                userId: activeUserId
+            )
+            window.contentViewController = mainVC
+        } else {
+            // Session missing: mount Login/Signup panel
+            let authVC = AuthViewController(authService: authService)
+            authVC.onAuthSuccess = { [weak self] userId in
+                DispatchQueue.main.async {
+                    let mainVC = MainSplitViewController(
+                        storage: storageService,
+                        folderService: folderService,
+                        noteService: noteService,
+                        userId: userId
+                    )
+                    self?.window.contentViewController = mainVC
+                }
+            }
+            window.contentViewController = authVC
+        }
         
-        window.contentViewController = mainSplitViewController
         window.makeKeyAndOrderFront(nil)
         
         setupMenu()
