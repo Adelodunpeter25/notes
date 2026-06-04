@@ -131,8 +131,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertNoteFts(
       String noteId, String title, String plainContent, String userId) async {
+    await deleteNoteFts(noteId);
     await customStatement(
-      'INSERT OR REPLACE INTO notes_fts (note_id, title, plain_content, user_id) VALUES (?, ?, ?, ?)',
+      'INSERT INTO notes_fts (note_id, title, plain_content, user_id) VALUES (?, ?, ?, ?)',
       [noteId, title, plainContent, userId],
     );
   }
