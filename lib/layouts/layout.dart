@@ -163,12 +163,13 @@ class _AppLayoutState extends State<AppLayout> {
                           if (_selectedFolderIndex > 0 && _selectedFolderIndex <= folders.length) {
                             folderId = folders[_selectedFolderIndex - 1].folder.id;
                           }
-                          await services.noteService.createNote(
+                          final newNote = await services.noteService.createNote(
                             title: '',
                             content: '',
                             userId: user.id,
                             folderId: folderId,
                           );
+                          _onNoteSelected(newNote);
                         },
                         onSync: () => _performSync(),
                       ),
