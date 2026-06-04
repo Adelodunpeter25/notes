@@ -17,8 +17,8 @@ void main() async {
   final db = AppDatabase();
   final api = ApiService();
   final auth = AuthService(db, api);
-  final folderService = FolderService(FolderDao(db));
   final noteService = NoteService(NoteDao(db));
+  final folderService = FolderService(FolderDao(db), noteService);
   final syncService = SyncService(db, api);
   
   // Check session persistence

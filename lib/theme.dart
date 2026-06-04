@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color accent = Color(0xFFD4A017);
+  static const Color onAccent = Colors.black;
+  static const Color destructive = Color(0xFFFF3B30);
+  static const Color onDestructive = Colors.white;
+  static const Color success = Color(0xFF34C759);
+  static const Color handle = Color(0xFFBDBDBD);
   static const Color darkBg = Color(0xFF000000);
   static const Color darkSurface = Color(0xFF1C1C1E);
   static const Color darkElevated = Color(0xFF2C2C2E);
   static const Color lightBg = Color(0xFFF2F2F7);
   static const Color lightSurface = Colors.white;
   static const Color lightElevated = Color(0xFFE5E5EA);
-  static const Color destructive = Color(0xFFFF3B30);
 }
 
 class AppTextColors {

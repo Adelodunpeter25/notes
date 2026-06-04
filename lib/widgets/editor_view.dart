@@ -7,6 +7,7 @@ import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../utils/dialogs.dart';
 import '../utils/note.dart';
+import '../utils/time.dart';
 import '../theme.dart';
 import 'editor_toolbar.dart';
 
@@ -122,21 +123,8 @@ class _EditorViewState extends State<EditorView> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
-    final ampm = date.hour >= 12 ? 'PM' : 'AM';
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '${date.day} ${months[date.month - 1]} ${date.year} at $hour:$minute $ampm';
-  }
-
   Future<void> _handleBack() async {
     _focusNode.unfocus();
-    FocusScope.of(context).unfocus();
-    FocusManager.instance.primaryFocus?.unfocus();
     await _saveNow();
     widget.onBack();
   }
@@ -183,7 +171,7 @@ class _EditorViewState extends State<EditorView> {
           ),
           leadingWidth: 100,
           title: Text(
-            _formatDate(widget.note.createdAt),
+            TimeUtils.formatEditorHeader(widget.note.createdAt),
             style: TextStyle(
               fontSize: 13,
               color: AppTextColors.tertiary(context),
@@ -227,9 +215,10 @@ class _EditorViewState extends State<EditorView> {
                       fontSize: 16.0,
                       color: AppTextColors.primary(context),
                     ),
-                    code: const TextStyle(
-                      color: Colors.red,
-                      backgroundColor: Color.fromARGB(98, 0, 195, 255),
+                    code: TextStyle(
+                      fontFamily: 'monospace',
+                      color: AppTextColors.primary(context),
+                      backgroundColor: AppSurfaces.elevated(context),
                     ),
                   ),
                 ),
@@ -257,15 +246,7 @@ class _EditorViewState extends State<EditorView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const BottomSheetHandle(),
             ListTile(
               leading: Icon(
                 widget.note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,

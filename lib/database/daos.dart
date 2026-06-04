@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/drift.dart';
 import 'database.dart';
 
@@ -28,6 +29,42 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
         .watch();
   }
 
+  /// Reactive count of non-deleted notes for a user (replaces the
+  /// FutureBuilder N+1 pattern in folders_view).
+  Stream<int> watchAllNotesCount(String userId) {
+    return customSelect(
+      'SELECT COUNT(*) AS cnt FROM notes WHERE user_id = ? AND deleted_at IS NULL',
+      variables: [Variable.withString(userId)],
+      readsFrom: {notes},
+    ).watch().map((rows) => rows.first.read<int>('cnt'));
+  }
+
+  /// Reactive count of soft-deleted notes (trash).
+  Stream<int> watchTrashNotesCount(String userId) {
+    return customSelect(
+      'SELECT COUNT(*) AS cnt FROM notes WHERE user_id = ? AND deleted_at IS NOT NULL',
+      variables: [Variable.withString(userId)],
+      readsFrom: {notes},
+    ).watch().map((rows) => rows.first.read<int>('cnt'));
+  }
+
+  /// Reactive per-folder counts, returned as a Map<folderId, count>.
+  /// Folders with zero notes still appear (with count 0) because of the
+  /// LEFT JOIN on folders.
+  Stream<Map<String, int>> watchPerFolderCounts(String userId) {
+    return customSelect(
+      'SELECT f.id AS folder_id, COUNT(n.id) AS cnt '
+      'FROM folders f LEFT JOIN notes n '
+      'ON n.folder_id = f.id AND n.deleted_at IS NULL '
+      'WHERE f.user_id = ? AND f.deleted_at IS NULL '
+      'GROUP BY f.id',
+      variables: [Variable.withString(userId)],
+      readsFrom: {notes, db.folders},
+    ).watch().map((rows) {
+      return {for (final row in rows) row.read<String>('folder_id'): row.read<int>('cnt')};
+    });
+  }
+
   Future<int> insertNote(NotesCompanion entry) => into(notes).insert(entry);
   Future updateNote(Note entry) => update(notes).replace(entry);
   Future<int> emptyTrash(String userId) {
@@ -35,6 +72,13 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
   }
   Future<int> deleteNotePermanently(Note entry) {
     return (delete(notes)..where((t) => t.id.equals(entry.id))).go();
+  }
+
+  /// Clears the folder reference on every note in the given folder.
+  /// Used when a folder is soft-deleted so its notes don't become orphans.
+  Future<int> clearFolderFromNotes(String folderId) {
+    return (update(notes)..where((t) => t.folderId.equals(folderId)))
+        .write(const NotesCompanion(folderId: Value(null)));
   }
 }
 

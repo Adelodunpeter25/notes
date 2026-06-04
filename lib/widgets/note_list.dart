@@ -431,17 +431,17 @@ class _NoteCard extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        color: isTrash ? Colors.green : AppColors.accent,
+        color: isTrash ? AppColors.success : AppColors.accent,
         child: Icon(
           isTrash ? CupertinoIcons.arrow_uturn_left : CupertinoIcons.pin_fill,
-          color: isTrash ? Colors.white : Colors.black,
+          color: isTrash ? AppColors.onDestructive : AppColors.onAccent,
         ),
       ),
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         color: AppColors.destructive,
-        child: const Icon(CupertinoIcons.trash_fill, color: Colors.white),
+        child: const Icon(CupertinoIcons.trash_fill, color: AppColors.onDestructive),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {

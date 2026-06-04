@@ -1,12 +1,31 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../database/database.dart';
+import '../theme.dart';
 
 class MoveToFolderResult {
   final bool confirmed;
   final Folder? folder;
 
   const MoveToFolderResult({required this.confirmed, this.folder});
+}
+
+/// The small grab handle shown at the top of modal bottom sheets.
+class BottomSheetHandle extends StatelessWidget {
+  const BottomSheetHandle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 4,
+      margin: const EdgeInsets.only(top: 12, bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.handle,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
 }
 
 class DialogUtils {

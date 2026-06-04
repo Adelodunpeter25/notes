@@ -21,6 +21,22 @@ class NoteService {
     return noteDao.watchTrashNotes(userId);
   }
 
+  Stream<int> watchAllNotesCount(String userId) {
+    return noteDao.watchAllNotesCount(userId);
+  }
+
+  Stream<int> watchTrashNotesCount(String userId) {
+    return noteDao.watchTrashNotesCount(userId);
+  }
+
+  Stream<Map<String, int>> watchPerFolderCounts(String userId) {
+    return noteDao.watchPerFolderCounts(userId);
+  }
+
+  Future<int> clearFolderFromNotes(String folderId) {
+    return noteDao.clearFolderFromNotes(folderId);
+  }
+
   Future<Note> createNote({
     required String title,
     required String content,
