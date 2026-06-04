@@ -12,8 +12,8 @@ class AuthService {
 
   /// Registers a new user via the server
   Future<AuthResponse> registerUser(String username, String email, String password) async {
-    final response = await api.post('/auth/signup', {
-      'username': username,
+    final response = await api.post('auth/signup', {
+      'name': username,
       'email': email,
       'password': password,
     });
@@ -40,7 +40,7 @@ class AuthService {
 
   /// Login a user via the server and save their session
   Future<AuthResponse> login(String email, String password) async {
-    final response = await api.post('/auth/login', {
+    final response = await api.post('auth/login', {
       'email': email,
       'password': password,
     });

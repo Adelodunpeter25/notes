@@ -17,7 +17,7 @@ class SyncService {
     final cursor = prefs.getString(_cursorKey);
 
     try {
-      final response = await api.post('/sync', {
+      final response = await api.post('sync', {
         'cursor': cursor,
         'ops': [],
       });

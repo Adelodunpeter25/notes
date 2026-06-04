@@ -3,14 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   late Dio _dio;
-  static const String _baseUrl = 'https://notes-api.scaleitpro.com/api'; // Production API
+  static const String _baseUrl = 'https://notes-api.scaleitpro.com/api/'; // Production API with trailing slash
   static const String _tokenKey = 'auth_token';
 
   ApiService() {
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 3),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
     ));
 
     // Add interceptor to include token in headers
