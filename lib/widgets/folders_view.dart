@@ -1,21 +1,38 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
+import '../widgets/search_bar.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
 
-class FoldersView extends StatelessWidget {
+class FoldersView extends StatefulWidget {
   final List<FolderWithCount> folders;
   final ValueChanged<int> onFolderSelected;
   final String userId;
+  final VoidCallback onNewNote;
 
   const FoldersView({
     super.key,
     required this.folders,
     required this.onFolderSelected,
     required this.userId,
+    required this.onNewNote,
   });
+
+  @override
+  State<FoldersView> createState() => _FoldersViewState();
+}
+
+class _FoldersViewState extends State<FoldersView> {
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<int> _countAllNotes(ServiceProvider services, String userId) async {
     final list = await services.db
@@ -34,6 +51,12 @@ class FoldersView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = ServiceProvider.of(context);
+
+    // Filter custom folders
+    final filteredFolders = widget.folders.where((fc) {
+      if (_searchQuery.isEmpty) return true;
+      return fc.folder.name.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppSurfaces.background(context),
@@ -58,24 +81,40 @@ class FoldersView extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 children: [
-                  // All Notes
-                  FutureBuilder<int>(
-                    future: _countAllNotes(services, userId),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data ?? 0;
-                      return _FolderCard(
-                        icon: CupertinoIcons.doc_text_fill,
-                        iconColor: AppColors.accent,
-                        title: 'All Notes',
-                        count: count,
-                        onTap: () => onFolderSelected(0),
-                      );
-                    },
+                  // Search Bar at the top of the list
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: CustomSearchBar(
+                      controller: _searchController,
+                      placeholder: 'Search folders',
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.trim();
+                        });
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 16),
+
+                  // Only show All Notes and Trash if query is empty or matches their titles
+                  if (_searchQuery.isEmpty || 'all notes'.contains(_searchQuery.toLowerCase())) ...[
+                    FutureBuilder<int>(
+                      future: _countAllNotes(services, widget.userId),
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _FolderCard(
+                          icon: CupertinoIcons.doc_text_fill,
+                          iconColor: AppColors.accent,
+                          title: 'All Notes',
+                          count: count,
+                          onTap: () => widget.onFolderSelected(0),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Header for Custom Folders
-                  if (folders.isNotEmpty) ...[
+                  if (filteredFolders.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.only(left: 8, bottom: 8),
                       child: Text(
@@ -90,45 +129,44 @@ class FoldersView extends StatelessWidget {
                     ),
                   ],
 
-                  // Custom folders
-                  ...List.generate(folders.length, (index) {
-                    final fc = folders[index];
+                  // Custom folders (without any folder icon)
+                  ...List.generate(filteredFolders.length, (index) {
+                    final fc = filteredFolders[index];
+                    final originalIndex = widget.folders.indexOf(fc);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: _FolderCard(
-                        icon: CupertinoIcons.folder_fill,
-                        iconColor: AppColors.accent,
                         title: fc.folder.name,
                         count: fc.noteCount,
-                        onTap: () => onFolderSelected(index + 1),
+                        onTap: () => widget.onFolderSelected(originalIndex + 1),
                         onLongPress: () => _showFolderActions(context, fc, services),
                       ),
                     );
                   }),
 
-                  const SizedBox(height: 16),
-
-                  // Trash Note
-                  FutureBuilder<int>(
-                    future: _countTrashNotes(services, userId),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data ?? 0;
-                      return _FolderCard(
-                        icon: CupertinoIcons.trash_fill,
-                        iconColor: AppColors.destructive,
-                        title: 'Trash',
-                        count: count,
-                        onTap: () => onFolderSelected(folders.length + 1),
-                      );
-                    },
-                  ),
+                  if (_searchQuery.isEmpty || 'trash'.contains(_searchQuery.toLowerCase())) ...[
+                    const SizedBox(height: 16),
+                    FutureBuilder<int>(
+                      future: _countTrashNotes(services, widget.userId),
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return _FolderCard(
+                          icon: CupertinoIcons.trash_fill,
+                          iconColor: AppColors.destructive,
+                          title: 'Trash',
+                          count: count,
+                          onTap: () => widget.onFolderSelected(widget.folders.length + 1),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            // New Folder button dock
+            // Bottom bar: New Folder (left), New Note (right)
             Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               decoration: BoxDecoration(
                 color: AppSurfaces.surface(context),
                 border: Border(top: BorderSide(color: AppSurfaces.divider(context), width: 0.5)),
@@ -136,7 +174,7 @@ class FoldersView extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton.icon(
+                  IconButton(
                     onPressed: () async {
                       final folderName = await DialogUtils.showTextInputDialog(
                         context: context,
@@ -147,19 +185,17 @@ class FoldersView extends StatelessWidget {
                       if (folderName != null && folderName.trim().isNotEmpty) {
                         await services.folderService.createFolder(
                           folderName.trim(),
-                          userId,
+                          widget.userId,
                         );
                       }
                     },
-                    icon: const Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent),
-                    label: const Text(
-                      'New Folder',
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    icon: const Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent, size: 28),
+                    tooltip: 'New Folder',
+                  ),
+                  IconButton(
+                    onPressed: widget.onNewNote,
+                    icon: const Icon(CupertinoIcons.square_pencil, color: AppColors.accent, size: 28),
+                    tooltip: 'New Note',
                   ),
                 ],
               ),
@@ -231,16 +267,16 @@ class FoldersView extends StatelessWidget {
 }
 
 class _FolderCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
+  final IconData? icon;
+  final Color? iconColor;
   final String title;
   final int count;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
   const _FolderCard({
-    required this.icon,
-    required this.iconColor,
+    this.icon,
+    this.iconColor,
     required this.title,
     required this.count,
     required this.onTap,
@@ -261,8 +297,10 @@ class _FolderCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, color: iconColor, size: 24),
-              const SizedBox(width: 14),
+              if (icon != null) ...[
+                Icon(icon, color: iconColor, size: 24),
+                const SizedBox(width: 14),
+              ],
               Expanded(
                 child: Text(
                   title,

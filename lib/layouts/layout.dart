@@ -139,6 +139,15 @@ class _AppLayoutState extends State<AppLayout> {
               folders: folders,
               onFolderSelected: _onFolderSelected,
               userId: _currentUser!.id,
+              onNewNote: () async {
+                final newNote = await services.noteService.createNote(
+                  title: '',
+                  content: '',
+                  userId: _currentUser!.id,
+                  folderId: null,
+                );
+                _onNoteSelected(newNote);
+              },
             );
             break;
           case ScreenType.notes:
