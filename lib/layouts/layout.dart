@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/note_list.dart';
 import '../widgets/editor_view.dart';
@@ -187,26 +188,38 @@ class _AppLayoutState extends State<AppLayout> {
             break;
         }
 
-        return Scaffold(
-          body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              if (child.key == const ValueKey('folders_screen')) {
-                return FadeTransition(opacity: animation, child: child);
-              }
-              // Slide transition for NoteList and Editor
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
-                child: child,
-              );
-            },
-            child: screen,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (_currentScreen == ScreenType.editor) {
+              _onBackFromEditor();
+            } else if (_currentScreen == ScreenType.notes) {
+              _onBackFromNotes();
+            } else {
+              SystemNavigator.pop();
+            }
+          },
+          child: Scaffold(
+            body: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                if (child.key == const ValueKey('folders_screen')) {
+                  return FadeTransition(opacity: animation, child: child);
+                }
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              child: screen,
+            ),
           ),
         );
       },

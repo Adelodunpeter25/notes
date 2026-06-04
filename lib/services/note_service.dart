@@ -103,9 +103,10 @@ class NoteService {
   }
 
   Future<int> emptyTrash(String userId) async {
+    final ids = await noteDao.listTrashNoteIds(userId);
     final count = await noteDao.emptyTrash(userId);
-    if (count > 0) {
-      await _recorder.noteEmptyTrash(userId);
+    if (ids.isNotEmpty) {
+      await _recorder.noteHardDeletedIds(ids, userId);
     }
     return count;
   }

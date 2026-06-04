@@ -1,37 +1,70 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
 
-/// Thin wrapper around [SyncOpDao] passed to services that need to record
-/// local mutations. Services don't talk to the sync service directly — they
-/// just drop an op in the queue and let the next sync drain it.
+/// Thin wrapper around [SyncOpDao] that services use to record local
+/// mutations. Each op is written with a client-generated UUID id and an
+/// updatedAt timestamp — the server uses both for idempotency and conflict
+/// resolution (see server/services/sync.ts processUpsert).
 class SyncOpRecorder {
   final SyncOpDao _dao;
+  final _uuid = const Uuid();
+
   SyncOpRecorder(this._dao);
 
-  Future<void> noteCreated(Note n) => _record('create', 'note', n.id, _notePayload(n));
-  Future<void> noteUpdated(Note n) => _record('update', 'note', n.id, _notePayload(n));
-  Future<void> noteSoftDeleted(Note n) => _record('update', 'note', n.id, _notePayload(n));
-  Future<void> noteRestored(Note n) => _record('update', 'note', n.id, _notePayload(n));
-  Future<void> notePinned(Note n) => _record('update', 'note', n.id, _notePayload(n));
-  Future<void> noteMoved(Note n) => _record('update', 'note', n.id, _notePayload(n));
-  Future<void> noteHardDeleted(Note n) => _record('delete', 'note', n.id, _notePayload(n));
-  Future<void> noteEmptyTrash(String userId) =>
-      _record('empty_trash', 'note', userId, jsonEncode({'userId': userId}));
+  // ---------- Notes ----------
+  Future<void> noteCreated(Note n) => _upsertNote(n);
+  Future<void> noteUpdated(Note n) => _upsertNote(n);
+  Future<void> noteSoftDeleted(Note n) => _upsertNote(n);
+  Future<void> noteRestored(Note n) => _upsertNote(n);
+  Future<void> notePinned(Note n) => _upsertNote(n);
+  Future<void> noteMoved(Note n) => _upsertNote(n);
+  Future<void> noteHardDeleted(Note n) =>
+      _record('delete', 'note', n.id, _notePayload(n), n.updatedAt);
 
-  Future<void> folderCreated(Folder f) => _record('create', 'folder', f.id, _folderPayload(f));
-  Future<void> folderRenamed(Folder f) => _record('update', 'folder', f.id, _folderPayload(f));
-  Future<void> folderSoftDeleted(Folder f) => _record('update', 'folder', f.id, _folderPayload(f));
-  Future<void> folderRestored(Folder f) => _record('update', 'folder', f.id, _folderPayload(f));
-  Future<void> folderEmptyTrash(String userId) =>
-      _record('empty_trash', 'folder', userId, jsonEncode({'userId': userId}));
+  /// Record one hard-delete op per trashed note id. Used after emptyTrash
+  /// wipes the local rows so the server also hard-deletes.
+  Future<void> noteHardDeletedIds(List<String> ids, String userId) async {
+    final now = DateTime.now();
+    for (final id in ids) {
+      await _record(
+        'delete',
+        'note',
+        id,
+        jsonEncode({'id': id, 'userId': userId, 'hard': true}),
+        now,
+      );
+    }
+  }
 
-  Future<void> _record(String opType, String entityType, String entityId, String payload) {
+  Future<void> _upsertNote(Note n) =>
+      _record('upsert', 'note', n.id, _notePayload(n), n.updatedAt);
+
+  // ---------- Folders ----------
+  Future<void> folderCreated(Folder f) => _upsertFolder(f);
+  Future<void> folderRenamed(Folder f) => _upsertFolder(f);
+  Future<void> folderSoftDeleted(Folder f) => _upsertFolder(f);
+  Future<void> folderRestored(Folder f) => _upsertFolder(f);
+
+  Future<void> _upsertFolder(Folder f) =>
+      _record('upsert', 'folder', f.id, _folderPayload(f), DateTime.now());
+
+  // ---------- Helpers ----------
+  Future<void> _record(
+    String opType,
+    String entityType,
+    String entityId,
+    String payload,
+    DateTime updatedAt,
+  ) {
     return _dao.insertOp(
+      id: _uuid.v4(),
       opType: opType,
       entityType: entityType,
       entityId: entityId,
       payload: payload,
+      updatedAt: updatedAt,
     );
   }
 

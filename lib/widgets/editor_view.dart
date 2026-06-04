@@ -7,7 +7,6 @@ import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../utils/dialogs.dart';
 import '../utils/note.dart';
-import '../utils/time.dart';
 import '../theme.dart';
 import 'editor_toolbar.dart';
 
@@ -35,6 +34,10 @@ class _EditorViewState extends State<EditorView> {
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
   late final FocusNode _focusNode;
+  String _initialDocJson = '';
+  bool _isDirty = false;
+  bool _canUndo = false;
+  bool _canRedo = false;
 
   @override
   void initState() {
@@ -66,9 +69,27 @@ class _EditorViewState extends State<EditorView> {
       _editorState = EditorState.blank();
     }
 
+    _initialDocJson = jsonEncode(_editorState!.document.toJson());
+    _isDirty = false;
+    _canUndo = false;
+    _canRedo = false;
+
     _transactionSubscription = _editorState!.transactionStream.listen((event) {
       if (event.$1 == TransactionTime.after) {
         _triggerSave();
+        final canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        final canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+        final currentDocJson = jsonEncode(_editorState!.document.toJson());
+        final isDirty = currentDocJson != _initialDocJson;
+        if (canUndo != _canUndo || canRedo != _canRedo || isDirty != _isDirty) {
+          if (mounted) {
+            setState(() {
+              _canUndo = canUndo;
+              _canRedo = canRedo;
+              _isDirty = isDirty;
+            });
+          }
+        }
       }
     });
   }
@@ -94,6 +115,8 @@ class _EditorViewState extends State<EditorView> {
 
     final services = ServiceProvider.of(context);
     await services.noteService.updateNote(updated);
+    _initialDocJson = jsonEncode(_editorState!.document.toJson());
+    if (mounted) setState(() => _isDirty = false);
     widget.onNoteUpdated?.call(updated);
   }
 
@@ -124,9 +147,34 @@ class _EditorViewState extends State<EditorView> {
   }
 
   Future<void> _handleBack() async {
+    _debounceSave?.cancel();
     _focusNode.unfocus();
     await _saveNow();
     widget.onBack();
+  }
+
+  void _onUndo() {
+    _editorState?.undoManager.undo();
+    if (mounted) {
+      setState(() {
+        _canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        _canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+      });
+    }
+  }
+
+  void _onRedo() {
+    _editorState?.undoManager.redo();
+    if (mounted) {
+      setState(() {
+        _canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        _canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+      });
+    }
+  }
+
+  Future<void> _onDone() async {
+    await _saveNow();
   }
 
   @override
@@ -170,15 +218,15 @@ class _EditorViewState extends State<EditorView> {
             onPressed: _handleBack,
           ),
           leadingWidth: 100,
-          title: Text(
-            TimeUtils.formatEditorHeader(widget.note.createdAt),
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTextColors.tertiary(context),
-            ),
-          ),
-          centerTitle: true,
           actions: [
+            IconButton(
+              icon: const Icon(CupertinoIcons.arrow_uturn_left, size: 20),
+              onPressed: _canUndo ? _onUndo : null,
+            ),
+            IconButton(
+              icon: const Icon(CupertinoIcons.arrow_uturn_right, size: 20),
+              onPressed: _canRedo ? _onRedo : null,
+            ),
             IconButton(
               icon: Icon(
                 widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
@@ -190,10 +238,29 @@ class _EditorViewState extends State<EditorView> {
                 services.noteService.pinNote(widget.note, !widget.note.isPinned);
               },
             ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
-              onPressed: () => _showMoreActions(context),
-            ),
+            if (_isDirty)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(18),
+                  onPressed: _onDone,
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(
+                      color: AppColors.onAccent,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
+                onPressed: () => _showMoreActions(context),
+              ),
           ],
         ),
         body: Column(

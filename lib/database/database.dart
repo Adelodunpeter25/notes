@@ -44,14 +44,25 @@ class Notes extends Table {
 }
 
 /// Queue of local mutations waiting to be pushed to the server.
-/// Each row is one op; the sync service drains the table on a successful push.
+///
+/// Shape matches the server's SyncOperation contract
+/// (see server/types/sync.ts):
+///   id         — client-generated UUID (idempotency key)
+///   opType     — 'upsert' | 'delete'
+///   entityType — 'note' | 'folder'
+///   entityId   — the entity's UUID
+///   payload    — JSON snapshot of the entity at op time
+///   updatedAt  — ISO timestamp, used by the server for conflict resolution
 class SyncOps extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get opType => text()();        // create | update | delete
-  TextColumn get entityType => text()();    // note | folder
+  TextColumn get id => text()();             // client UUID
+  TextColumn get opType => text()();         // upsert | delete
+  TextColumn get entityType => text()();     // note | folder
   TextColumn get entityId => text()();
-  TextColumn get payload => text()();       // JSON-serialized entity snapshot
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get payload => text()();        // JSON snapshot
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [Users, Folders, Notes, SyncOps], daos: [NoteDao, FolderDao, SyncOpDao])
@@ -59,15 +70,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onUpgrade: (m, from, to) async {
-        // Drop-and-recreate is fine for a local-only cache DB. Any ops that
-        // hadn't been pushed yet are lost, but the local entities remain.
         if (from < 2) {
+          await m.createTable(syncOps);
+        }
+        if (from < 3) {
+          await customStatement('DROP TABLE IF EXISTS ${syncOps.actualTableName}');
           await m.createTable(syncOps);
         }
       },

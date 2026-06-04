@@ -16,24 +16,24 @@ class SyncService {
 
   /// Pushes queued local mutations to the server, then pulls remote changes.
   ///
-  /// The server is expected to accept ops of the form:
-  ///   {"op": "create"|"update"|"delete"|"empty_trash",
-  ///    "entityType": "note"|"folder",
-  ///    "entityId": "<uuid>",
-  ///    "data": <entity snapshot or {userId} for empty_trash>}
-  /// and respond with {nextCursor, notes, folders, deleted}.
+  /// Op shape matches server/types/sync.ts:
+  ///   {id, type: 'upsert'|'delete', entityType, entityId, updatedAt, payload}
+  /// Server replies with:
+  ///   {nextCursor, notes, folders, deleted, processedOpIds, errors?}
   Future<void> syncData(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final cursor = prefs.getString(_cursorKey);
 
-    // 1. Drain pending ops (FIFO).
+    // 1. Drain pending ops FIFO.
     final pending = await _opDao.pullPending();
     final ops = pending
         .map((op) => {
-              'op': op.opType,
+              'id': op.id,
+              'type': op.opType,
               'entityType': op.entityType,
               'entityId': op.entityId,
-              'data': jsonDecode(op.payload),
+              'updatedAt': op.updatedAt.toIso8601String(),
+              'payload': jsonDecode(op.payload),
             })
         .toList();
 
@@ -50,17 +50,26 @@ class SyncService {
 
       final data = response.data as Map<String, dynamic>? ?? {};
 
-      // 2. Server acked — drop the ops we just pushed.
-      if (pending.isNotEmpty) {
-        await _opDao.deleteOps(pending.map((o) => o.id).toList());
+      // 2. Server tells us which ops it applied — only clear those.
+      final processedIds = (data['processedOpIds'] as List<dynamic>? ?? const [])
+          .whereType<String>()
+          .toList();
+      if (processedIds.isNotEmpty) {
+        await _opDao.deleteOps(processedIds);
       }
 
-      // 3. Apply pulled data.
+      final errors = data['errors'] as List<dynamic>?;
+      if (errors != null && errors.isNotEmpty) {
+        dev.log('Sync: ${errors.length} ops rejected by server: $errors');
+      }
+
+      // 3. Persist the new cursor.
       final nextCursor = data['nextCursor'] as String?;
       if (nextCursor != null) {
         await prefs.setString(_cursorKey, nextCursor);
       }
 
+      // 4. Apply pulled data (folders first so FKs exist for notes).
       final foldersList = data['folders'] as List<dynamic>? ?? const [];
       for (final f in foldersList) {
         if (f is! Map) continue;
@@ -103,6 +112,7 @@ class SyncService {
         );
       }
 
+      // 5. Apply tombstones.
       final deletedList = data['deleted'] as List<dynamic>? ?? const [];
       for (final d in deletedList) {
         if (d is! Map) continue;

@@ -70,6 +70,16 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
   Future<int> emptyTrash(String userId) {
     return (delete(notes)..where((t) => t.userId.equals(userId) & t.deletedAt.isNotNull())).go();
   }
+
+  /// Returns the ids of every soft-deleted note belonging to [userId].
+  /// Used to record per-note hard-delete ops before the local rows are wiped.
+  Future<List<String>> listTrashNoteIds(String userId) {
+    return (select(notes)
+          ..where((t) => t.userId.equals(userId) & t.deletedAt.isNotNull()))
+        .get()
+        .then((rows) => rows.map((r) => r.id).toList());
+  }
+
   Future<int> deleteNotePermanently(Note entry) {
     return (delete(notes)..where((t) => t.id.equals(entry.id))).go();
   }
@@ -121,34 +131,38 @@ class FolderWithCount {
 
 /// Queue for local mutations pending push to the server.
 ///
-/// Each row is one op; rows are drained FIFO by [pullPending] and removed by
-/// [deleteOps] once the server acks them.
+/// Shape matches the server's SyncOperation contract; rows are drained FIFO
+/// by [pullPending] and removed by [deleteOps] once the server acks their ids.
 @DriftAccessor(tables: [SyncOps])
 class SyncOpDao extends DatabaseAccessor<AppDatabase> with _$SyncOpDaoMixin {
   SyncOpDao(super.db);
 
   Future<int> insertOp({
+    required String id,
     required String opType,
     required String entityType,
     required String entityId,
     required String payload,
+    required DateTime updatedAt,
   }) {
     return into(syncOps).insert(SyncOpsCompanion.insert(
+      id: id,
       opType: opType,
       entityType: entityType,
       entityId: entityId,
       payload: payload,
+      updatedAt: Value(updatedAt),
     ));
   }
 
-  /// Returns all pending ops ordered by insertion time.
+  /// Returns all pending ops ordered by insertion time (updatedAt asc).
   Future<List<SyncOp>> pullPending() {
-    return (select(syncOps)..orderBy([(t) => OrderingTerm.asc(t.id)]))
+    return (select(syncOps)..orderBy([(t) => OrderingTerm.asc(t.updatedAt)]))
         .get();
   }
 
-  /// Remove the ops whose ids were acked by the server.
-  Future<int> deleteOps(List<int> ids) {
+  /// Remove the ops whose ids were acked by the server (processedOpIds).
+  Future<int> deleteOps(List<String> ids) {
     if (ids.isEmpty) return Future.value(0);
     return (delete(syncOps)..where((t) => t.id.isIn(ids))).go();
   }
