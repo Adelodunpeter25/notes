@@ -50,11 +50,14 @@ class AuthService {
       await api.saveToken(authResponse.token);
       await _saveSession(authResponse.token);
       
-      // Save user locally
+      // Save user locally — use email prefix as fallback if name is null/empty
+      final displayName = (authResponse.user.name != null && authResponse.user.name!.isNotEmpty)
+          ? authResponse.user.name!
+          : authResponse.user.email.split('@').first;
       await db.into(db.users).insertOnConflictUpdate(
         UsersCompanion.insert(
           id: authResponse.user.id,
-          username: authResponse.user.name ?? '',
+          username: displayName,
           email: authResponse.user.email,
         ),
       );
