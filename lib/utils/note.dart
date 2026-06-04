@@ -18,7 +18,10 @@ class NoteUtils {
       final decoded = jsonDecode(content);
       if (decoded is Map<String, dynamic>) {
         final lines = <String>[];
-        _collectLines(decoded, lines);
+        final rootNode = decoded['document'] is Map<String, dynamic>
+            ? decoded['document'] as Map<String, dynamic>
+            : decoded;
+        _collectLines(rootNode, lines);
         return lines;
       }
     } catch (_) {
