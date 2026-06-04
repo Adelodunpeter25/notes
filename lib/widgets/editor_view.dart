@@ -5,9 +5,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
-import '../utils/dialogs.dart';
 import '../utils/note.dart';
 import '../theme.dart';
+import 'editor_app_bar.dart';
 import 'editor_toolbar.dart';
 
 /// Full-screen mobile editor. The entire body is the AppFlowy editor; the
@@ -193,75 +193,16 @@ class _EditorViewState extends State<EditorView> {
       },
       child: Scaffold(
         backgroundColor: AppSurfaces.background(context),
-        appBar: AppBar(
-          backgroundColor: AppSurfaces.surface(context),
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  CupertinoIcons.chevron_left,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
-                Text(
-                  'Notes',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            onPressed: _handleBack,
-          ),
-          leadingWidth: 100,
-          actions: [
-            IconButton(
-              icon: const Icon(CupertinoIcons.arrow_uturn_left, size: 20),
-              onPressed: _canUndo ? _onUndo : null,
-            ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.arrow_uturn_right, size: 20),
-              onPressed: _canRedo ? _onRedo : null,
-            ),
-            IconButton(
-              icon: Icon(
-                widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-                color: widget.note.isPinned ? AppColors.accent : null,
-                size: 20,
-              ),
-              onPressed: () {
-                final services = ServiceProvider.of(context);
-                services.noteService.pinNote(widget.note, !widget.note.isPinned);
-              },
-            ),
-            if (_isDirty)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: CupertinoButton(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(18),
-                  onPressed: _onDone,
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(
-                      color: AppColors.onAccent,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
-                onPressed: () => _showMoreActions(context),
-              ),
-          ],
+        appBar: EditorAppBar(
+          editorState: _editorState!,
+          note: widget.note,
+          isDirty: _isDirty,
+          canUndo: _canUndo,
+          canRedo: _canRedo,
+          onBack: _handleBack,
+          onUndo: _onUndo,
+          onRedo: _onRedo,
+          onDone: _onDone,
         ),
         body: Column(
           children: [
@@ -295,84 +236,6 @@ class _EditorViewState extends State<EditorView> {
               editorState: _editorState!,
               onToggleChecklist: _toggleChecklist,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMoreActions(BuildContext context) {
-    final services = ServiceProvider.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BottomSheetHandle(),
-            ListTile(
-              leading: Icon(
-                widget.note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
-              ),
-              title: Text(widget.note.isPinned ? 'Unpin Note' : 'Pin Note'),
-              onTap: () {
-                Navigator.pop(context);
-                services.noteService.pinNote(widget.note, !widget.note.isPinned);
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.folder),
-              title: const Text('Move to Folder...'),
-              onTap: () async {
-                Navigator.pop(context);
-                final folders = await services.db
-                    .select(services.db.folders)
-                    .get();
-                if (context.mounted) {
-                  final currentFolder = folders.where((f) => f.id == widget.note.folderId).firstOrNull;
-                  final result = await DialogUtils.showFolderSelectionDialog(
-                    context: context,
-                    folders: folders,
-                    initialFolder: currentFolder,
-                  );
-                  if (result != null && result.confirmed) {
-                    await services.noteService.moveNoteToFolder(widget.note, result.folder?.id);
-                  }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.square_list),
-              title: const Text('Toggle Checklist'),
-              onTap: () {
-                Navigator.pop(context);
-                _toggleChecklist();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
-              title: const Text('Delete Note', style: TextStyle(color: AppColors.destructive)),
-              onTap: () async {
-                Navigator.pop(context);
-                final confirmed = await DialogUtils.showConfirmation(
-                  context: context,
-                  title: 'Delete Note?',
-                  message: 'This note will be moved to Trash.',
-                  primaryButtonText: 'Delete',
-                  isDestructive: true,
-                );
-                if (confirmed) {
-                  await services.noteService.softDeleteNote(widget.note);
-                  widget.onBack();
-                }
-              },
-            ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
