@@ -224,11 +224,10 @@ class _EditorViewState extends State<EditorView> {
               ),
             ),
           ),
-          if (_isKeyboardVisible)
-            EditorToolbar(
-              editorState: _editorState!,
-              onToggleChecklist: _toggleChecklist,
-            ),
+          EditorToolbar(
+            editorState: _editorState!,
+            onToggleChecklist: _toggleChecklist,
+          ),
         ],
       ),
     );
