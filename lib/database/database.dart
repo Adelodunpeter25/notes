@@ -96,6 +96,7 @@ class AppDatabase extends _$AppDatabase {
         }
       },
       onCreate: (m) async {
+        await m.createAll();
         await customStatement('''
           CREATE VIRTUAL TABLE notes_fts USING fts5(
             note_id,
