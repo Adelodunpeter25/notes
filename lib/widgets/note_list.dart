@@ -51,6 +51,7 @@ class _NoteListState extends State<NoteList> {
   Stream<List<Note>>? _notesStream;
   Future<List<Note>>? _searchFuture;
   bool _isLoading = true;
+  Map<String, String> _folderNames = {};
 
   @override
   void didChangeDependencies() {
@@ -67,12 +68,16 @@ class _NoteListState extends State<NoteList> {
   }
 
   Future<void> _loadData() async {
-    if (_currentUser != null) return;
     final services = ServiceProvider.of(context);
     final user = await services.authService.getCurrentUser();
+    
+    final foldersList = await services.db.select(services.db.folders).get();
+    final folderNames = {for (var f in foldersList) f.id: f.name};
+
     if (mounted) {
       setState(() {
         _currentUser = user;
+        _folderNames = folderNames;
         _isLoading = false;
         _initNotesStream();
       });
@@ -356,6 +361,9 @@ class _NoteListState extends State<NoteList> {
                   onRestore: isTrashView
                       ? () => services.noteService.restoreNote(note)
                       : null,
+                  folderName: widget.filter.type == NoteFilterType.all && note.folderId != null
+                      ? _folderNames[note.folderId]
+                      : null,
                 );
               },
               childCount: pinnedNotes.length,
@@ -393,6 +401,9 @@ class _NoteListState extends State<NoteList> {
                     isTrash: isTrashView,
                     onRestore: isTrashView
                         ? () => services.noteService.restoreNote(note)
+                        : null,
+                    folderName: widget.filter.type == NoteFilterType.all && note.folderId != null
+                        ? _folderNames[note.folderId]
                         : null,
                   );
                 },

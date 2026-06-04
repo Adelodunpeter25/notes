@@ -15,6 +15,7 @@ class NoteCard extends StatelessWidget {
   final VoidCallback onPin;
   final bool isTrash;
   final VoidCallback? onRestore;
+  final String? folderName;
 
   const NoteCard({
     super.key,
@@ -24,6 +25,7 @@ class NoteCard extends StatelessWidget {
     required this.onPin,
     this.isTrash = false,
     this.onRestore,
+    this.folderName,
   });
 
   String _formatDate(DateTime date) {
@@ -136,6 +138,23 @@ class NoteCard extends StatelessWidget {
                           color: AppTextColors.tertiary(context),
                         ),
                       ),
+                      if (folderName != null) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          CupertinoIcons.folder,
+                          size: 12,
+                          color: AppTextColors.tertiary(context),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          folderName!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTextColors.tertiary(context),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
