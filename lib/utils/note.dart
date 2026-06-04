@@ -31,7 +31,7 @@ class NoteUtils {
   }
 
   static void _collectLines(Map<String, dynamic> node, List<String> out) {
-    final delta = node['delta'];
+    final delta = node['delta'] ?? node['data']?['delta'] ?? node['attributes']?['delta'];
     if (delta is List) {
       final buf = StringBuffer();
       for (final op in delta) {
