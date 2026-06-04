@@ -30,6 +30,9 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
 
   Future<int> insertNote(NotesCompanion entry) => into(notes).insert(entry);
   Future updateNote(Note entry) => update(notes).replace(entry);
+  Future<int> emptyTrash(String userId) {
+    return (delete(notes)..where((t) => t.userId.equals(userId) & t.deletedAt.isNotNull())).go();
+  }
 }
 
 @DriftAccessor(tables: [Folders, Notes])

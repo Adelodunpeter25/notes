@@ -73,4 +73,8 @@ class NoteService {
   Future moveNoteToFolder(Note note, String? folderId) {
     return noteDao.updateNote(note.copyWith(folderId: Value(folderId)));
   }
+
+  Future<int> emptyTrash(String userId) {
+    return noteDao.emptyTrash(userId);
+  }
 }
