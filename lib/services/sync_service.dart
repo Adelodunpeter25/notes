@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
+import '../utils/note.dart';
 import 'api_service.dart';
 
 class SyncService {
@@ -110,6 +111,8 @@ class SyncService {
             deletedAt: Value(_parseDate(m['deletedAt'])),
           ),
         );
+        final plainContent = NoteUtils.extractLines(content).join(' ');
+        await db.upsertNoteFts(id, title, plainContent, uid);
       }
 
       // 5. Apply tombstones.
@@ -126,6 +129,7 @@ class SyncService {
           await (db.update(db.notes)..where((t) => t.id.equals(entityId))).write(
             NotesCompanion(deletedAt: Value(deletedAt)),
           );
+          await db.deleteNoteFts(entityId);
         } else if (entityType == 'folder') {
           await (db.update(db.folders)..where((t) => t.id.equals(entityId))).write(
             FoldersCompanion(deletedAt: Value(deletedAt)),

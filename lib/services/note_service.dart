@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
+import '../utils/note.dart';
 import 'sync_op_recorder.dart';
 
 class NoteService {
@@ -33,6 +34,10 @@ class NoteService {
 
   Stream<Map<String, int>> watchPerFolderCounts(String userId) {
     return noteDao.watchPerFolderCounts(userId);
+  }
+
+  Future<List<Note>> searchNotes(String userId, String query) {
+    return noteDao.searchNotes(userId, query);
   }
 
   Future<int> clearFolderFromNotes(String folderId) {
@@ -69,12 +74,16 @@ class NoteService {
         isPinned: const Value(false),
       ),
     );
+    final plainContent = NoteUtils.extractLines(content).join(' ');
+    await noteDao.db.upsertNoteFts(noteId, title, plainContent, userId);
     await _recorder.noteCreated(note);
     return note;
   }
 
   Future updateNote(Note note) async {
     await noteDao.updateNote(note);
+    final plainContent = NoteUtils.extractLines(note.content).join(' ');
+    await noteDao.db.upsertNoteFts(note.id, note.title, plainContent, note.userId);
     await _recorder.noteUpdated(note);
   }
 
@@ -105,6 +114,9 @@ class NoteService {
   Future<int> emptyTrash(String userId) async {
     final ids = await noteDao.listTrashNoteIds(userId);
     final count = await noteDao.emptyTrash(userId);
+    for (final id in ids) {
+      await noteDao.db.deleteNoteFts(id);
+    }
     if (ids.isNotEmpty) {
       await _recorder.noteHardDeletedIds(ids, userId);
     }
@@ -113,6 +125,7 @@ class NoteService {
 
   Future<int> deleteNotePermanently(Note note) async {
     final count = await noteDao.deleteNotePermanently(note);
+    await noteDao.db.deleteNoteFts(note.id);
     await _recorder.noteHardDeleted(note);
     return count;
   }

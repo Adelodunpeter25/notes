@@ -100,6 +100,36 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
               t.deletedAt.isNull()))
         .get();
   }
+
+  /// Full-text search across title and plain-text content via the FTS index.
+  Future<List<Note>> searchNotes(String userId, String query) async {
+    final terms = query.split(RegExp(r'\s+')).where((s) => s.isNotEmpty);
+    if (terms.isEmpty) return [];
+    final ftsQuery = terms.map((t) => '$t*').join(' AND ');
+
+    final rows = await customSelect(
+      'SELECT n.id, n.title, n.content, n.created_at, n.updated_at, '
+      'n.is_pinned, n.folder_id, n.user_id, n.deleted_at '
+      'FROM notes n '
+      'INNER JOIN notes_fts fts ON n.id = fts.note_id '
+      'WHERE notes_fts MATCH ? AND fts.user_id = ? AND n.deleted_at IS NULL '
+      'ORDER BY rank',
+      variables: [Variable.withString(ftsQuery), Variable.withString(userId)],
+      readsFrom: {notes},
+    ).get();
+
+    return rows.map((row) => Note(
+          id: row.read<String>('id'),
+          title: row.read<String>('title'),
+          content: row.read<String>('content'),
+          createdAt: row.read<DateTime>('created_at'),
+          updatedAt: row.read<DateTime>('updated_at'),
+          isPinned: row.read<bool>('is_pinned'),
+          folderId: row.read<String?>('folder_id'),
+          userId: row.read<String>('user_id'),
+          deletedAt: row.read<DateTime?>('deleted_at'),
+        )).toList();
+  }
 }
 
 @DriftAccessor(tables: [Folders, Notes])

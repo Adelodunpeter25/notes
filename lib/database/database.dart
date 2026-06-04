@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import '../utils/note.dart';
 import 'daos.dart';
 
 part 'database.g.dart';
@@ -70,7 +71,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -83,7 +84,54 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('DROP TABLE IF EXISTS ${syncOps.actualTableName}');
           await m.createTable(syncOps);
         }
+        if (from < 4) {
+          await customStatement('''
+            CREATE VIRTUAL TABLE notes_fts USING fts5(
+              note_id,
+              title,
+              plain_content,
+              user_id
+            )
+          ''');
+        }
       },
+      onCreate: (m) async {
+        await customStatement('''
+          CREATE VIRTUAL TABLE notes_fts USING fts5(
+            note_id,
+            title,
+            plain_content,
+            user_id
+          )
+        ''');
+      },
+    );
+  }
+
+  /// Rebuilds the FTS index from all non-deleted notes.
+  /// Called on startup to guarantee the index is in sync.
+  Future<void> rebuildNoteFts() async {
+    await customStatement('DELETE FROM notes_fts');
+    final notesList = await select(notes).get();
+    for (final note in notesList) {
+      if (note.deletedAt != null) continue;
+      final plainContent = NoteUtils.extractLines(note.content).join(' ');
+      await upsertNoteFts(note.id, note.title, plainContent, note.userId);
+    }
+  }
+
+  Future<void> upsertNoteFts(
+      String noteId, String title, String plainContent, String userId) async {
+    await customStatement(
+      'INSERT OR REPLACE INTO notes_fts (note_id, title, plain_content, user_id) VALUES (?, ?, ?, ?)',
+      [noteId, title, plainContent, userId],
+    );
+  }
+
+  Future<void> deleteNoteFts(String noteId) async {
+    await customStatement(
+      'DELETE FROM notes_fts WHERE note_id = ?',
+      [noteId],
     );
   }
 }
