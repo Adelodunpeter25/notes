@@ -28,6 +28,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Native Window Persistence (Matches cmux implementation)
         window.setFrameAutosaveName("NotesMainWindow")
+        window.isReleasedWhenClosed = false
+        _ = window.setFrameUsingName("NotesMainWindow")
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
