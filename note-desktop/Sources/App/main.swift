@@ -4,7 +4,6 @@ import NoteCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
-    private var windowPersistence: WindowPersistence?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
@@ -26,10 +25,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
-
-        let persistence = WindowPersistence(key: "NotesMainWindowFrame")
-        persistence.attach(to: window)
-        windowPersistence = persistence
+        
+        // Native Window Persistence (Matches cmux implementation)
+        window.setFrameAutosaveName("NotesMainWindow")
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
@@ -94,12 +92,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
-    }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        if let window = window {
-            windowPersistence?.saveNow(for: window)
-        }
     }
 }
 
