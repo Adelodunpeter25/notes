@@ -1,7 +1,7 @@
 import AppKit
 
 public struct AppColors {
-    // Mobile-aligned Accent Color (Gold/Ochre)
+    // Accent Color
     public static let accent = NSColor(red: 0xD4/255.0, green: 0xA0/255.0, blue: 0x17/255.0, alpha: 1.0)
     
     // Core Palette
