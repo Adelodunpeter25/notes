@@ -6,11 +6,6 @@ public final class NoteEditor: NSViewController, NoteBlockStoreDelegate {
     public private(set) var textView: NSTextView!
     public private(set) var scrollView: NSScrollView!
     
-    // Strong references to manual TextKit 2 pipeline components
-    private let textContentStorage = NSTextContentStorage()
-    private let textLayoutManager = NSTextLayoutManager()
-    private let textContainer = NSTextContainer()
-    
     public var onBlocksUpdated: (([Block]) -> Void)?
     
     public override func loadView() {
@@ -18,22 +13,16 @@ public final class NoteEditor: NSViewController, NoteBlockStoreDelegate {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         
-        // 1. Wire up the TextKit 2 pipeline
-        textContentStorage.addTextLayoutManager(textLayoutManager)
-        textLayoutManager.textContainer = textContainer
-        
-        textContainer.widthTracksTextView = true
-        let contentSize = scrollView.contentSize
-        textContainer.containerSize = NSSize(width: contentSize.width, height: CGFloat.greatestFiniteMagnitude)
-        
-        // 2. Instantiate and configure NSTextView
-        textView = NSTextView(frame: NSRect(origin: .zero, size: contentSize), textContainer: textContainer)
+        // Use the system-configured TextKit 2 text view
+        textView = NSTextView(usingTextLayoutManager: true)
         textView.isRichText = true
         textView.importsGraphics = false
         textView.allowsUndo = true
         textView.isEditable = true
         textView.isSelectable = true
         
+        let contentSize = scrollView.contentSize
+        textView.frame = NSRect(origin: .zero, size: contentSize)
         textView.minSize = NSSize(width: 0.0, height: contentSize.height)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.isVerticallyResizable = true
@@ -54,6 +43,7 @@ public final class NoteEditor: NSViewController, NoteBlockStoreDelegate {
         store.delegate = self
         self.store = store
         
+        guard let textContentStorage = textView.textContentStorage else { return }
         BlockToTextConverter.clearCache()
         
         let coordinator = NoteDocumentCoordinator(store: store, textContentStorage: textContentStorage)
@@ -71,7 +61,8 @@ public final class NoteEditor: NSViewController, NoteBlockStoreDelegate {
     }
     
     public func toggleChecklist() {
-        guard let store = store else { return }
+        guard let store = store,
+              let textContentStorage = textView.textContentStorage else { return }
               
         let selectedRange = textView.selectedRange()
         guard selectedRange.location != NSNotFound else { return }
