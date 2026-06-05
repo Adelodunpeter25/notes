@@ -7,9 +7,6 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
-    private let textContentStorage = NSTextContentStorage()
-    private let textLayoutManager = NSTextLayoutManager()
-    private let textContainer = NSTextContainer(containerSize: .zero)
     private var textView: NSTextView!
     private let toolbar = EditorToolbar()
     private let scrollView = NSScrollView()
@@ -43,10 +40,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         headerLabel.alignment = .center
         
         // 2. Setup TextKit 2 pipeline
-        textContentStorage.addTextLayoutManager(textLayoutManager)
-        textLayoutManager.textContainer = textContainer
-        
-        textView = NSTextView(frame: .zero, textContainer: textContainer)
+        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0), textContainer: nil)
         textView.isRichText = true
         textView.importsGraphics = false
         textView.allowsUndo = true
@@ -105,8 +99,10 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         newStore.delegate = self
         self.store = newStore
         
-        // Wire up coordinator to text content storage
-        let newCoordinator = NoteDocumentCoordinator(store: newStore, textContentStorage: textContentStorage)
+        // Wire up coordinator using the text view's own content storage
+        guard let contentStorage = textView.textContentStorage else { return }
+        BlockToTextConverter.clearCache()
+        let newCoordinator = NoteDocumentCoordinator(store: newStore, textContentStorage: contentStorage)
         textView.delegate = newCoordinator
         self.coordinator = newCoordinator
     }

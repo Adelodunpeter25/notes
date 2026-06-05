@@ -83,6 +83,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         outlineView.delegate = self
         outlineView.headerView = nil
         outlineView.floatsGroupRows = false
+        // Context menu setup
+        let contextMenu = NSMenu()
+        contextMenu.delegate = self
+        outlineView.menu = contextMenu
         outlineView.rowHeight = 28
         
         if #available(macOS 12.0, *) {
@@ -286,17 +290,9 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         return 28
     }
     
-    public func outlineView(_ outlineView: NSOutlineView, menuFor item: Any?) -> NSMenu? {
-        guard let node = item as? SidebarNode else { return nil }
-        if node.type == SidebarNode.NodeType.folder {
-            return FolderContextMenu(target: self, renameAction: #selector(contextRenameTapped), deleteAction: #selector(contextDeleteTapped))
-        }
-        return nil
-    }
-    
     public func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? SidebarNode else { return nil }
-        
+
         if node.type == SidebarNode.NodeType.divider {
             let container = NSView()
             let line = NSView()
@@ -426,5 +422,26 @@ fileprivate final class SidebarCellView: NSTableCellView {
             badgeField.centerYAnchor.constraint(equalTo: centerYAnchor),
             badgeField.widthAnchor.constraint(greaterThanOrEqualToConstant: 24)
         ])
+    }
+}
+
+extension FolderList: NSMenuDelegate {
+    public func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+
+        let clickedRow = outlineView.clickedRow
+        guard clickedRow != -1,
+              let node = outlineView.item(atRow: clickedRow) as? SidebarNode,
+              node.type == SidebarNode.NodeType.folder else { return }
+
+        outlineView.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
+
+        let renameItem = NSMenuItem(title: "Rename", action: #selector(contextRenameTapped), keyEquivalent: "")
+        renameItem.target = self
+        menu.addItem(renameItem)
+
+        let deleteItem = NSMenuItem(title: "Delete", action: #selector(contextDeleteTapped), keyEquivalent: "")
+        deleteItem.target = self
+        menu.addItem(deleteItem)
     }
 }

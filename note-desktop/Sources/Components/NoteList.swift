@@ -24,6 +24,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     private var userId: String = ""
     private var isTrashSelected = false
+    private var contextMenuNote: DBNote?
     
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
@@ -223,10 +224,8 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc private func contextPinTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow] else { return }
-        
+        guard let note = contextMenuNote else { return }
+
         let newPinState = !note.isPinned
         if noteService.pinNote(note, isPinned: newPinState) {
             var updated = note
@@ -236,12 +235,9 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc private func contextDeleteTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow] else { return }
-        
+        guard let note = contextMenuNote else { return }
+
         if note.deletedAt != nil {
-            // Hard delete
             ConfirmDialog.show(title: "Delete Permanently", message: "Are you sure you want to permanently delete this note?") { [weak self] in
                 guard let self = self else { return }
                 if self.noteService.deleteNotePermanently(note) {
@@ -250,7 +246,6 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
                 }
             }
         } else {
-            // Soft delete
             if noteService.softDeleteNote(note) {
                 self.onNoteSelected?(nil)
                 var updated = note
@@ -261,11 +256,9 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc private func contextRestoreTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow],
+        guard let note = contextMenuNote,
               note.deletedAt != nil else { return }
-        
+
         if noteService.restoreNote(note) {
             var updated = note
             updated.deletedAt = nil
@@ -419,12 +412,13 @@ extension NoteList: NSMenuDelegate {
               case .note(let note) = rowItems[clickedRow],
               let contextMenu = menu as? NoteContextMenu else {
             menu.removeAllItems()
+            contextMenuNote = nil
             return
         }
-        
-        // Dynamically select the right-clicked row for feedback
+
+        contextMenuNote = note
         tableView.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
-        
+
         contextMenu.update(
             note: note,
             target: self,
