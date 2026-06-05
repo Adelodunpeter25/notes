@@ -2,9 +2,9 @@ import AppKit
 import NoteKit
 import NoteCore
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
-    private let frameKey = "NotesMainWindowFrame"
+    private var windowPersistence: WindowPersistence?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
@@ -18,30 +18,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
 
         // 2. Setup macOS Window
-        let defaultFrame = NSRect(x: 0, y: 0, width: 900, height: 600)
-        let savedFrame = UserDefaults.standard.array(forKey: frameKey)
-            .flatMap { array -> NSRect? in
-                guard array.count == 4,
-                      let x = array[0] as? CGFloat,
-                      let y = array[1] as? CGFloat,
-                      let w = array[2] as? CGFloat,
-                      let h = array[3] as? CGFloat else { return nil }
-                return NSRect(x: x, y: y, width: w, height: h)
-            }
-
         window = NSWindow(
-            contentRect: savedFrame ?? defaultFrame,
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
-        window.delegate = self
 
-        if savedFrame == nil {
-            window.center()
-        }
+        let persistence = WindowPersistence(key: "NotesMainWindowFrame")
+        persistence.attach(to: window)
+        windowPersistence = persistence
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
@@ -104,21 +92,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.mainMenu = mainMenu
     }
     
-    // MARK: - NSWindowDelegate
-
-    func windowDidMove(_ notification: Notification) {
-        saveWindowFrame()
-    }
-
-    func windowDidResize(_ notification: Notification) {
-        saveWindowFrame()
-    }
-
-    private func saveWindowFrame() {
-        let f = window.frame
-        UserDefaults.standard.set([f.origin.x, f.origin.y, f.size.width, f.size.height], forKey: frameKey)
-    }
-
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }

@@ -7,6 +7,9 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
+    private let textContentStorage = NSTextContentStorage()
+    private let textLayoutManager = NSTextLayoutManager()
+    private let textContainer = NSTextContainer()
     private var textView: NSTextView!
     private let toolbar = EditorToolbar()
     private let scrollView = NSScrollView()
@@ -40,9 +43,9 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         headerLabel.alignment = .center
         
         // 2. Setup TextKit 2 pipeline
-        // init(frame:) without textContainer creates a TK2 stack by default;
-        // init(frame:, textContainer:) always creates TK1 regardless of the container type.
-        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0))
+        textContentStorage.addTextLayoutManager(textLayoutManager)
+        textLayoutManager.textContainer = textContainer
+        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0), textContainer: textContainer)
         textView.isRichText = true
         textView.importsGraphics = false
         textView.allowsUndo = true
@@ -102,9 +105,11 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         self.store = newStore
         
         // Wire up coordinator using the text view's own content storage
-        guard let contentStorage = textView.textContentStorage else { return }
+        // (connected to its TK2 rendering pipeline). Fall back to our external
+        // storage if the text view hasn't set up TK2 yet.
+        let storage = textView.textContentStorage ?? textContentStorage
         BlockToTextConverter.clearCache()
-        let newCoordinator = NoteDocumentCoordinator(store: newStore, textContentStorage: contentStorage)
+        let newCoordinator = NoteDocumentCoordinator(store: newStore, textContentStorage: storage)
         textView.delegate = newCoordinator
         self.coordinator = newCoordinator
     }
