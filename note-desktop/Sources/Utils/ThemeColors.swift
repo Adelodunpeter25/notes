@@ -38,11 +38,4 @@ public struct AppColors {
 }
 
 public final class ThemeTableRowView: NSTableRowView {
-    public override func drawSelection(in dirtyRect: NSRect) {
-        if isSelected {
-            AppColors.accent.withAlphaComponent(0.18).setFill()
-            let path = NSBezierPath(rect: bounds)
-            path.fill()
-        }
-    }
 }
