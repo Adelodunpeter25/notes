@@ -40,7 +40,9 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         headerLabel.alignment = .center
         
         // 2. Setup TextKit 2 pipeline
-        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0), textContainer: nil)
+        // init(frame:) without textContainer creates a TK2 stack by default;
+        // init(frame:, textContainer:) always creates TK1 regardless of the container type.
+        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0))
         textView.isRichText = true
         textView.importsGraphics = false
         textView.allowsUndo = true
