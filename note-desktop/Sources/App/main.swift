@@ -2,7 +2,7 @@ import AppKit
 import NoteKit
 import NoteCore
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
+        window.delegate = self
         
         // Native Window Persistence (v3 to ensure fresh size)
         window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow_v3")
@@ -110,6 +111,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    // MARK: - NSWindowDelegate
+    func windowDidMove(_ notification: Notification) {
+        if let window = notification.object as? NSWindow {
+            print("DEBUG: Window moved to \(window.frame)")
+        }
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        if let window = notification.object as? NSWindow {
+            print("DEBUG: Window resized to \(window.frame)")
+        }
     }
 }
 
