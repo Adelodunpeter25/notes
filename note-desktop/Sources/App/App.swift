@@ -2,10 +2,13 @@ import AppKit
 import NoteKit
 import NoteCore
 
+@main
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("DEBUG: AppDelegate applicationDidFinishLaunching called")
+        
         // 1. Initialize core layers & databases
         let database = Database(dbName: "note_app_db.sqlite")
         let storageService = StorageService(database: database)
@@ -17,8 +20,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
 
         // 2. Setup macOS Window (Modern cmux-like configuration)
+        // We use a large default size (1000x700)
+        let windowRect = NSRect(x: 0, y: 0, width: 1000, height: 700)
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
+            contentRect: windowRect,
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -29,12 +34,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.toolbarStyle = .unified
         
         // Native Window Persistence (Matches modern AppKit/cmux pattern)
-        window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow")
-        window.setFrameAutosaveName("NotesMainWindow")
+        // We use v2 here to bypass any old, potentially small saved frames in UserDefaults.
+        window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow_v2")
+        window.setFrameAutosaveName("NotesMainWindow_v2")
         window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 800, height: 600)
         
-        // Ensure restoration happens immediately
-        if !window.setFrameUsingName("NotesMainWindow") {
+        // Ensure restoration happens immediately. If it returns false, it means no saved frame exists.
+        if window.setFrameUsingName("NotesMainWindow_v2") {
+            print("DEBUG: Successfully restored window frame from persistence: \(window.frame)")
+        } else {
+            print("DEBUG: No saved window frame found, centering window at default size 1000x700")
             window.center()
         }
 
@@ -109,10 +119,3 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 }
-
-// Start NSApplication runloop
-let app = NSApplication.shared
-app.setActivationPolicy(.regular)
-let delegate = AppDelegate()
-app.delegate = delegate
-app.run()
