@@ -1,8 +1,8 @@
 import AppKit
 
 public struct AppColors {
-    // Signature Accent Color
-    public static let accent = NSColor.systemBlue
+    // Mobile-aligned Accent Color (Gold/Ochre)
+    public static let accent = NSColor(red: 0xD4/255.0, green: 0xA0/255.0, blue: 0x17/255.0, alpha: 1.0)
     
     // Core Palette
     public static let destructive = NSColor(red: 0xFF/255.0, green: 0x3B/255.0, blue: 0x30/255.0, alpha: 1.0)
