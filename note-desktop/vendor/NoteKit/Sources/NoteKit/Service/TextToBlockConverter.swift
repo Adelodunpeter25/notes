@@ -10,20 +10,42 @@ public final class TextToBlockConverter {
             return []
         }
         
-        // Enumerate ranges where the blockId is identical
-        attributedString.enumerateAttribute(.blockId, in: NSRange(location: 0, length: totalLength), options: []) { value, range, _ in
-            guard let blockId = value as? UUID else { return }
+        var currentBlockId: UUID?
+        var currentMarkdown = ""
+        var currentType: BlockType = .text
+        var currentIsChecked: Bool?
+        
+        attributedString.enumerateAttributes(in: NSRange(location: 0, length: totalLength), options: []) { attrs, range, _ in
+            let blockId = attrs[.blockId] as? UUID
+            let type = attrs[.blockType] as? BlockType ?? .text
+            let isChecked = attrs[.blockCheckedState] as? Bool
             
-            let blockSubString = attributedString.attributedSubstring(from: range)
+            let slice = attributedString.attributedSubstring(from: range)
+            let markdown = serializeToMarkdown(slice)
             
-            // Re-serialize the rich text attributes back to inline Markdown formatting
-            let markdownContent = serializeToMarkdown(blockSubString)
-            
-            let type = attributedString.attribute(.blockType, at: range.location, effectiveRange: nil) as? BlockType ?? .text
-            let isChecked = attributedString.attribute(.blockCheckedState, at: range.location, effectiveRange: nil) as? Bool
-            
-            let block = Block(id: blockId, type: type, content: markdownContent, isChecked: isChecked)
-            blocks.append(block)
+            if let bid = blockId {
+                if bid == currentBlockId {
+                    currentMarkdown += markdown
+                } else {
+                    if let cid = currentBlockId {
+                        blocks.append(Block(id: cid, type: currentType, content: currentMarkdown, isChecked: currentIsChecked))
+                    }
+                    currentBlockId = bid
+                    currentMarkdown = markdown
+                    currentType = type
+                    currentIsChecked = isChecked
+                }
+            } else {
+                // Fallback for typed text that lost its block ID attribute
+                if currentBlockId == nil {
+                    currentBlockId = UUID()
+                }
+                currentMarkdown += markdown
+            }
+        }
+        
+        if let cid = currentBlockId {
+            blocks.append(Block(id: cid, type: currentType, content: currentMarkdown, isChecked: currentIsChecked))
         }
         
         return blocks

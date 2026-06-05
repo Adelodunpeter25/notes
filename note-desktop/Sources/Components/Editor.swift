@@ -47,7 +47,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         textLayoutManager.textContainer = textContainer
         
         textView = NSTextView(frame: .zero, textContainer: textContainer)
-        textView.isRichText = false
+        textView.isRichText = true
         textView.importsGraphics = false
         textView.allowsUndo = true
         textView.isEditable = true
@@ -66,6 +66,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         stack.orientation = .vertical
         stack.spacing = 8
         stack.alignment = .centerX
+        stack.distribution = .fill
         
         view.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -76,6 +77,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
             scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
             toolbar.heightAnchor.constraint(equalToConstant: 36)
         ])
