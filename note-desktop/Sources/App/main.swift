@@ -16,20 +16,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
 
-        // 2. Setup macOS Window
+        // 2. Setup macOS Window (Modern cmux-like configuration)
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.toolbarStyle = .unified
         
-        // Native Window Persistence (Matches cmux implementation)
+        // Native Window Persistence (Matches modern AppKit/cmux pattern)
+        window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow")
         window.setFrameAutosaveName("NotesMainWindow")
         window.isReleasedWhenClosed = false
-        _ = window.setFrameUsingName("NotesMainWindow")
+        
+        // Ensure restoration happens immediately
+        if !window.setFrameUsingName("NotesMainWindow") {
+            window.center()
+        }
+
+        // Add a minimal toolbar to support unified titlebar appearance and persistence
+        let toolbar = NSToolbar(identifier: "NotesToolbar")
+        toolbar.autosavesConfiguration = true
+        toolbar.displayMode = .iconOnly
+        window.toolbar = toolbar
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
