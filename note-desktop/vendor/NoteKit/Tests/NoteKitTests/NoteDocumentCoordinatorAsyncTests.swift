@@ -21,7 +21,7 @@ final class NoteDocumentCoordinatorAsyncTests: XCTestCase {
         
         // Simulate typing by triggering the delegate callback
         textContentStorage.attributedString = newAttributedString
-        coordinator.textContentStorage(textContentStorage, didProcessEditingRange: NSRange(location: 0, length: 16), changeInLength: 16, invalidatedRange: NSRange(location: 0, length: 16))
+        coordinator.textContentManager(textContentStorage, didProcessEditingRange: NSRange(location: 0, length: 16), changeInLength: 16, invalidatedRange: NSRange(location: 0, length: 16))
         
         // 2. Immediately after editing, the block content should still be "Initial Text" due to 300ms debounce
         XCTAssertEqual(store.blocks[0].content, "Initial Text")

@@ -67,7 +67,7 @@ public final class NoteDocumentCoordinator: NSObject, NSTextContentStorageDelega
     
     // MARK: - NSTextContentStorageDelegate
     
-    public func textContentStorage(_ textContentStorage: NSTextContentStorage, didProcessEditingRange editedRange: NSRange, changeInLength delta: Int, invalidatedRange: NSRange) {
+    public func textContentManager(_ textContentManager: NSTextContentManager, didProcessEditingRange editedRange: NSRange, changeInLength delta: Int, invalidatedRange: NSRange) {
         // Cancel any pending sync requests to prevent multiple redundant runs
         syncWorkItem?.cancel()
         

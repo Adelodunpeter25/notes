@@ -1,21 +1,14 @@
 import AppKit
 import NoteKit
 
-public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolbarDelegate {
+public final class Editor: NSViewController, EditorToolbarDelegate {
     private let noteService: NoteService
     private var activeNote: DBNote?
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
-    private let textContentStorage = NSTextContentStorage()
-    private let textLayoutManager = NSTextLayoutManager()
-    private let textContainer = NSTextContainer()
-    private var textView: NSTextView!
+    private let noteEditor = NoteEditor()
     private let toolbar = EditorToolbar()
-    private let scrollView = NSScrollView()
-    
-    private var store: BlockStore?
-    private var coordinator: NoteDocumentCoordinator?
     
     public var onNoteUpdated: ((DBNote?) -> Void)?
     
@@ -42,26 +35,17 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         headerLabel.font = NSFont.systemFont(ofSize: 11)
         headerLabel.alignment = .center
         
-        // 2. Setup TextKit 2 pipeline
-        textContentStorage.addTextLayoutManager(textLayoutManager)
-        textLayoutManager.textContainer = textContainer
-        textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 400, height: 0), textContainer: textContainer)
-        textView.isRichText = true
-        textView.importsGraphics = false
-        textView.allowsUndo = true
-        textView.isEditable = true
-        textView.isSelectable = true
-        textView.autoresizingMask = [.width, .height]
-        textView.font = NSFont.systemFont(ofSize: 14)
-        
-        scrollView.hasVerticalScroller = true
-        scrollView.documentView = textView
+        // 2. Setup NoteEditor
+        addChild(noteEditor)
+        noteEditor.onBlocksUpdated = { [weak self] blocks in
+            self?.saveNoteContent(blocks: blocks)
+        }
         
         // 3. Setup Toolbar Actions
         toolbar.delegate = self
         
         // Stack and align layouts
-        let stack = NSStackView(views: [headerLabel, scrollView, toolbar])
+        let stack = NSStackView(views: [headerLabel, noteEditor.view, toolbar])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.alignment = .centerX
@@ -69,14 +53,16 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         
         view.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
+        noteEditor.view.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             stack.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
-            scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            noteEditor.view.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            noteEditor.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
             toolbar.heightAnchor.constraint(equalToConstant: 36)
         ])
@@ -98,26 +84,13 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
         
         // Convert AppFlowy editor JSON format to NoteKit blocks representation
         let blocks = AppFlowyConverter.toBlocks(jsonString: note.content)
-        
-        // Initialize new memory store
-        let newStore = BlockStore(blocks: blocks)
-        newStore.delegate = self
-        self.store = newStore
-        
-        // Wire up coordinator using the text view's own content storage
-        // (connected to its TK2 rendering pipeline). Fall back to our external
-        // storage if the text view hasn't set up TK2 yet.
-        let storage = textView.textContentStorage ?? textContentStorage
-        BlockToTextConverter.clearCache()
-        let newCoordinator = NoteDocumentCoordinator(store: newStore, textContentStorage: storage)
-        textView.delegate = newCoordinator
-        self.coordinator = newCoordinator
+        noteEditor.loadBlocks(blocks)
     }
     
-    private func saveNoteContent() {
-        guard var note = activeNote, let store = store else { return }
+    private func saveNoteContent(blocks: [Block]) {
+        guard var note = activeNote else { return }
         
-        let newJSON = AppFlowyConverter.toAppFlowyJSON(blocks: store.blocks)
+        let newJSON = AppFlowyConverter.toAppFlowyJSON(blocks: blocks)
         note.content = newJSON
         note.title = NoteUtils.titleFromContent(newJSON)
         
@@ -126,24 +99,6 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
             onNoteUpdated?(note)
         }
-    }
-    
-    // MARK: - NoteBlockStoreDelegate
-    
-    public func blockStore(_ store: BlockStore, didUpdateBlocks blocks: [Block]) {
-        saveNoteContent()
-    }
-    
-    public func blockStore(_ store: BlockStore, didUpdateBlock block: Block, atIndex index: Int) {
-        saveNoteContent()
-    }
-    
-    public func blockStore(_ store: BlockStore, didInsertBlock block: Block, atIndex index: Int) {
-        saveNoteContent()
-    }
-    
-    public func blockStore(_ store: BlockStore, didRemoveBlockWithId id: UUID, atIndex index: Int) {
-        saveNoteContent()
     }
     
     // MARK: - EditorToolbarDelegate
@@ -170,9 +125,7 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
             if self?.noteService.softDeleteNote(note) == true {
                 // Clear selection states
                 self?.activeNote = nil
-                self?.store = nil
-                self?.coordinator = nil
-                self?.textView.string = ""
+                self?.noteEditor.loadBlocks([])
                 self?.headerLabel.stringValue = ""
                 self?.onNoteUpdated?(nil)
             }
@@ -180,6 +133,6 @@ public final class Editor: NSViewController, NoteBlockStoreDelegate, EditorToolb
     }
     
     public func toolbarDidTapCheckbox(_ toolbar: EditorToolbar) {
-        // Toggle checklists insertion at active layout ranges
+        noteEditor.toggleChecklist()
     }
 }
