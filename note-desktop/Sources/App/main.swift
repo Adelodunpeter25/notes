@@ -25,8 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
-        window.center()
-        window.setFrameAutosaveName("NotesMainWindowAutosave")
+        window.setFrameAutosaveName("NotesMainWindow")
+        if window.frame.origin == .zero {
+            window.center()
+        }
         
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
