@@ -95,6 +95,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let window = window {
+            windowPersistence?.saveNow(for: window)
+        }
+    }
 }
 
 // Start NSApplication runloop

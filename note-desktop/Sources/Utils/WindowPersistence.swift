@@ -22,6 +22,11 @@ public final class WindowPersistence: NSObject, NSWindowDelegate {
         restoreFrame(for: window)
     }
 
+    public func saveNow(for window: NSWindow) {
+        saveWorkItem?.cancel()
+        saveFrame(window.frame)
+    }
+
     // MARK: - NSWindowDelegate
 
     public func windowDidMove(_ notification: Notification) {
@@ -46,30 +51,18 @@ public final class WindowPersistence: NSObject, NSWindowDelegate {
     }
 
     private func saveFrame(_ frame: NSRect) {
-        UserDefaults.standard.set(
-            [frame.origin.x, frame.origin.y, frame.size.width, frame.size.height],
-            forKey: key
-        )
+        UserDefaults.standard.set(NSStringFromRect(frame), forKey: key)
     }
 
     private func loadFrame() -> NSRect? {
-        guard let array = UserDefaults.standard.array(forKey: key),
-              array.count == 4,
-              let x = array[0] as? CGFloat,
-              let y = array[1] as? CGFloat,
-              let w = array[2] as? CGFloat,
-              let h = array[3] as? CGFloat else { return nil }
-        let frame = NSRect(x: x, y: y, width: w, height: h)
-        guard let visible = NSScreen.visibleFrame(for: frame) else { return nil }
-        return visible.intersects(frame) ? frame : nil
-    }
-}
-
-private extension NSScreen {
-    static func visibleFrame(for frame: NSRect) -> NSRect? {
-        for screen in NSScreen.screens where screen.visibleFrame.intersects(frame) {
-            return screen.visibleFrame
+        guard let frameString = UserDefaults.standard.string(forKey: key) else { return nil }
+        let frame = NSRectFromString(frameString)
+        if frame == .zero { return nil }
+        
+        // Ensure the window frame is still visible on some screen
+        let isVisible = NSScreen.screens.contains { screen in
+            screen.frame.intersects(frame)
         }
-        return NSScreen.main?.visibleFrame
+        return isVisible ? frame : nil
     }
 }
