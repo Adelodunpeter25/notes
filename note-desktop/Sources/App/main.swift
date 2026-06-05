@@ -2,9 +2,10 @@ import AppKit
 import NoteKit
 import NoteCore
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
-    
+    private let frameKey = "NotesMainWindowFrame"
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
         let database = Database(dbName: "note_app_db.sqlite")
@@ -15,26 +16,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let searchService = SearchService(database: database)
         let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
-        
+
         // 2. Setup macOS Window
+        let defaultFrame = NSRect(x: 0, y: 0, width: 900, height: 600)
+        let savedFrame = UserDefaults.standard.array(forKey: frameKey)
+            .flatMap { array -> NSRect? in
+                guard array.count == 4,
+                      let x = array[0] as? CGFloat,
+                      let y = array[1] as? CGFloat,
+                      let w = array[2] as? CGFloat,
+                      let h = array[3] as? CGFloat else { return nil }
+                return NSRect(x: x, y: y, width: w, height: h)
+            }
+
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+            contentRect: savedFrame ?? defaultFrame,
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
-        window.setFrameAutosaveName("NotesMainWindow")
-        if window.frame.origin == .zero {
+        window.delegate = self
+
+        if savedFrame == nil {
             window.center()
         }
-        
+
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
            let firstUserRow = database.query(sql: "SELECT id FROM users LIMIT 1;").first,
            let activeUserId = firstUserRow["id"] as? String {
-            // Already logged in: directly mount Main Split Editor
             let mainVC = MainSplitViewController(
                 storage: storageService,
                 folderService: folderService,
@@ -43,7 +55,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             window.contentViewController = mainVC
         } else {
-            // Session missing: mount Login/Signup panel
             let authVC = AuthViewController(authService: authService)
             authVC.onAuthSuccess = { [weak self] userId in
                 DispatchQueue.main.async {
@@ -58,10 +69,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             window.contentViewController = authVC
         }
-        
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        
+
         setupMenu()
     }
     
@@ -93,6 +104,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = mainMenu
     }
     
+    // MARK: - NSWindowDelegate
+
+    func windowDidMove(_ notification: Notification) {
+        saveWindowFrame()
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        saveWindowFrame()
+    }
+
+    private func saveWindowFrame() {
+        let f = window.frame
+        UserDefaults.standard.set([f.origin.x, f.origin.y, f.size.width, f.size.height], forKey: frameKey)
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }
