@@ -31,19 +31,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
         window.delegate = self
-        
-        // Native Window Persistence (v3 to ensure fresh size)
-        window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow_v3")
-        window.setFrameAutosaveName("NotesMainWindow_v3")
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 800, height: 600)
-        
-        if window.setFrameUsingName("NotesMainWindow_v3") {
-            print("DEBUG: Successfully restored window frame: \(window.frame)")
-        } else {
-            print("DEBUG: No saved frame, centering window")
-            window.center()
-        }
 
         let toolbar = NSToolbar(identifier: "NotesToolbar")
         toolbar.autosavesConfiguration = true
@@ -72,6 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                         userId: userId
                     )
                     self?.window.contentViewController = mainVC
+                    // Re-trigger restoration if we just logged in
+                    self?.restoreWindowFrame()
                 }
             }
             window.contentViewController = authVC
@@ -79,8 +70,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        
+        // 4. Native Window Persistence (Moved to the end to prevent override by layout)
+        restoreWindowFrame()
 
         setupMenu()
+    }
+    
+    private func restoreWindowFrame() {
+        window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow_v3")
+        window.setFrameAutosaveName("NotesMainWindow_v3")
+        
+        if window.setFrameUsingName("NotesMainWindow_v3") {
+            print("DEBUG: Successfully restored window frame: \(window.frame)")
+        } else {
+            print("DEBUG: No saved frame, centering window")
+            window.center()
+        }
     }
     
     private func setupMenu() {
