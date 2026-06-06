@@ -6,8 +6,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("DEBUG: AppDelegate applicationDidFinishLaunching called")
-        
         // 1. Initialize core layers & databases
         let database = Database(dbName: "note_app_db.sqlite")
         let storageService = StorageService(database: database)
@@ -61,7 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                         userId: userId
                     )
                     self?.window.contentViewController = mainVC
-                    // Re-trigger restoration if we just logged in
                     self?.restoreWindowFrame()
                 }
             }
@@ -71,7 +68,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         
-        // 4. Native Window Persistence (Moved to the end to prevent override by layout)
         restoreWindowFrame()
 
         setupMenu()
@@ -80,13 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func restoreWindowFrame() {
         window.identifier = NSUserInterfaceItemIdentifier("NotesMainWindow_v3")
         window.setFrameAutosaveName("NotesMainWindow_v3")
-        
-        if window.setFrameUsingName("NotesMainWindow_v3") {
-            print("DEBUG: Successfully restored window frame: \(window.frame)")
-        } else {
-            print("DEBUG: No saved frame, centering window")
-            window.center()
-        }
+        _ = window.setFrameUsingName("NotesMainWindow_v3")
     }
     
     private func setupMenu() {
@@ -117,19 +107,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
-    }
-
-    // MARK: - NSWindowDelegate
-    func windowDidMove(_ notification: Notification) {
-        if let window = notification.object as? NSWindow {
-            print("DEBUG: Window moved to \(window.frame)")
-        }
-    }
-
-    func windowDidResize(_ notification: Notification) {
-        if let window = notification.object as? NSWindow {
-            print("DEBUG: Window resized to \(window.frame)")
-        }
     }
 }
 

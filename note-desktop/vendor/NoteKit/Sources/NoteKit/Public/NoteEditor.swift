@@ -33,6 +33,13 @@ public final class NoteEditor: NSViewController, NoteBlockStoreDelegate {
         textView.drawsBackground = true
         textView.backgroundColor = .textBackgroundColor
         textView.textColor = .textColor
+        textView.font = NSFont.systemFont(ofSize: 14)
+        
+        // Ensure typing attributes have correct color and font for visibility
+        textView.typingAttributes = [
+            .font: NSFont.systemFont(ofSize: 14),
+            .foregroundColor: NSColor.textColor
+        ]
         
         scrollView.documentView = textView
         self.view = scrollView
