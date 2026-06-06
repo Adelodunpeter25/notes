@@ -2,25 +2,16 @@ import AppKit
 
 public final class NoteList: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
     
-    // MARK: - Row Representation
-    private enum RowItem {
-        case header(String)
-        case note(DBNote)
-    }
-    
     // MARK: - Properties
     private let noteService: NoteService
     private let storage: StorageService
+    private var viewModel: NoteListViewModel?
     
     private let searchField = SearchField()
     private let tableView = NSTableView()
     private let scrollView = NSScrollView()
     private let headerLabel = NSTextField(labelWithString: "All Notes")
     private let addNoteButton = NSButton()
-    
-    private var allNotes: [DBNote] = []
-    private var filteredNotes: [DBNote] = []
-    private var rowItems: [RowItem] = []
     
     private var userId: String = ""
     private var isTrashSelected = false
@@ -125,12 +116,17 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     // MARK: - Public Interface
     public func setNotes(_ notes: [DBNote], title: String, userId: String) {
-        self.allNotes = notes
         self.userId = userId
         self.headerLabel.stringValue = title
         self.isTrashSelected = (title == "Trash")
+        
+        if viewModel == nil {
+            viewModel = NoteListViewModel(noteService: noteService, storage: storage, userId: userId)
+        }
+        
+        viewModel?.updateNotes(notes, searchquery: searchField.stringValue)
         updateHeaderButtonState()
-        filterNotes()
+        tableView.reloadData()
     }
     
     private func updateHeaderButtonState() {
@@ -153,11 +149,11 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     public func selectNote(_ note: DBNote?) {
-        guard let note = note else {
+        guard let note = note, let viewModel = viewModel else {
             tableView.deselectAll(nil)
             return
         }
-        for (index, item) in rowItems.enumerated() {
+        for (index, item) in viewModel.rowItems.enumerated() {
             if case .note(let dbNote) = item, dbNote.id == note.id {
                 tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
                 tableView.scrollRowToVisible(index)
@@ -168,39 +164,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     // MARK: - Search
     private func filterNotes() {
-        let query = searchField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if query.isEmpty {
-            filteredNotes = allNotes
-        } else {
-            filteredNotes = noteService.searchNotes(query: query, userId: userId)
-        }
-        updateRowItems()
-    }
-    
-    private func updateRowItems() {
-        var newItems: [RowItem] = []
-        
-        let pinned = filteredNotes.filter { $0.isPinned }
-        let unpinned = filteredNotes.filter { !$0.isPinned }
-        
-        if !pinned.isEmpty {
-            newItems.append(.header("Pinned"))
-            for note in pinned {
-                newItems.append(.note(note))
-            }
-        }
-        
-        var currentSection: String? = nil
-        for note in unpinned {
-            let section = TimeUtils.getNoteSection(for: note.updatedAt)
-            if section != currentSection {
-                currentSection = section
-                newItems.append(.header(section))
-            }
-            newItems.append(.note(note))
-        }
-        
-        self.rowItems = newItems
+        viewModel?.filterNotes(query: searchField.stringValue)
         tableView.reloadData()
     }
     
@@ -287,12 +251,13 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     // MARK: - NSTableViewDataSource
     public func numberOfRows(in tableView: NSTableView) -> Int {
-        return rowItems.count
+        return viewModel?.rowItems.count ?? 0
     }
     
     // MARK: - NSTableViewDelegate
     public func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
-        switch rowItems[row] {
+        guard let item = viewModel?.rowItems[row] else { return false }
+        switch item {
         case .header:
             return true
         case .note:
@@ -301,7 +266,8 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     public func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-        switch rowItems[row] {
+        guard let item = viewModel?.rowItems[row] else { return 52 }
+        switch item {
         case .header:
             return 22
         case .note:
@@ -310,7 +276,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let item = rowItems[row]
+        guard let item = viewModel?.rowItems[row] else { return nil }
         
         switch item {
         case .header(let title):
@@ -342,7 +308,8 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
             return
         }
         
-        switch rowItems[selectedRow] {
+        guard let item = viewModel?.rowItems[selectedRow] else { return }
+        switch item {
         case .header:
             onNoteSelected?(nil)
         case .note(let note):
@@ -351,76 +318,12 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
 }
 
-// MARK: - Note Cell View
-fileprivate final class NoteCellView: NSTableCellView {
-    let titleLabel = NSTextField(labelWithString: "")
-    let subtitleLabel = NSTextField(labelWithString: "")
-    let pinImageView = NSImageView()
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupViews()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupViews() {
-        titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
-        titleLabel.textColor = .labelColor
-        titleLabel.lineBreakMode = .byTruncatingTail
-        addSubview(titleLabel)
-        
-        subtitleLabel.font = NSFont.systemFont(ofSize: 11)
-        subtitleLabel.textColor = .secondaryLabelColor
-        subtitleLabel.lineBreakMode = .byTruncatingTail
-        addSubview(subtitleLabel)
-        
-        pinImageView.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "Pinned")
-        pinImageView.imageScaling = .scaleProportionallyDown
-        pinImageView.contentTintColor = AppColors.accent
-        addSubview(pinImageView)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        pinImageView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: pinImageView.leadingAnchor, constant: -8),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            
-            subtitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            subtitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-            
-            pinImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            pinImageView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            pinImageView.widthAnchor.constraint(equalToConstant: 12),
-            pinImageView.heightAnchor.constraint(equalToConstant: 12)
-        ])
-    }
-    
-    public static func previewFromContent(_ content: String) -> String {
-        let lines = NoteUtils.extractLines(from: content)
-        if lines.count <= 1 {
-            return "No additional text"
-        }
-        let remaining = lines.dropFirst().map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-        if remaining.isEmpty {
-            return "No additional text"
-        }
-        return remaining.joined(separator: " ")
-    }
-}
-
 extension NoteList: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow],
+        guard let viewModel = viewModel,
+              clickedRow != -1,
+              case .note(let note) = viewModel.rowItems[clickedRow],
               let contextMenu = menu as? NoteContextMenu else {
             menu.removeAllItems()
             contextMenuNote = nil
