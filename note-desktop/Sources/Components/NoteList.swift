@@ -267,6 +267,17 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         }
     }
     
+    @objc func contextMoveTapped(_ sender: NSMenuItem) {
+        guard let note = contextMenuNote else { return }
+        let folderId = sender.representedObject as? String
+        
+        if noteService.moveNoteToFolder(note, folderId: folderId) {
+            var updated = note
+            updated.folderId = folderId
+            onNoteUpdated?(updated)
+        }
+    }
+    
     // MARK: - NSSearchFieldDelegate
     public func controlTextDidChange(_ obj: Notification) {
         if obj.object as? NSSearchField == searchField {
@@ -419,12 +430,16 @@ extension NoteList: NSMenuDelegate {
         contextMenuNote = note
         tableView.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
 
+        let folders = storage.listActiveFolders(userId: userId)
+        
         contextMenu.update(
             note: note,
+            folders: folders,
             target: self,
             pinAction: #selector(contextPinTapped),
             deleteAction: #selector(contextDeleteTapped),
-            restoreAction: #selector(contextRestoreTapped)
+            restoreAction: #selector(contextRestoreTapped),
+            moveAction: #selector(contextMoveTapped)
         )
     }
 }
