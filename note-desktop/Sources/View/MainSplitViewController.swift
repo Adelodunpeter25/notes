@@ -1,5 +1,4 @@
 import AppKit
-import NoteKit
 
 public final class MainSplitViewController: NSSplitViewController {
     

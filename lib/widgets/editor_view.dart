@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../widgets/service_provider.dart';
+import '../widgets/editor_selection_menu.dart';
 import '../database/database.dart' hide User;
 import '../utils/note.dart';
 import '../theme.dart';
@@ -218,69 +218,10 @@ class _EditorViewState extends State<EditorView> {
                 editorState: _editorState!,
                 editorScrollController: _editorScrollController,
                 toolbarBuilder: (context, anchor, closeToolbar) {
-                  final selection = _editorState!.selection;
-                  final isCollapsed = selection == null || selection.isCollapsed;
-
-                  return AdaptiveTextSelectionToolbar(
-                    anchors: TextSelectionToolbarAnchors(primaryAnchor: anchor),
-                    children: AdaptiveTextSelectionToolbar.getAdaptiveButtons(
-                      context,
-                      [
-                        if (!isCollapsed) ...[
-                          ContextMenuButtonItem(
-                            onPressed: () {
-                              copyCommand.execute(_editorState!);
-                              closeToolbar();
-                            },
-                            type: ContextMenuButtonType.copy,
-                          ),
-                          ContextMenuButtonItem(
-                            onPressed: () {
-                              cutCommand.execute(_editorState!);
-                              closeToolbar();
-                            },
-                            type: ContextMenuButtonType.cut,
-                            ),
-                            ContextMenuButtonItem(
-                            onPressed: () async {
-                              final selection = _editorState!.selection;
-                              if (selection != null && !selection.isCollapsed) {
-                                final text = _editorState!.getTextInSelection(selection).join('');
-                                if (text.isNotEmpty) {
-                                  final url = Uri.parse('https://www.google.com/search?q=${Uri.encodeComponent(text)}');
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                                  }
-                                }
-                              }
-                              closeToolbar();
-                            },
-                            label: 'Lookup',
-                            ),
-                            ],
-                            ContextMenuButtonItem(
-                            onPressed: () {
-                            pasteCommand.execute(_editorState!);
-                            closeToolbar();
-                          },
-                          type: ContextMenuButtonType.paste,
-                        ),
-                        ContextMenuButtonItem(
-                          onPressed: () {
-                            final lastNode = _editorState!.document.root.children.last;
-                            _editorState!.selection = Selection(
-                              start: Position(path: [0]),
-                              end: Position(
-                                path: [_editorState!.document.root.children.length - 1],
-                                offset: lastNode.delta?.length ?? 0,
-                              ),
-                            );
-                            closeToolbar();
-                          },
-                          type: ContextMenuButtonType.selectAll,
-                        ),
-                      ],
-                    ).toList(),
+                  return EditorSelectionMenu(
+                    editorState: _editorState!,
+                    anchor: anchor,
+                    closeToolbar: closeToolbar,
                   );
                 },
                 child: AppFlowyEditor(

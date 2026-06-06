@@ -16,17 +16,14 @@ let package = Package(
     targets: [
         .target(
             name: "NoteCore",
-            dependencies: [
-                .product(name: "NoteKit", package: "NoteKit")
-            ],
+            dependencies: [],
             path: "Sources",
             exclude: ["App"]
         ),
         .executableTarget(
             name: "Note",
             dependencies: [
-                "NoteCore",
-                .product(name: "NoteKit", package: "NoteKit")
+                "NoteCore"
             ],
             path: "Sources/App"
         ),

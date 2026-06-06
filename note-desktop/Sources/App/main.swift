@@ -1,5 +1,4 @@
 import AppKit
-import NoteKit
 import NoteCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {

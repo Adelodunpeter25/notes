@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/app_bottom_sheet.dart';
+import '../widgets/sync_button.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
@@ -84,7 +85,7 @@ class _FoldersViewState extends State<FoldersView> {
         ),
         centerTitle: false,
         actions: [
-          _RotatingSyncButton(onSync: widget.onSync),
+          RotatingSyncButton(onSync: widget.onSync),
         ],
       ),
       body: SafeArea(
@@ -293,66 +294,6 @@ class _FoldersViewState extends State<FoldersView> {
           ),
           const SizedBox(height: 8),
         ],
-      ),
-    );
-  }
-}
-
-class _RotatingSyncButton extends StatefulWidget {
-  final Future<void> Function() onSync;
-
-  const _RotatingSyncButton({required this.onSync});
-
-  @override
-  State<_RotatingSyncButton> createState() => _RotatingSyncButtonState();
-}
-
-class _RotatingSyncButtonState extends State<_RotatingSyncButton> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  bool _isSyncing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleSync() async {
-    if (_isSyncing) return;
-    setState(() {
-      _isSyncing = true;
-    });
-    _controller.repeat();
-    try {
-      await widget.onSync();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSyncing = false;
-        });
-        _controller.stop();
-        _controller.reset();
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _controller,
-      child: IconButton(
-        icon: const Icon(CupertinoIcons.refresh),
-        onPressed: _handleSync,
-        tooltip: 'Sync',
       ),
     );
   }

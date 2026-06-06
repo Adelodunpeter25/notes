@@ -1,5 +1,4 @@
 import AppKit
-import NoteKit
 
 public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDelegate {
     private let noteService: NoteService
