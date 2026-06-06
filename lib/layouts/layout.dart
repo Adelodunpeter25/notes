@@ -153,6 +153,7 @@ class _AppLayoutState extends State<AppLayout> {
                 );
                 _onNoteSelected(newNote);
               },
+              onSync: _performSync,
             );
             break;
           case ScreenType.notes:

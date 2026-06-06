@@ -12,6 +12,7 @@ class FoldersView extends StatefulWidget {
   final ValueChanged<int> onFolderSelected;
   final String userId;
   final VoidCallback onNewNote;
+  final Future<void> Function() onSync;
 
   const FoldersView({
     super.key,
@@ -19,6 +20,7 @@ class FoldersView extends StatefulWidget {
     required this.onFolderSelected,
     required this.userId,
     required this.onNewNote,
+    required this.onSync,
   });
 
   @override
@@ -81,6 +83,9 @@ class _FoldersViewState extends State<FoldersView> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          _RotatingSyncButton(onSync: widget.onSync),
+        ],
       ),
       body: SafeArea(
         child: StreamBuilder<int>(
@@ -288,6 +293,66 @@ class _FoldersViewState extends State<FoldersView> {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+}
+
+class _RotatingSyncButton extends StatefulWidget {
+  final Future<void> Function() onSync;
+
+  const _RotatingSyncButton({required this.onSync});
+
+  @override
+  State<_RotatingSyncButton> createState() => _RotatingSyncButtonState();
+}
+
+class _RotatingSyncButtonState extends State<_RotatingSyncButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSync() async {
+    if (_isSyncing) return;
+    setState(() {
+      _isSyncing = true;
+    });
+    _controller.repeat();
+    try {
+      await widget.onSync();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+        _controller.stop();
+        _controller.reset();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: IconButton(
+        icon: const Icon(CupertinoIcons.refresh),
+        onPressed: _handleSync,
+        tooltip: 'Sync',
       ),
     );
   }

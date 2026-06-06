@@ -467,7 +467,7 @@ class _RotatingSyncButtonState extends State<RotatingSyncButton> with SingleTick
     return RotationTransition(
       turns: _controller,
       child: IconButton(
-        icon: const Icon(CupertinoIcons.arrow_2_circlepath),
+        icon: const Icon(CupertinoIcons.refresh),
         onPressed: _handleSync,
         tooltip: 'Sync',
       ),

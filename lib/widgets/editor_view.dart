@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../utils/note.dart';
@@ -239,10 +240,26 @@ class _EditorViewState extends State<EditorView> {
                               closeToolbar();
                             },
                             type: ContextMenuButtonType.cut,
-                          ),
-                        ],
-                        ContextMenuButtonItem(
-                          onPressed: () {
+                            ),
+                            ContextMenuButtonItem(
+                            onPressed: () async {
+                              final selection = _editorState!.selection;
+                              if (selection != null && !selection.isCollapsed) {
+                                final text = _editorState!.getTextInSelection(selection).join('');
+                                if (text.isNotEmpty) {
+                                  final url = Uri.parse('https://www.google.com/search?q=${Uri.encodeComponent(text)}');
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  }
+                                }
+                              }
+                              closeToolbar();
+                            },
+                            label: 'Lookup',
+                            ),
+                            ],
+                            ContextMenuButtonItem(
+                            onPressed: () {
                             pasteCommand.execute(_editorState!);
                             closeToolbar();
                           },
