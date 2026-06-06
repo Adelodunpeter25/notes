@@ -70,7 +70,6 @@ class EditorSelectionMenu extends StatelessWidget {
                   offset: lastNode.delta?.length ?? 0,
                 ),
               );
-              closeToolbar();
             },
             type: ContextMenuButtonType.selectAll,
           ),
