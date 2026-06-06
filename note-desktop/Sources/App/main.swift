@@ -3,6 +3,7 @@ import NoteCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
+    private var mainSplitVC: MainSplitViewController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
@@ -46,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 noteService: noteService,
                 userId: activeUserId
             )
+            self.mainSplitVC = mainVC
             window.contentViewController = mainVC
         } else {
             let authVC = AuthViewController(authService: authService)
@@ -57,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                         noteService: noteService,
                         userId: userId
                     )
+                    self?.mainSplitVC = mainVC
                     self?.window.contentViewController = mainVC
                     self?.restoreWindowFrame()
                 }
@@ -69,7 +72,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         restoreWindowFrame()
 
-        setupMenu()
+        // 4. Setup Menu with Shortcuts
+        NSApp.mainMenu = AppMenu(
+            target: self,
+            newNoteAction: #selector(handleNewNoteShortcut),
+            newFolderAction: #selector(handleNewFolderShortcut)
+        )
     }
     
     private func restoreWindowFrame() {
@@ -78,30 +86,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         _ = window.setFrameUsingName("NotesMainWindow_v3")
     }
     
-    private func setupMenu() {
-        let mainMenu = NSMenu()
-        
-        let appMenuItem = NSMenuItem()
-        mainMenu.addItem(appMenuItem)
-        let appMenu = NSMenu()
-        appMenuItem.submenu = appMenu
-        appMenu.addItem(withTitle: "About Notes", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
-        appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit Notes", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        
-        let editMenuItem = NSMenuItem()
-        mainMenu.addItem(editMenuItem)
-        let editMenu = NSMenu(title: "Edit")
-        editMenuItem.submenu = editMenu
-        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
-        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
-        editMenu.addItem(NSMenuItem.separator())
-        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "Select All", action: #selector(NSStandardKeyBindingResponding.selectAll(_:)), keyEquivalent: "a")
-        
-        NSApp.mainMenu = mainMenu
+    @objc private func handleNewNoteShortcut() {
+        mainSplitVC?.createNewNote()
+    }
+    
+    @objc private func handleNewFolderShortcut() {
+        mainSplitVC?.createNewFolder()
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

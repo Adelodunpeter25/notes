@@ -179,6 +179,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     }
     
     // MARK: - Actions
+    public func createNewFolder() {
+        newFolderButtonTapped()
+    }
+    
     @objc private func newFolderButtonTapped() {
         if let folder = folderService.createFolder(name: "Untitled Folder", userId: userId) {
             reloadData()

@@ -108,6 +108,15 @@ public final class MainSplitViewController: NSSplitViewController {
         }
     }
     
+    // MARK: - Public Actions
+    public func createNewNote() {
+        createNewNoteInCurrentSelection()
+    }
+    
+    public func createNewFolder() {
+        folderList.createNewFolder()
+    }
+    
     // MARK: - Data Synchronization
     private func refreshAll() {
         folderList.reloadData()
