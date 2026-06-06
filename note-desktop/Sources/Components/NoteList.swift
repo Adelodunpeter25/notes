@@ -118,7 +118,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         ])
         
         // Context menu setup
-        let menu = NoteContextMenu(note: nil, target: self, pinAction: #selector(contextPinTapped), deleteAction: #selector(contextDeleteTapped), restoreAction: #selector(contextRestoreTapped))
+        let menu = NoteContextMenu(target: self, pinAction: #selector(contextPinTapped), deleteAction: #selector(contextDeleteTapped), restoreAction: #selector(contextRestoreTapped))
         menu.delegate = self
         tableView.menu = menu
     }

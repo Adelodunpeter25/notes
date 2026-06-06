@@ -3,16 +3,12 @@ import AppKit
 public final class NoteContextMenu: NSMenu {
     
     public init(
-        note: DBNote?,
         target: AnyObject,
         pinAction: Selector,
         deleteAction: Selector,
         restoreAction: Selector
     ) {
         super.init(title: "Note Context")
-        if let note = note {
-            buildMenu(note: note, target: target, pinAction: pinAction, deleteAction: deleteAction, restoreAction: restoreAction)
-        }
     }
     
     required init(coder: NSCoder) {
@@ -27,16 +23,7 @@ public final class NoteContextMenu: NSMenu {
         restoreAction: Selector
     ) {
         removeAllItems()
-        buildMenu(note: note, target: target, pinAction: pinAction, deleteAction: deleteAction, restoreAction: restoreAction)
-    }
-    
-    private func buildMenu(
-        note: DBNote,
-        target: AnyObject,
-        pinAction: Selector,
-        deleteAction: Selector,
-        restoreAction: Selector
-    ) {
+        
         // 1. Pin/Unpin action
         let pinTitle = note.isPinned ? "Unpin Note" : "Pin Note"
         let pinItem = NSMenuItem(title: pinTitle, action: pinAction, keyEquivalent: "")
