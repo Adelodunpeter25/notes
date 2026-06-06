@@ -10,9 +10,7 @@ let package = Package(
         .executable(name: "Note", targets: ["Note"]),
         .library(name: "NoteCore", targets: ["NoteCore"])
     ],
-    dependencies: [
-        .package(path: "vendor/NoteKit")
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "NoteCore",
