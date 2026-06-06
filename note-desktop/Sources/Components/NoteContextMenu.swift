@@ -6,7 +6,8 @@ public final class NoteContextMenu: NSMenu {
         target: AnyObject,
         pinAction: Selector,
         deleteAction: Selector,
-        restoreAction: Selector
+        restoreAction: Selector,
+        moveAction: Selector
     ) {
         super.init(title: "Note Context")
     }
