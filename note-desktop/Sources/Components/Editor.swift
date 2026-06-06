@@ -1,13 +1,14 @@
 import AppKit
 import NoteKit
 
-public final class Editor: NSViewController, EditorToolbarDelegate {
+public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDelegate {
     private let noteService: NoteService
     private var activeNote: DBNote?
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
-    private let noteEditor = NoteEditor()
+    private let textView = NSTextView()
+    private let scrollView = NSScrollView()
     private let toolbar = EditorToolbar()
     
     public var onNoteUpdated: ((DBNote?) -> Void)?
@@ -35,17 +36,31 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
         headerLabel.font = NSFont.systemFont(ofSize: 11)
         headerLabel.alignment = .center
         
-        // 2. Setup NoteEditor
-        addChild(noteEditor)
-        noteEditor.onBlocksUpdated = { [weak self] blocks in
-            self?.saveNoteContent(blocks: blocks)
-        }
+        // 2. Setup Plain Text Editor
+        scrollView.hasVerticalScroller = true
+        scrollView.drawsBackground = false
+        
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsUndo = true
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.font = NSFont.systemFont(ofSize: 14)
+        textView.textColor = .textColor
+        textView.backgroundColor = .textBackgroundColor
+        textView.drawsBackground = true
+        textView.delegate = self
+        
+        textView.autoresizingMask = [.width]
+        textView.isVerticallyResizable = true
+        
+        scrollView.documentView = textView
         
         // 3. Setup Toolbar Actions
         toolbar.delegate = self
         
         // Stack and align layouts
-        let stack = NSStackView(views: [headerLabel, noteEditor.view, toolbar])
+        let stack = NSStackView(views: [headerLabel, scrollView, toolbar])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.alignment = .centerX
@@ -53,7 +68,7 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
         
         view.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        noteEditor.view.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -61,8 +76,8 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
             stack.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
-            noteEditor.view.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            noteEditor.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
             toolbar.heightAnchor.constraint(equalToConstant: 36)
         ])
@@ -82,15 +97,20 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
         headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
         toolbar.isPinned = note.isPinned
         
-        // Convert AppFlowy editor JSON format to NoteKit blocks representation
+        // Extract plain text from AppFlowy JSON for display
         let blocks = AppFlowyConverter.toBlocks(jsonString: note.content)
-        noteEditor.loadBlocks(blocks)
+        let plainText = blocks.map { $0.content }.joined(separator: "\n")
+        textView.string = plainText
     }
     
-    private func saveNoteContent(blocks: [Block]) {
+    private func saveNoteContent() {
         guard var note = activeNote else { return }
         
-        let newJSON = AppFlowyConverter.toAppFlowyJSON(blocks: blocks)
+        let plainText = textView.string
+        // Store as a single text block in AppFlowy JSON to maintain system-wide compatibility
+        let block = Block(type: .text, content: plainText)
+        let newJSON = AppFlowyConverter.toAppFlowyJSON(blocks: [block])
+        
         note.content = newJSON
         note.title = NoteUtils.titleFromContent(newJSON)
         
@@ -99,6 +119,12 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
             onNoteUpdated?(note)
         }
+    }
+    
+    // MARK: - NSTextDelegate
+    
+    public func textDidChange(_ notification: Notification) {
+        saveNoteContent()
     }
     
     // MARK: - EditorToolbarDelegate
@@ -125,7 +151,7 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
             if self?.noteService.softDeleteNote(note) == true {
                 // Clear selection states
                 self?.activeNote = nil
-                self?.noteEditor.loadBlocks([])
+                self?.textView.string = ""
                 self?.headerLabel.stringValue = ""
                 self?.onNoteUpdated?(nil)
             }
@@ -133,6 +159,6 @@ public final class Editor: NSViewController, EditorToolbarDelegate {
     }
     
     public func toolbarDidTapCheckbox(_ toolbar: EditorToolbar) {
-        noteEditor.toggleChecklist()
+        // Checkboxes not supported in plain-text mode
     }
 }
