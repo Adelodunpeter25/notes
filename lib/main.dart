@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:appflowy_editor/appflowy_editor.dart';
 import 'database/database.dart';
 import 'database/daos.dart';
 import 'services/api_service.dart';
@@ -58,6 +60,15 @@ class NoteApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        AppFlowyEditorLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+      ],
       home: isLoggedIn
           ? const AppLayout()
           : AuthPage(authService: authService),

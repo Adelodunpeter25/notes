@@ -34,6 +34,7 @@ class _EditorViewState extends State<EditorView> {
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
   late final FocusNode _focusNode;
+  late final EditorScrollController _editorScrollController;
   String _initialDocJson = '';
   bool _isDirty = false;
   bool _canUndo = false;
@@ -51,6 +52,7 @@ class _EditorViewState extends State<EditorView> {
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
     _focusNode.dispose();
+    _editorScrollController.dispose();
     super.dispose();
   }
 
@@ -69,6 +71,7 @@ class _EditorViewState extends State<EditorView> {
       _editorState = EditorState.blank();
     }
 
+    _editorScrollController = EditorScrollController(editorState: _editorState!);
     _initialDocJson = jsonEncode(_editorState!.document.toJson());
     _isDirty = false;
     _canUndo = false;
@@ -210,25 +213,72 @@ class _EditorViewState extends State<EditorView> {
         body: Column(
           children: [
             Expanded(
-              child: AppFlowyEditor(
+              child: MobileFloatingToolbar(
                 editorState: _editorState!,
-                focusNode: _focusNode,
-                editorScrollController: EditorScrollController(
+                editorScrollController: _editorScrollController,
+                toolbarBuilder: (context, anchor, closeToolbar) {
+                  return AdaptiveTextSelectionToolbar(
+                    anchors: TextSelectionToolbarAnchors(primaryAnchor: anchor),
+                    children: AdaptiveTextSelectionToolbar.getAdaptiveButtons(
+                      context,
+                      [
+                        ContextMenuButtonItem(
+                          onPressed: () {
+                            copyCommand.execute(_editorState!);
+                            closeToolbar();
+                          },
+                          type: ContextMenuButtonType.copy,
+                        ),
+                        ContextMenuButtonItem(
+                          onPressed: () {
+                            cutCommand.execute(_editorState!);
+                            closeToolbar();
+                          },
+                          type: ContextMenuButtonType.cut,
+                        ),
+                        ContextMenuButtonItem(
+                          onPressed: () {
+                            pasteCommand.execute(_editorState!);
+                            closeToolbar();
+                          },
+                          type: ContextMenuButtonType.paste,
+                        ),
+                        ContextMenuButtonItem(
+                          onPressed: () {
+                            final lastNode = _editorState!.document.root.children.last;
+                            _editorState!.selection = Selection(
+                              start: Position(path: [0]),
+                              end: Position(
+                                path: [_editorState!.document.root.children.length - 1],
+                                offset: lastNode.delta?.length ?? 0,
+                              ),
+                            );
+                            closeToolbar();
+                          },
+                          type: ContextMenuButtonType.selectAll,
+                        ),
+                      ],
+                    ).toList(),
+                  );
+                },
+                child: AppFlowyEditor(
                   editorState: _editorState!,
-                ),
-                editorStyle: EditorStyle.mobile(
-                  cursorColor: AppColors.accent,
-                  dragHandleColor: AppColors.accent,
-                  selectionColor: AppColors.accent.withOpacity(0.2),
-                  textStyleConfiguration: TextStyleConfiguration(
-                    text: TextStyle(
-                      fontSize: 16.0,
-                      color: AppTextColors.primary(context),
-                    ),
-                    code: TextStyle(
-                      fontFamily: 'monospace',
-                      color: AppTextColors.primary(context),
-                      backgroundColor: AppSurfaces.elevated(context),
+                  focusNode: _focusNode,
+                  editorScrollController: _editorScrollController,
+                  editorStyle: EditorStyle.mobile(
+                    cursorColor: AppColors.accent,
+                    dragHandleColor: AppColors.accent,
+                    selectionColor: AppColors.accent.withOpacity(0.2),
+                    textStyleConfiguration: TextStyleConfiguration(
+                      text: TextStyle(
+                        fontSize: 16.0,
+                        color: AppTextColors.primary(context),
+                      ),
+                      code: TextStyle(
+                        fontFamily: 'monospace',
+                        color: AppTextColors.primary(context),
+                        backgroundColor: AppSurfaces.elevated(context),
+                      ),
                     ),
                   ),
                 ),
