@@ -64,6 +64,7 @@ public final class MainSplitViewController: NSSplitViewController {
         
         // Modern divider styles
         splitView.dividerStyle = .thin
+        splitView.autosaveName = "MainSplitView"
     }
     
     private func setupBindings() {
