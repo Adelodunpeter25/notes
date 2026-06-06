@@ -35,7 +35,7 @@ A minimal, offline-first note-taking app with real-time sync across devices.
 ### Desktop (`note-desktop/`)
 
 - **Swift** / Swift Package Manager (macOS 13+)
-- **NoteKit** — custom TextKit 2 block editor with inline markdown (bold, italic, links), 8 block types, checkbox attachments, and a rendering cache
+- **Standard NSTextView** for robust plain-text editing
 - Three-pane split view (folders / note list / editor) with context menus, search, and inline rename
 - Local SQLite persistence with FTS5 search (same schema as the mobile app)
 - Shared AppFlowy JSON content format — notes are cross-compatible with the mobile app

@@ -1,6 +1,6 @@
 import AppKit
 
-public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDelegate {
+public final class Editor: NSViewController, NSTextViewDelegate {
     private let noteService: NoteService
     private var activeNote: DBNote?
     
@@ -8,7 +8,6 @@ public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDe
     private let headerLabel = NSTextField(labelWithString: "")
     private let textView = NSTextView()
     private let scrollView = NSScrollView()
-    private let toolbar = EditorToolbar()
     
     public var onNoteUpdated: ((DBNote?) -> Void)?
     
@@ -55,11 +54,8 @@ public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDe
         
         scrollView.documentView = textView
         
-        // 3. Setup Toolbar Actions
-        toolbar.delegate = self
-        
         // Stack and align layouts
-        let stack = NSStackView(views: [headerLabel, scrollView, toolbar])
+        let stack = NSStackView(views: [headerLabel, scrollView])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.alignment = .centerX
@@ -76,9 +72,7 @@ public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDe
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
             scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
-            toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            toolbar.heightAnchor.constraint(equalToConstant: 36)
+            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
         ])
     }
     
@@ -86,15 +80,13 @@ public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDe
     public func loadNote(_ note: DBNote) {
         if self.activeNote?.id == note.id {
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
-            toolbar.isPinned = note.isPinned
             return
         }
         
         self.activeNote = note
         
-        // Update header & toolbar states
+        // Update header
         headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
-        toolbar.isPinned = note.isPinned
         
         // Extract plain text from AppFlowy JSON for display
         let blocks = AppFlowyConverter.toBlocks(jsonString: note.content)
@@ -120,44 +112,9 @@ public final class Editor: NSViewController, EditorToolbarDelegate, NSTextViewDe
         }
     }
     
-    // MARK: - NSTextDelegate
+    // MARK: - NSTextViewDelegate
     
     public func textDidChange(_ notification: Notification) {
         saveNoteContent()
-    }
-    
-    // MARK: - EditorToolbarDelegate
-    
-    public func toolbarDidTapPin(_ toolbar: EditorToolbar) {
-        guard let note = activeNote else { return }
-        let newPinState = !note.isPinned
-        if noteService.pinNote(note, isPinned: newPinState) {
-            self.activeNote?.isPinned = newPinState
-            toolbar.isPinned = newPinState
-            if let active = activeNote {
-                onNoteUpdated?(active)
-            }
-        }
-    }
-    
-    public func toolbarDidTapMove(_ toolbar: EditorToolbar) {
-        // Available for routing/popover folder movements in app splitview
-    }
-    
-    public func toolbarDidTapDelete(_ toolbar: EditorToolbar) {
-        guard let note = activeNote else { return }
-        ConfirmDialog.show(title: "Delete Note", message: "Are you sure you want to move this note to Trash?") { [weak self] in
-            if self?.noteService.softDeleteNote(note) == true {
-                // Clear selection states
-                self?.activeNote = nil
-                self?.textView.string = ""
-                self?.headerLabel.stringValue = ""
-                self?.onNoteUpdated?(nil)
-            }
-        }
-    }
-    
-    public func toolbarDidTapCheckbox(_ toolbar: EditorToolbar) {
-        // Checkboxes not supported in plain-text mode
     }
 }

@@ -24,6 +24,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     private var userId: String = ""
     private var isTrashSelected = false
+    private var contextMenuNote: DBNote?
     
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
@@ -223,9 +224,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc func contextPinTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow] else { return }
+        guard let note = contextMenuNote else { return }
 
         let newPinState = !note.isPinned
         if noteService.pinNote(note, isPinned: newPinState) {
@@ -236,9 +235,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc func contextDeleteTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow] else { return }
+        guard let note = contextMenuNote else { return }
 
         if note.deletedAt != nil {
             ConfirmDialog.show(title: "Delete Permanently", message: "Are you sure you want to permanently delete this note?") { [weak self] in
@@ -259,9 +256,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     }
     
     @objc func contextRestoreTapped() {
-        let clickedRow = tableView.clickedRow
-        guard clickedRow != -1,
-              case .note(let note) = rowItems[clickedRow],
+        guard let note = contextMenuNote,
               note.deletedAt != nil else { return }
 
         if noteService.restoreNote(note) {
@@ -417,9 +412,11 @@ extension NoteList: NSMenuDelegate {
               case .note(let note) = rowItems[clickedRow],
               let contextMenu = menu as? NoteContextMenu else {
             menu.removeAllItems()
+            contextMenuNote = nil
             return
         }
 
+        contextMenuNote = note
         tableView.selectRowIndexes(IndexSet(integer: clickedRow), byExtendingSelection: false)
 
         contextMenu.update(
