@@ -134,7 +134,7 @@ class _NoteListState extends State<NoteList> {
     };
 
     for (final note in notesList) {
-      final section = TimeUtils.getNoteSection(note.createdAt);
+      final section = TimeUtils.getNoteSection(note.updatedAt);
       grouped[section]?.add(note);
     }
 
@@ -313,7 +313,7 @@ class _NoteListState extends State<NoteList> {
       );
     }
 
-    allNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    allNotes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
     final pinnedNotes = allNotes.where((n) => n.isPinned).toList();
     final unpinnedNotes = allNotes.where((n) => !n.isPinned).toList();

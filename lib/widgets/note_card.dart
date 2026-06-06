@@ -132,7 +132,7 @@ class NoteCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        _formatDate(note.createdAt),
+                        _formatDate(note.updatedAt),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTextColors.tertiary(context),

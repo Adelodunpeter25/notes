@@ -10,13 +10,15 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
 
   Stream<List<Note>> watchAllNotes(String userId) {
     return (select(notes)
-          ..where((t) => t.userId.equals(userId) & t.deletedAt.isNull()))
+          ..where((t) => t.userId.equals(userId) & t.deletedAt.isNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
         .watch();
   }
 
   Stream<List<Note>> watchTrashNotes(String userId) {
     return (select(notes)
-          ..where((t) => t.userId.equals(userId) & t.deletedAt.isNotNull()))
+          ..where((t) => t.userId.equals(userId) & t.deletedAt.isNotNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
         .watch();
   }
 
@@ -25,7 +27,8 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
           ..where((t) =>
               t.userId.equals(userId) &
               t.folderId.equals(folderId) &
-              t.deletedAt.isNull()))
+              t.deletedAt.isNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
         .watch();
   }
 
