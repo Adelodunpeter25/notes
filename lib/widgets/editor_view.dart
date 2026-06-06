@@ -217,25 +217,30 @@ class _EditorViewState extends State<EditorView> {
                 editorState: _editorState!,
                 editorScrollController: _editorScrollController,
                 toolbarBuilder: (context, anchor, closeToolbar) {
+                  final selection = _editorState!.selection;
+                  final isCollapsed = selection == null || selection.isCollapsed;
+
                   return AdaptiveTextSelectionToolbar(
                     anchors: TextSelectionToolbarAnchors(primaryAnchor: anchor),
                     children: AdaptiveTextSelectionToolbar.getAdaptiveButtons(
                       context,
                       [
-                        ContextMenuButtonItem(
-                          onPressed: () {
-                            copyCommand.execute(_editorState!);
-                            closeToolbar();
-                          },
-                          type: ContextMenuButtonType.copy,
-                        ),
-                        ContextMenuButtonItem(
-                          onPressed: () {
-                            cutCommand.execute(_editorState!);
-                            closeToolbar();
-                          },
-                          type: ContextMenuButtonType.cut,
-                        ),
+                        if (!isCollapsed) ...[
+                          ContextMenuButtonItem(
+                            onPressed: () {
+                              copyCommand.execute(_editorState!);
+                              closeToolbar();
+                            },
+                            type: ContextMenuButtonType.copy,
+                          ),
+                          ContextMenuButtonItem(
+                            onPressed: () {
+                              cutCommand.execute(_editorState!);
+                              closeToolbar();
+                            },
+                            type: ContextMenuButtonType.cut,
+                          ),
+                        ],
                         ContextMenuButtonItem(
                           onPressed: () {
                             pasteCommand.execute(_editorState!);
