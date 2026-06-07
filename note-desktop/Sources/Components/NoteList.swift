@@ -13,6 +13,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     public var onNoteSelected: ((DBNote?) -> Void)?
     public var onAddNoteTapped: (() -> Void)?
     public var onNoteUpdated: ((DBNote?) -> Void)?
+    public var onLogoutTapped: (() -> Void)?
     
     public init(noteService: NoteService, storage: StorageService) {
         self.noteService = noteService
@@ -31,6 +32,12 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         listView.searchField.delegate = self
         listView.addNoteButton.target = self
         listView.addNoteButton.action = #selector(addButtonTapped)
+        
+        #if DEBUG
+        listView.logoutButton.target = self
+        listView.logoutButton.action = #selector(logoutButtonTapped)
+        #endif
+        
         listView.tableView.menu = NoteContextMenu(target: self, pinAction: #selector(contextPinTapped), deleteAction: #selector(contextDeleteTapped), restoreAction: #selector(contextRestoreTapped), moveAction: #selector(contextMoveTapped))
         listView.tableView.menu?.delegate = self
     }
@@ -64,6 +71,10 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
                 if self?.noteService.emptyTrash(userId: self?.userId ?? "") == true { self?.onNoteSelected?(nil); self?.onNoteUpdated?(nil) }
             }
         } else { onAddNoteTapped?() }
+    }
+    
+    @objc func logoutButtonTapped() {
+        onLogoutTapped?()
     }
     
     @objc func contextPinTapped() {

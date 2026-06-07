@@ -4,14 +4,15 @@ import NoteCore
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
     private var mainSplitVC: MainSplitViewController?
+    
+    private let database = Database(dbName: "note_app_db.sqlite")
+    private lazy var storageService = StorageService(database: database)
+    private lazy var apiService = ApiService()
+    private lazy var authService = AuthService(storage: storageService, api: apiService)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
-        let database = Database(dbName: "note_app_db.sqlite")
-        let storageService = StorageService(database: database)
         let recorder = SyncOpRecorder(storage: storageService)
-        let apiService = ApiService()
-        let authService = AuthService(storage: storageService, api: apiService)
         let searchService = SearchService(database: database)
         let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
@@ -42,44 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if authService.getSessionToken() != nil,
            let firstUserRow = database.query(sql: "SELECT id FROM users LIMIT 1;").first,
            let activeUserId = firstUserRow["id"] as? String {
-            let mainVC = MainSplitViewController(
-                storage: storageService,
-                folderService: folderService,
-                noteService: noteService,
-                userId: activeUserId
-            )
-            self.mainSplitVC = mainVC
-            window.contentViewController = mainVC
-            
-            // Initial sync on launch
-            syncService.syncData(userId: activeUserId) { _ in
-                DispatchQueue.main.async {
-                    mainVC.refreshAllData()
-                }
-            }
+            showMainContent(userId: activeUserId, syncService: syncService, noteService: noteService, folderService: folderService)
         } else {
-            let authVC = AuthViewController(authService: authService)
-            authVC.onAuthSuccess = { [weak self] userId in
-                DispatchQueue.main.async {
-                    let mainVC = MainSplitViewController(
-                        storage: storageService,
-                        folderService: folderService,
-                        noteService: noteService,
-                        userId: userId
-                    )
-                    self?.mainSplitVC = mainVC
-                    self?.window.contentViewController = mainVC
-                    self?.restoreWindowFrame()
-                    
-                    // Sync immediately after first login
-                    syncService.syncData(userId: userId) { _ in
-                        DispatchQueue.main.async {
-                            mainVC.refreshAllData()
-                        }
-                    }
-                }
-            }
-            window.contentViewController = authVC
+            showAuthContent(syncService: syncService, noteService: noteService, folderService: folderService)
         }
 
         window.makeKeyAndOrderFront(nil)
@@ -93,6 +59,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             newNoteAction: #selector(handleNewNoteShortcut),
             newFolderAction: #selector(handleNewFolderShortcut)
         )
+    }
+    
+    private func showMainContent(userId: String, syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+        let mainVC = MainSplitViewController(
+            storage: storageService,
+            folderService: folderService,
+            noteService: noteService,
+            userId: userId
+        )
+        self.mainSplitVC = mainVC
+        
+        mainVC.onLogout = { [weak self] in
+            self?.handleLogout(syncService: syncService, noteService: noteService, folderService: folderService)
+        }
+        
+        window.contentViewController = mainVC
+        
+        // Initial sync on launch
+        syncService.syncData(userId: userId) { _ in
+            DispatchQueue.main.async {
+                mainVC.refreshAllData()
+            }
+        }
+    }
+    
+    private func showAuthContent(syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+        let authVC = AuthViewController(authService: authService)
+        authVC.onAuthSuccess = { [weak self] userId in
+            DispatchQueue.main.async {
+                self?.showMainContent(userId: userId, syncService: syncService, noteService: noteService, folderService: folderService)
+            }
+        }
+        window.contentViewController = authVC
+    }
+    
+    private func handleLogout(syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+        authService.logout()
+        self.mainSplitVC = nil
+        showAuthContent(syncService: syncService, noteService: noteService, folderService: folderService)
     }
     
     private func restoreWindowFrame() {

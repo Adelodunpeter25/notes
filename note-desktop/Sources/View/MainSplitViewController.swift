@@ -16,6 +16,8 @@ public final class MainSplitViewController: NSSplitViewController {
     // MARK: - State
     private var currentSelection: FolderSelection = .allNotes
     
+    public var onLogout: (() -> Void)?
+    
     // MARK: - Initializer
     public init(storage: StorageService, folderService: FolderService, noteService: NoteService, userId: String) {
         self.storage = storage
@@ -81,7 +83,6 @@ public final class MainSplitViewController: NSSplitViewController {
             if let note = note {
                 self.editor.loadNote(note)
             } else {
-                // Load dummy empty note or clear view
                 // Editor handles nil note by clearing backing stores and UI strings
             }
         }
@@ -106,6 +107,11 @@ public final class MainSplitViewController: NSSplitViewController {
             guard let self = self else { return }
             self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             self.folderList.reloadData()
+        }
+        
+        // Logout action (Debug only)
+        noteList.onLogoutTapped = { [weak self] in
+            self?.onLogout?()
         }
     }
     
