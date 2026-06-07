@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let searchService = SearchService(database: database)
         let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
         let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
+        let syncService = SyncService(storage: storageService, api: apiService)
 
         // 2. Setup macOS Window (Modern cmux-like configuration)
         let windowRect = NSRect(x: 0, y: 0, width: 1000, height: 700)
@@ -49,6 +50,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             )
             self.mainSplitVC = mainVC
             window.contentViewController = mainVC
+            
+            // Initial sync on launch
+            syncService.syncData(userId: activeUserId) { _ in
+                DispatchQueue.main.async {
+                    mainVC.refreshAllData()
+                }
+            }
         } else {
             let authVC = AuthViewController(authService: authService)
             authVC.onAuthSuccess = { [weak self] userId in
@@ -62,6 +70,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     self?.mainSplitVC = mainVC
                     self?.window.contentViewController = mainVC
                     self?.restoreWindowFrame()
+                    
+                    // Sync immediately after first login
+                    syncService.syncData(userId: userId) { _ in
+                        DispatchQueue.main.async {
+                            mainVC.refreshAllData()
+                        }
+                    }
                 }
             }
             window.contentViewController = authVC

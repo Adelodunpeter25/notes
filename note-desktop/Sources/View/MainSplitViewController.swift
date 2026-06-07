@@ -40,7 +40,7 @@ public final class MainSplitViewController: NSSplitViewController {
         
         setupSplitViewItems()
         setupBindings()
-        refreshAll()
+        refreshAllData()
     }
     
     private func setupSplitViewItems() {
@@ -119,7 +119,7 @@ public final class MainSplitViewController: NSSplitViewController {
     }
     
     // MARK: - Data Synchronization
-    private func refreshAll() {
+    public func refreshAllData() {
         folderList.reloadData()
         loadNotesForCurrentSelection()
     }
@@ -173,7 +173,7 @@ public final class MainSplitViewController: NSSplitViewController {
         }
         
         if let note = noteService.createNote(title: "Untitled", content: "", userId: userId, folderId: folderId) {
-            refreshAll()
+            refreshAllData()
             noteList.selectNote(note)
             editor.loadNote(note)
         }
