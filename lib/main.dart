@@ -9,6 +9,7 @@ import 'services/folder_service.dart';
 import 'services/note_service.dart';
 import 'services/sync_service.dart';
 import 'services/sync_op_recorder.dart';
+import 'services/quick_action_service.dart';
 import 'layouts/layout.dart';
 import 'pages/auth_page.dart';
 import 'widgets/service_provider.dart';
@@ -25,7 +26,10 @@ void main() async {
   final noteService = NoteService(NoteDao(db), recorder);
   final folderService = FolderService(FolderDao(db), noteService, recorder);
   final syncService = SyncService(db, api, syncOpDao);
+  final quickActionService = QuickActionService();
   
+  quickActionService.initialize();
+
   // Check session persistence
   final token = await auth.getSessionToken();
 
@@ -35,6 +39,7 @@ void main() async {
     folderService: folderService,
     noteService: noteService,
     syncService: syncService,
+    quickActionService: quickActionService,
     child: NoteApp(
       authService: auth,
       isLoggedIn: token != null,
@@ -60,7 +65,7 @@ class NoteApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

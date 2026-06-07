@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,12 +27,24 @@ class _AppLayoutState extends State<AppLayout> {
   
   User? _currentUser;
   Stream<List<FolderWithCount>>? _foldersStream;
+  StreamSubscription? _quickActionSub;
   bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _quickActionSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -44,10 +57,32 @@ class _AppLayoutState extends State<AppLayout> {
         _isLoading = false;
         if (user != null) {
           _foldersStream = services.folderService.watchFolders(user.id);
+          _setupQuickActions(services, user.id);
         }
       });
       _performSync();
     }
+  }
+
+  void _setupQuickActions(ServiceProvider services, String userId) {
+    _quickActionSub?.cancel();
+    _quickActionSub = services.quickActionService.onActionTriggered.listen((type) async {
+      if (type == 'new_note') {
+        final newNote = await services.noteService.createNote(
+          title: '',
+          content: '',
+          userId: userId,
+          folderId: null,
+        );
+        _onNoteSelected(newNote);
+      } else if (type == 'new_folder') {
+        setState(() {
+          _currentScreen = ScreenType.folders;
+        });
+      }
+    });
+
+    services.quickActionService.updateShortcuts();
   }
 
   Future<void> _performSync() async {

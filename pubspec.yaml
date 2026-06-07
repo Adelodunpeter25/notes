@@ -43,6 +43,7 @@ dependencies:
   dio: ^5.7.0
   uuid: ^4.5.1
   url_launcher: ^6.3.1
+  quick_actions: ^1.0.9
 
 dev_dependencies:
   flutter_test:
