@@ -80,11 +80,15 @@ class _EditorViewState extends State<EditorView> {
 
     _transactionSubscription = _editorState!.transactionStream.listen((event) {
       if (event.$1 == TransactionTime.after) {
-        _triggerSave();
-        final canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
-        final canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
         final currentDocJson = jsonEncode(_editorState!.document.toJson());
         final isDirty = currentDocJson != _initialDocJson;
+
+        if (isDirty) {
+          _triggerSave();
+        }
+
+        final canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        final canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
         if (canUndo != _canUndo || canRedo != _canRedo || isDirty != _isDirty) {
           if (mounted) {
             setState(() {
@@ -107,9 +111,18 @@ class _EditorViewState extends State<EditorView> {
   Future<void> _saveNow() async {
     _debounceSave?.cancel();
     if (_editorState == null) return;
+
     final docMap = _editorState!.document.toJson();
     final newContent = jsonEncode(docMap);
     final newTitle = _deriveTitle();
+
+    // Only save if something actually changed to avoid updating updatedAt unnecessarily
+    if (newContent == _initialDocJson && newTitle == widget.note.title) {
+      if (mounted && _isDirty) {
+        setState(() => _isDirty = false);
+      }
+      return;
+    }
 
     final services = ServiceProvider.of(context);
     final fresh = await (services.db.select(services.db.notes)
