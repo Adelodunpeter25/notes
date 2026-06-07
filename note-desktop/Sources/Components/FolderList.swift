@@ -45,7 +45,7 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     private func setupBindings() {
         listView.outlineView.dataSource = self
         listView.outlineView.delegate = self
-        listView.outlineView.menu = FolderContextMenu(target: self, renameAction: #selector(contextRenameTapped), deleteAction: #selector(contextDeleteTapped))
+        listView.outlineView.menu = FolderContextMenu()
         listView.outlineView.menu?.delegate = self
         listView.newFolderButton.target = self
         listView.newFolderButton.action = #selector(newFolderButtonTapped)
@@ -164,9 +164,13 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
 extension FolderList: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
         let row = listView.outlineView.clickedRow
+        guard let ctxMenu = menu as? FolderContextMenu else { return }
+        
         guard row != -1, let node = listView.outlineView.item(atRow: row) as? SidebarNode, node.type == .folder else {
-            menu.removeAllItems(); return
+            ctxMenu.removeAllItems(); return
         }
+        
         listView.outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        ctxMenu.update(target: self, renameAction: #selector(contextRenameTapped), deleteAction: #selector(contextDeleteTapped))
     }
 }
