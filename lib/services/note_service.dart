@@ -131,10 +131,12 @@ class NoteService {
   }
 
   Future<void> autoDeleteEmptyNotes(String userId) async {
-    final emptyNotes = await noteDao.findEmptyNotes(userId);
-    for (final note in emptyNotes) {
-      await noteDao.deleteNotePermanently(note);
-      await _recorder.noteHardDeleted(note);
+    final potentialEmpty = await noteDao.findEmptyNotes(userId);
+    for (final note in potentialEmpty) {
+      if (note.title.isEmpty && NoteUtils.isContentEmpty(note.content)) {
+        await noteDao.deleteNotePermanently(note);
+        await _recorder.noteHardDeleted(note);
+      }
     }
   }
 }

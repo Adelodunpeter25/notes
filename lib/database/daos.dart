@@ -98,8 +98,6 @@ class NoteDao extends DatabaseAccessor<AppDatabase> with _$NoteDaoMixin {
     return (select(notes)
           ..where((t) =>
               t.userId.equals(userId) &
-              t.title.equals('') &
-              t.content.equals('') &
               t.deletedAt.isNull()))
         .get();
   }
