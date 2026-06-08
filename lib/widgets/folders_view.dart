@@ -13,6 +13,7 @@ class FoldersView extends StatefulWidget {
   final ValueChanged<int> onFolderSelected;
   final String userId;
   final VoidCallback onNewNote;
+  final VoidCallback onNewFolder;
   final Future<void> Function() onSync;
 
   const FoldersView({
@@ -21,6 +22,7 @@ class FoldersView extends StatefulWidget {
     required this.onFolderSelected,
     required this.userId,
     required this.onNewNote,
+    required this.onNewFolder,
     required this.onSync,
   });
 
@@ -218,20 +220,7 @@ class _FoldersViewState extends State<FoldersView> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
-                                onPressed: () async {
-                                  final folderName = await DialogUtils.showTextInputDialog(
-                                    context: context,
-                                    title: 'New Folder',
-                                    placeholder: 'Enter folder name',
-                                    primaryButtonText: 'Create',
-                                  );
-                                  if (folderName != null && folderName.trim().isNotEmpty) {
-                                    await services.folderService.createFolder(
-                                      folderName.trim(),
-                                      widget.userId,
-                                    );
-                                  }
-                                },
+                                onPressed: widget.onNewFolder,
                                 icon: const Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent, size: 26),
                               ),
                               IconButton(

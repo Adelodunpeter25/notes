@@ -6,6 +6,7 @@ import '../widgets/service_provider.dart';
 import '../widgets/note_list.dart';
 import '../widgets/editor_view.dart';
 import '../widgets/folders_view.dart';
+import '../utils/dialogs.dart';
 
 import '../models/user.dart';
 import '../database/daos.dart';
@@ -64,6 +65,23 @@ class _AppLayoutState extends State<AppLayout> {
     }
   }
 
+  Future<void> _handleNewFolder() async {
+    if (_currentUser == null) return;
+    final services = ServiceProvider.of(context);
+    final folderName = await DialogUtils.showTextInputDialog(
+      context: context,
+      title: 'New Folder',
+      placeholder: 'Enter folder name',
+      primaryButtonText: 'Create',
+    );
+    if (folderName != null && folderName.trim().isNotEmpty) {
+      await services.folderService.createFolder(
+        folderName.trim(),
+        _currentUser!.id,
+      );
+    }
+  }
+
   void _setupQuickActions(ServiceProvider services, String userId) {
     _quickActionSub?.cancel();
     _quickActionSub = services.quickActionService.onActionTriggered.listen((type) async {
@@ -78,6 +96,10 @@ class _AppLayoutState extends State<AppLayout> {
       } else if (type == 'new_folder') {
         setState(() {
           _currentScreen = ScreenType.folders;
+        });
+        // Delay slightly to ensure FoldersView is rendered if we were on Notes
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _handleNewFolder();
         });
       }
     });
@@ -188,6 +210,7 @@ class _AppLayoutState extends State<AppLayout> {
                 );
                 _onNoteSelected(newNote);
               },
+              onNewFolder: _handleNewFolder,
               onSync: _performSync,
             );
             break;
