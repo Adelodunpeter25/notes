@@ -3,6 +3,9 @@ import AppKit
 public final class FolderContextMenu: NSMenu {
     public init() {
         super.init(title: "Folder Context")
+        // Initialize with default items so AppKit always opens the menu
+        addItem(withTitle: "Rename", action: nil, keyEquivalent: "")
+        addItem(withTitle: "Delete", action: nil, keyEquivalent: "")
     }
     
     public required init(coder: NSCoder) {

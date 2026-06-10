@@ -144,6 +144,16 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell.badgeField.stringValue = count > 0 ? "\(count)" : ""
         return cell
     }
+    public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
+        let identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
+        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? NSTableRowView
+        if rowView == nil {
+            rowView = NSTableRowView(frame: .zero)
+            rowView?.identifier = identifier
+        }
+        return rowView
+    }
+    
     public func outlineViewSelectionDidChange(_ n: Notification) {
         let row = listView.outlineView.selectedRow
         guard row != -1, let node = listView.outlineView.item(atRow: row) as? SidebarNode else { return }
@@ -158,7 +168,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
 
 extension FolderList: NSMenuDelegate {
     public func menuNeedsUpdate(_ menu: NSMenu) {
-        let row = listView.outlineView.clickedRow
+        var row = listView.outlineView.clickedRow
+        if row == -1 {
+            row = listView.outlineView.selectedRow
+        }
         guard let ctxMenu = menu as? FolderContextMenu else { return }
         
         guard row != -1, let node = listView.outlineView.item(atRow: row) as? SidebarNode, node.type == .folder else {
