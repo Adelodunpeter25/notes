@@ -108,16 +108,6 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         }
     }
     
-    public func tableView(_ tv: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-        let identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
-        var rowView = tv.makeView(withIdentifier: identifier, owner: self) as? ThemeTableRowView
-        if rowView == nil {
-            rowView = ThemeTableRowView(frame: .zero)
-            rowView?.identifier = identifier
-        }
-        return rowView
-    }
-    
     public func tableViewSelectionDidChange(_ n: Notification) {
         let row = listView.tableView.selectedRow
         if row == -1 { onNoteSelected?(nil); return }

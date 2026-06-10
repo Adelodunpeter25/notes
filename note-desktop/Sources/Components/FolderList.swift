@@ -45,8 +45,6 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     private func setupBindings() {
         listView.outlineView.dataSource = self
         listView.outlineView.delegate = self
-        listView.outlineView.menu = FolderContextMenu()
-        listView.outlineView.menu?.delegate = self
         listView.newFolderButton.target = self
         listView.newFolderButton.action = #selector(newFolderButtonTapped)
     }
@@ -144,16 +142,6 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell.badgeField.stringValue = count > 0 ? "\(count)" : ""
         return cell
     }
-    public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
-        let identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
-        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? ThemeTableRowView
-        if rowView == nil {
-            rowView = ThemeTableRowView(frame: .zero)
-            rowView?.identifier = identifier
-        }
-        return rowView
-    }
-    
     public func outlineViewSelectionDidChange(_ n: Notification) {
         let row = listView.outlineView.selectedRow
         guard row != -1, let node = listView.outlineView.item(atRow: row) as? SidebarNode else { return }
@@ -163,19 +151,5 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         case .trash: onSelectionChanged?(.trash)
         default: break
         }
-    }
-}
-
-extension FolderList: NSMenuDelegate {
-    public func menuNeedsUpdate(_ menu: NSMenu) {
-        let row = listView.outlineView.clickedRow
-        guard let ctxMenu = menu as? FolderContextMenu else { return }
-        
-        guard row != -1, let node = listView.outlineView.item(atRow: row) as? SidebarNode, node.type == .folder else {
-            ctxMenu.removeAllItems(); return
-        }
-        
-        listView.outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-        ctxMenu.update(target: self, renameAction: #selector(contextRenameTapped), deleteAction: #selector(contextDeleteTapped))
     }
 }
