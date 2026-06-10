@@ -66,4 +66,12 @@ class NoteUtils {
     }
     return 'Untitled';
   }
+
+  /// Returns true if the content is either a truly empty string, or a valid
+  /// JSON document with no text content across any of its blocks.
+  static bool isContentEmpty(String content) {
+    if (content.trim().isEmpty) return true;
+    final lines = extractLines(content);
+    return lines.every((line) => line.trim().isEmpty);
+  }
 }

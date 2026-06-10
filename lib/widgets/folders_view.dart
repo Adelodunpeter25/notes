@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/search_bar.dart';
+import '../widgets/app_bottom_sheet.dart';
+import '../widgets/sync_button.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
@@ -11,6 +13,8 @@ class FoldersView extends StatefulWidget {
   final ValueChanged<int> onFolderSelected;
   final String userId;
   final VoidCallback onNewNote;
+  final VoidCallback onNewFolder;
+  final Future<void> Function() onSync;
 
   const FoldersView({
     super.key,
@@ -18,6 +22,8 @@ class FoldersView extends StatefulWidget {
     required this.onFolderSelected,
     required this.userId,
     required this.onNewNote,
+    required this.onNewFolder,
+    required this.onSync,
   });
 
   @override
@@ -28,35 +34,42 @@ class _FoldersViewState extends State<FoldersView> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
+  Stream<int>? _allCountStream;
+  Stream<int>? _trashCountStream;
+  Stream<Map<String, int>>? _perFolderStream;
+  String? _cachedUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final userId = widget.userId;
+    if (_cachedUserId != userId) {
+      _cachedUserId = userId;
+      final services = ServiceProvider.of(context);
+      _allCountStream = services.noteService.watchAllNotesCount(userId);
+      _trashCountStream = services.noteService.watchTrashNotesCount(userId);
+      _perFolderStream = services.noteService.watchPerFolderCounts(userId);
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<int> _countAllNotes(ServiceProvider services, String userId) async {
-    final list = await services.db
-        .select(services.db.notes)
-        .get();
-    return list.where((n) => n.userId == userId && n.deletedAt == null).length;
-  }
-
-  Future<int> _countTrashNotes(ServiceProvider services, String userId) async {
-    final list = await services.db
-        .select(services.db.notes)
-        .get();
-    return list.where((n) => n.userId == userId && n.deletedAt != null).length;
-  }
-
   @override
   Widget build(BuildContext context) {
     final services = ServiceProvider.of(context);
 
-    // Filter custom folders
     final filteredFolders = widget.folders.where((fc) {
       if (_searchQuery.isEmpty) return true;
       return fc.folder.name.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
+
+    final allCountStream = _allCountStream!;
+    final trashCountStream = _trashCountStream!;
+    final perFolderStream = _perFolderStream!;
 
     return Scaffold(
       backgroundColor: AppSurfaces.background(context),
@@ -73,220 +86,203 @@ class _FoldersViewState extends State<FoldersView> {
           ),
         ),
         centerTitle: false,
+        actions: [
+          RotatingSyncButton(onSync: widget.onSync),
+        ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                children: [
-                  // Search Bar at the top of the list
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: CustomSearchBar(
-                      controller: _searchController,
-                      placeholder: 'Search folders',
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.trim();
-                        });
-                      },
-                    ),
-                  ),
+        child: StreamBuilder<int>(
+          stream: allCountStream,
+          initialData: 0,
+          builder: (context, allSnap) {
+            return StreamBuilder<int>(
+              stream: trashCountStream,
+              initialData: 0,
+              builder: (context, trashSnap) {
+                return StreamBuilder<Map<String, int>>(
+                  stream: perFolderStream,
+                  initialData: const {},
+                  builder: (context, perFolderSnap) {
+                    final allCount = allSnap.data ?? 0;
+                    final trashCount = trashSnap.data ?? 0;
+                    final perFolder = perFolderSnap.data ?? const <String, int>{};
 
-                  // Only show All Notes and Trash if query is empty or matches their titles
-                  if (_searchQuery.isEmpty || 'all notes'.contains(_searchQuery.toLowerCase())) ...[
-                    FutureBuilder<int>(
-                      future: _countAllNotes(services, widget.userId),
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _FolderCard(
-                          icon: CupertinoIcons.folder,
-                          iconColor: AppColors.accent,
-                          title: 'All Notes',
-                          count: count,
-                          onTap: () => widget.onFolderSelected(0),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: CustomSearchBar(
+                                  controller: _searchController,
+                                  placeholder: 'Search folders',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value.trim();
+                                    });
+                                  },
+                                ),
+                              ),
 
-                  // Header for Custom Folders
-                  if (filteredFolders.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8, bottom: 8),
-                      child: Text(
-                        'MY FOLDERS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppTextColors.tertiary(context),
-                          letterSpacing: 1.0,
+                              if (_searchQuery.isEmpty || 'all notes'.contains(_searchQuery.toLowerCase())) ...[
+                                _FolderCard(
+                                  icon: CupertinoIcons.folder,
+                                  iconColor: AppColors.accent,
+                                  title: 'All Notes',
+                                  count: allCount,
+                                  onTap: () => widget.onFolderSelected(0),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+
+                              if (filteredFolders.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8, bottom: 8),
+                                  child: Text(
+                                    'MY FOLDERS',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTextColors.tertiary(context),
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+
+                              ...List.generate(filteredFolders.length, (index) {
+                                final fc = filteredFolders[index];
+                                final originalIndex = widget.folders.indexOf(fc);
+                                final liveCount = perFolder[fc.folder.id] ?? fc.noteCount;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: _FolderCard(
+                                    icon: CupertinoIcons.folder,
+                                    iconColor: AppColors.accent,
+                                    title: fc.folder.name,
+                                    count: liveCount,
+                                    onTap: () => widget.onFolderSelected(originalIndex + 1),
+                                    onLongPress: () => _showFolderActions(context, fc, services),
+                                  ),
+                                );
+                              }),
+
+                              if (_searchQuery.isNotEmpty &&
+                                  filteredFolders.isEmpty &&
+                                  !'all notes'.contains(_searchQuery.toLowerCase()) &&
+                                  !'trash'.contains(_searchQuery.toLowerCase())) ...[
+                                const SizedBox(height: 48),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        CupertinoIcons.search,
+                                        size: 64,
+                                        color: AppTextColors.quaternary(context),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No folders match "$_searchQuery"',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: AppTextColors.tertiary(context),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              if (_searchQuery.isEmpty || 'trash'.contains(_searchQuery.toLowerCase())) ...[
+                                const SizedBox(height: 16),
+                                _FolderCard(
+                                  icon: CupertinoIcons.trash,
+                                  iconColor: AppColors.destructive,
+                                  title: 'Trash',
+                                  count: trashCount,
+                                  onTap: () => widget.onFolderSelected(widget.folders.length + 1),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-
-                  // Custom folders (with unified CupertinoIcons.folder)
-                  ...List.generate(filteredFolders.length, (index) {
-                    final fc = filteredFolders[index];
-                    final originalIndex = widget.folders.indexOf(fc);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: _FolderCard(
-                        icon: CupertinoIcons.folder, // Central folder icon for all custom folders
-                        iconColor: AppColors.accent,
-                        title: fc.folder.name,
-                        count: fc.noteCount,
-                        onTap: () => widget.onFolderSelected(originalIndex + 1),
-                        onLongPress: () => _showFolderActions(context, fc, services),
-                      ),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: AppSurfaces.divider(context), width: 0.5),
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                onPressed: widget.onNewFolder,
+                                icon: const Icon(CupertinoIcons.folder_badge_plus, color: AppColors.accent, size: 26),
+                              ),
+                              IconButton(
+                                onPressed: widget.onNewNote,
+                                icon: const Icon(CupertinoIcons.square_pencil, color: AppColors.accent, size: 26),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     );
-                  }),
-
-                  if (_searchQuery.isEmpty || 'trash'.contains(_searchQuery.toLowerCase())) ...[
-                    const SizedBox(height: 16),
-                    FutureBuilder<int>(
-                      future: _countTrashNotes(services, widget.userId),
-                      builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
-                        return _FolderCard(
-                          icon: CupertinoIcons.trash,
-                          iconColor: AppColors.destructive,
-                          title: 'Trash',
-                          count: count,
-                          onTap: () => widget.onFolderSelected(widget.folders.length + 1),
-                        );
-                      },
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Floating dark card dock bottom bar with reduced height
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 16.0),
-              child: Container(
-                height: 54, // Reduced height
-                decoration: BoxDecoration(
-                  color: Colors.grey[900], // Dark distinct surface color for dock
-                  borderRadius: BorderRadius.circular(27), // Capsule pill
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: IconButton(
-                        onPressed: () async {
-                          final folderName = await DialogUtils.showTextInputDialog(
-                            context: context,
-                            title: 'New Folder',
-                            placeholder: 'Enter folder name',
-                            primaryButtonText: 'Create',
-                          );
-                          if (folderName != null && folderName.trim().isNotEmpty) {
-                            await services.folderService.createFolder(
-                              folderName.trim(),
-                              widget.userId,
-                            );
-                          }
-                        },
-                        icon: const Icon(
-                          CupertinoIcons.folder_badge_plus,
-                          color: AppColors.accent,
-                          size: 24, // Sized perfectly for reduced height
-                        ),
-                        tooltip: 'New Folder',
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: IconButton(
-                        onPressed: widget.onNewNote,
-                        icon: const Icon(
-                          CupertinoIcons.square_pencil,
-                          color: AppColors.accent,
-                          size: 24, // Sized perfectly for reduced height
-                        ),
-                        tooltip: 'New Note',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+                  },
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
 
   void _showFolderActions(BuildContext context, FolderWithCount fc, ServiceProvider services) {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.pencil),
-              title: const Text('Rename Folder'),
-              onTap: () async {
-                Navigator.pop(context);
-                final newName = await DialogUtils.showTextInputDialog(
-                  context: context,
-                  title: 'Rename Folder',
-                  placeholder: fc.folder.name,
-                  primaryButtonText: 'Rename',
-                );
-                if (newName != null && newName.trim().isNotEmpty) {
-                  await services.folderService.renameFolder(fc.folder, newName.trim());
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
-              title: const Text('Delete Folder', style: TextStyle(color: AppColors.destructive)),
-              onTap: () async {
-                Navigator.pop(context);
-                final confirmed = await DialogUtils.showConfirmation(
-                  context: context,
-                  title: 'Delete Folder?',
-                  message: 'Are you sure you want to delete this folder and all its contents?',
-                  primaryButtonText: 'Delete',
-                  isDestructive: true,
-                );
-                if (confirmed) {
-                  await services.folderService.softDeleteFolder(fc.folder);
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(CupertinoIcons.pencil),
+            title: const Text('Rename Folder'),
+            onTap: () async {
+              Navigator.pop(context);
+              final newName = await DialogUtils.showTextInputDialog(
+                context: context,
+                title: 'Rename Folder',
+                placeholder: fc.folder.name,
+                primaryButtonText: 'Rename',
+              );
+              if (newName != null && newName.trim().isNotEmpty) {
+                await services.folderService.renameFolder(fc.folder, newName.trim());
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
+            title: const Text('Delete Folder', style: TextStyle(color: AppColors.destructive)),
+            onTap: () async {
+              Navigator.pop(context);
+              final confirmed = await DialogUtils.showConfirmation(
+                context: context,
+                title: 'Delete Folder?',
+                message: 'Are you sure you want to delete this folder? Notes inside will be moved back to All Notes.',
+                primaryButtonText: 'Delete',
+                isDestructive: true,
+              );
+              if (confirmed) {
+                await services.folderService.deleteFolder(fc.folder);
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

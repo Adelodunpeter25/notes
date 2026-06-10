@@ -4,10 +4,11 @@ import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
+import '../widgets/editor_selection_menu.dart';
 import '../database/database.dart' hide User;
-import '../utils/dialogs.dart';
 import '../utils/note.dart';
 import '../theme.dart';
+import 'editor_app_bar.dart';
 import 'editor_toolbar.dart';
 
 /// Full-screen mobile editor. The entire body is the AppFlowy editor; the
@@ -34,6 +35,11 @@ class _EditorViewState extends State<EditorView> {
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
   late final FocusNode _focusNode;
+  late final EditorScrollController _editorScrollController;
+  String _initialDocJson = '';
+  bool _isDirty = false;
+  bool _canUndo = false;
+  bool _canRedo = false;
 
   @override
   void initState() {
@@ -47,6 +53,7 @@ class _EditorViewState extends State<EditorView> {
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
     _focusNode.dispose();
+    _editorScrollController.dispose();
     super.dispose();
   }
 
@@ -65,9 +72,32 @@ class _EditorViewState extends State<EditorView> {
       _editorState = EditorState.blank();
     }
 
+    _editorScrollController = EditorScrollController(editorState: _editorState!);
+    _initialDocJson = jsonEncode(_editorState!.document.toJson());
+    _isDirty = false;
+    _canUndo = false;
+    _canRedo = false;
+
     _transactionSubscription = _editorState!.transactionStream.listen((event) {
       if (event.$1 == TransactionTime.after) {
-        _triggerSave();
+        final currentDocJson = jsonEncode(_editorState!.document.toJson());
+        final isDirty = currentDocJson != _initialDocJson;
+
+        if (isDirty) {
+          _triggerSave();
+        }
+
+        final canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        final canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+        if (canUndo != _canUndo || canRedo != _canRedo || isDirty != _isDirty) {
+          if (mounted) {
+            setState(() {
+              _canUndo = canUndo;
+              _canRedo = canRedo;
+              _isDirty = isDirty;
+            });
+          }
+        }
       }
     });
   }
@@ -81,18 +111,33 @@ class _EditorViewState extends State<EditorView> {
   Future<void> _saveNow() async {
     _debounceSave?.cancel();
     if (_editorState == null) return;
+
     final docMap = _editorState!.document.toJson();
     final newContent = jsonEncode(docMap);
     final newTitle = _deriveTitle();
 
-    final updated = widget.note.copyWith(
+    // Only save if something actually changed to avoid updating updatedAt unnecessarily
+    if (newContent == _initialDocJson && newTitle == widget.note.title) {
+      if (mounted && _isDirty) {
+        setState(() => _isDirty = false);
+      }
+      return;
+    }
+
+    final services = ServiceProvider.of(context);
+    final fresh = await (services.db.select(services.db.notes)
+          ..where((t) => t.id.equals(widget.note.id)))
+        .getSingle();
+
+    final updated = fresh.copyWith(
       title: newTitle,
       content: newContent,
       updatedAt: DateTime.now(),
     );
 
-    final services = ServiceProvider.of(context);
     await services.noteService.updateNote(updated);
+    _initialDocJson = jsonEncode(_editorState!.document.toJson());
+    if (mounted) setState(() => _isDirty = false);
     widget.onNoteUpdated?.call(updated);
   }
 
@@ -122,23 +167,35 @@ class _EditorViewState extends State<EditorView> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
-    final ampm = date.hour >= 12 ? 'PM' : 'AM';
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '${date.day} ${months[date.month - 1]} ${date.year} at $hour:$minute $ampm';
-  }
-
   Future<void> _handleBack() async {
+    _debounceSave?.cancel();
     _focusNode.unfocus();
-    FocusScope.of(context).unfocus();
-    FocusManager.instance.primaryFocus?.unfocus();
     await _saveNow();
     widget.onBack();
+  }
+
+  void _onUndo() {
+    _editorState?.undoManager.undo();
+    if (mounted) {
+      setState(() {
+        _canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        _canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+      });
+    }
+  }
+
+  void _onRedo() {
+    _editorState?.undoManager.redo();
+    if (mounted) {
+      setState(() {
+        _canUndo = _editorState!.undoManager.undoStack.isNonEmpty;
+        _canRedo = _editorState!.undoManager.redoStack.isNonEmpty;
+      });
+    }
+  }
+
+  void _onNoteChanged(Note fresh) {
+    widget.onNoteUpdated?.call(fresh);
   }
 
   @override
@@ -157,79 +214,47 @@ class _EditorViewState extends State<EditorView> {
       },
       child: Scaffold(
         backgroundColor: AppSurfaces.background(context),
-        appBar: AppBar(
-          backgroundColor: AppSurfaces.surface(context),
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  CupertinoIcons.chevron_left,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
-                Text(
-                  'Notes',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            onPressed: _handleBack,
-          ),
-          leadingWidth: 100,
-          title: Text(
-            _formatDate(widget.note.createdAt),
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTextColors.tertiary(context),
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: Icon(
-                widget.note.isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-                color: widget.note.isPinned ? AppColors.accent : null,
-                size: 20,
-              ),
-              onPressed: () {
-                final services = ServiceProvider.of(context);
-                services.noteService.pinNote(widget.note, !widget.note.isPinned);
-              },
-            ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
-              onPressed: () => _showMoreActions(context),
-            ),
-          ],
+        appBar: EditorAppBar(
+          editorState: _editorState!,
+          note: widget.note,
+          canUndo: _canUndo,
+          canRedo: _canRedo,
+          onBack: _handleBack,
+          onUndo: _onUndo,
+          onRedo: _onRedo,
+          onNoteChanged: _onNoteChanged,
         ),
         body: Column(
           children: [
             Expanded(
-              child: AppFlowyEditor(
+              child: MobileFloatingToolbar(
                 editorState: _editorState!,
-                focusNode: _focusNode,
-                editorScrollController: EditorScrollController(
+                editorScrollController: _editorScrollController,
+                toolbarBuilder: (context, anchor, closeToolbar) {
+                  return EditorSelectionMenu(
+                    editorState: _editorState!,
+                    anchor: anchor,
+                    closeToolbar: closeToolbar,
+                  );
+                },
+                child: AppFlowyEditor(
                   editorState: _editorState!,
-                  shrinkWrap: true,
-                ),
-                editorStyle: EditorStyle.mobile(
-                  cursorColor: AppColors.accent,
-                  dragHandleColor: AppColors.accent,
-                  selectionColor: AppColors.accent.withOpacity(0.2),
-                  textStyleConfiguration: TextStyleConfiguration(
-                    text: TextStyle(
-                      fontSize: 16.0,
-                      color: AppTextColors.primary(context),
-                    ),
-                    code: const TextStyle(
-                      color: Colors.red,
-                      backgroundColor: Color.fromARGB(98, 0, 195, 255),
+                  focusNode: _focusNode,
+                  editorScrollController: _editorScrollController,
+                  editorStyle: EditorStyle.mobile(
+                    cursorColor: AppColors.accent,
+                    dragHandleColor: AppColors.accent,
+                    selectionColor: AppColors.accent.withOpacity(0.2),
+                    textStyleConfiguration: TextStyleConfiguration(
+                      text: TextStyle(
+                        fontSize: 16.0,
+                        color: AppTextColors.primary(context),
+                      ),
+                      code: TextStyle(
+                        fontFamily: 'monospace',
+                        color: AppTextColors.primary(context),
+                        backgroundColor: AppSurfaces.elevated(context),
+                      ),
                     ),
                   ),
                 ),
@@ -239,92 +264,6 @@ class _EditorViewState extends State<EditorView> {
               editorState: _editorState!,
               onToggleChecklist: _toggleChecklist,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMoreActions(BuildContext context) {
-    final services = ServiceProvider.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: Icon(
-                widget.note.isPinned ? CupertinoIcons.pin_slash_fill : CupertinoIcons.pin_fill,
-              ),
-              title: Text(widget.note.isPinned ? 'Unpin Note' : 'Pin Note'),
-              onTap: () {
-                Navigator.pop(context);
-                services.noteService.pinNote(widget.note, !widget.note.isPinned);
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.folder),
-              title: const Text('Move to Folder...'),
-              onTap: () async {
-                Navigator.pop(context);
-                final folders = await services.db
-                    .select(services.db.folders)
-                    .get();
-                if (context.mounted) {
-                  final currentFolder = folders.where((f) => f.id == widget.note.folderId).firstOrNull;
-                  final result = await DialogUtils.showFolderSelectionDialog(
-                    context: context,
-                    folders: folders,
-                    initialFolder: currentFolder,
-                  );
-                  if (result != null && result.confirmed) {
-                    await services.noteService.moveNoteToFolder(widget.note, result.folder?.id);
-                  }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.square_list),
-              title: const Text('Toggle Checklist'),
-              onTap: () {
-                Navigator.pop(context);
-                _toggleChecklist();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(CupertinoIcons.trash, color: AppColors.destructive),
-              title: const Text('Delete Note', style: TextStyle(color: AppColors.destructive)),
-              onTap: () async {
-                Navigator.pop(context);
-                final confirmed = await DialogUtils.showConfirmation(
-                  context: context,
-                  title: 'Delete Note?',
-                  message: 'This note will be moved to Trash.',
-                  primaryButtonText: 'Delete',
-                  isDestructive: true,
-                );
-                if (confirmed) {
-                  await services.noteService.softDeleteNote(widget.note);
-                  widget.onBack();
-                }
-              },
-            ),
-            const SizedBox(height: 8),
           ],
         ),
       ),

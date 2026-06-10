@@ -982,19 +982,369 @@ class NotesCompanion extends UpdateCompanion<Note> {
   }
 }
 
+class $SyncOpsTable extends SyncOps with TableInfo<$SyncOpsTable, SyncOp> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncOpsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _opTypeMeta = const VerificationMeta('opType');
+  @override
+  late final GeneratedColumn<String> opType = GeneratedColumn<String>(
+      'op_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityTypeMeta =
+      const VerificationMeta('entityType');
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+      'entity_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityIdMeta =
+      const VerificationMeta('entityId');
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+      'entity_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _payloadMeta =
+      const VerificationMeta('payload');
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+      'payload', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, opType, entityType, entityId, payload, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_ops';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncOp> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('op_type')) {
+      context.handle(_opTypeMeta,
+          opType.isAcceptableOrUnknown(data['op_type']!, _opTypeMeta));
+    } else if (isInserting) {
+      context.missing(_opTypeMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+          _entityTypeMeta,
+          entityType.isAcceptableOrUnknown(
+              data['entity_type']!, _entityTypeMeta));
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(_entityIdMeta,
+          entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta));
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(_payloadMeta,
+          payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncOp map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncOp(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      opType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}op_type'])!,
+      entityType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
+      entityId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_id'])!,
+      payload: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $SyncOpsTable createAlias(String alias) {
+    return $SyncOpsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncOp extends DataClass implements Insertable<SyncOp> {
+  final String id;
+  final String opType;
+  final String entityType;
+  final String entityId;
+  final String payload;
+  final DateTime updatedAt;
+  const SyncOp(
+      {required this.id,
+      required this.opType,
+      required this.entityType,
+      required this.entityId,
+      required this.payload,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['op_type'] = Variable<String>(opType);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['payload'] = Variable<String>(payload);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SyncOpsCompanion toCompanion(bool nullToAbsent) {
+    return SyncOpsCompanion(
+      id: Value(id),
+      opType: Value(opType),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      payload: Value(payload),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SyncOp.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncOp(
+      id: serializer.fromJson<String>(json['id']),
+      opType: serializer.fromJson<String>(json['opType']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'opType': serializer.toJson<String>(opType),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'payload': serializer.toJson<String>(payload),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  SyncOp copyWith(
+          {String? id,
+          String? opType,
+          String? entityType,
+          String? entityId,
+          String? payload,
+          DateTime? updatedAt}) =>
+      SyncOp(
+        id: id ?? this.id,
+        opType: opType ?? this.opType,
+        entityType: entityType ?? this.entityType,
+        entityId: entityId ?? this.entityId,
+        payload: payload ?? this.payload,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  SyncOp copyWithCompanion(SyncOpsCompanion data) {
+    return SyncOp(
+      id: data.id.present ? data.id.value : this.id,
+      opType: data.opType.present ? data.opType.value : this.opType,
+      entityType:
+          data.entityType.present ? data.entityType.value : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOp(')
+          ..write('id: $id, ')
+          ..write('opType: $opType, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, opType, entityType, entityId, payload, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncOp &&
+          other.id == this.id &&
+          other.opType == this.opType &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.payload == this.payload &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SyncOpsCompanion extends UpdateCompanion<SyncOp> {
+  final Value<String> id;
+  final Value<String> opType;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<String> payload;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const SyncOpsCompanion({
+    this.id = const Value.absent(),
+    this.opType = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncOpsCompanion.insert({
+    required String id,
+    required String opType,
+    required String entityType,
+    required String entityId,
+    required String payload,
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        opType = Value(opType),
+        entityType = Value(entityType),
+        entityId = Value(entityId),
+        payload = Value(payload);
+  static Insertable<SyncOp> custom({
+    Expression<String>? id,
+    Expression<String>? opType,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<String>? payload,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (opType != null) 'op_type': opType,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (payload != null) 'payload': payload,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncOpsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? opType,
+      Value<String>? entityType,
+      Value<String>? entityId,
+      Value<String>? payload,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return SyncOpsCompanion(
+      id: id ?? this.id,
+      opType: opType ?? this.opType,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      payload: payload ?? this.payload,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (opType.present) {
+      map['op_type'] = Variable<String>(opType.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncOpsCompanion(')
+          ..write('id: $id, ')
+          ..write('opType: $opType, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $UsersTable users = $UsersTable(this);
   late final $FoldersTable folders = $FoldersTable(this);
   late final $NotesTable notes = $NotesTable(this);
+  late final $SyncOpsTable syncOps = $SyncOpsTable(this);
   late final NoteDao noteDao = NoteDao(this as AppDatabase);
   late final FolderDao folderDao = FolderDao(this as AppDatabase);
+  late final SyncOpDao syncOpDao = SyncOpDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [users, folders, notes];
+  List<DatabaseSchemaEntity> get allSchemaEntities =>
+      [users, folders, notes, syncOps];
 }
 
 typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
@@ -2003,6 +2353,186 @@ typedef $$NotesTableProcessedTableManager = ProcessedTableManager<
     (Note, $$NotesTableReferences),
     Note,
     PrefetchHooks Function({bool folderId, bool userId})>;
+typedef $$SyncOpsTableCreateCompanionBuilder = SyncOpsCompanion Function({
+  required String id,
+  required String opType,
+  required String entityType,
+  required String entityId,
+  required String payload,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$SyncOpsTableUpdateCompanionBuilder = SyncOpsCompanion Function({
+  Value<String> id,
+  Value<String> opType,
+  Value<String> entityType,
+  Value<String> entityId,
+  Value<String> payload,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$SyncOpsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncOpsTable> {
+  $$SyncOpsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get opType => $composableBuilder(
+      column: $table.opType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payload => $composableBuilder(
+      column: $table.payload, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncOpsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncOpsTable> {
+  $$SyncOpsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get opType => $composableBuilder(
+      column: $table.opType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+      column: $table.payload, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncOpsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncOpsTable> {
+  $$SyncOpsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get opType =>
+      $composableBuilder(column: $table.opType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SyncOpsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncOpsTable,
+    SyncOp,
+    $$SyncOpsTableFilterComposer,
+    $$SyncOpsTableOrderingComposer,
+    $$SyncOpsTableAnnotationComposer,
+    $$SyncOpsTableCreateCompanionBuilder,
+    $$SyncOpsTableUpdateCompanionBuilder,
+    (SyncOp, BaseReferences<_$AppDatabase, $SyncOpsTable, SyncOp>),
+    SyncOp,
+    PrefetchHooks Function()> {
+  $$SyncOpsTableTableManager(_$AppDatabase db, $SyncOpsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncOpsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncOpsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncOpsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> opType = const Value.absent(),
+            Value<String> entityType = const Value.absent(),
+            Value<String> entityId = const Value.absent(),
+            Value<String> payload = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncOpsCompanion(
+            id: id,
+            opType: opType,
+            entityType: entityType,
+            entityId: entityId,
+            payload: payload,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String opType,
+            required String entityType,
+            required String entityId,
+            required String payload,
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncOpsCompanion.insert(
+            id: id,
+            opType: opType,
+            entityType: entityType,
+            entityId: entityId,
+            payload: payload,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncOpsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncOpsTable,
+    SyncOp,
+    $$SyncOpsTableFilterComposer,
+    $$SyncOpsTableOrderingComposer,
+    $$SyncOpsTableAnnotationComposer,
+    $$SyncOpsTableCreateCompanionBuilder,
+    $$SyncOpsTableUpdateCompanionBuilder,
+    (SyncOp, BaseReferences<_$AppDatabase, $SyncOpsTable, SyncOp>),
+    SyncOp,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2013,4 +2543,6 @@ class $AppDatabaseManager {
       $$FoldersTableTableManager(_db, _db.folders);
   $$NotesTableTableManager get notes =>
       $$NotesTableTableManager(_db, _db.notes);
+  $$SyncOpsTableTableManager get syncOps =>
+      $$SyncOpsTableTableManager(_db, _db.syncOps);
 }

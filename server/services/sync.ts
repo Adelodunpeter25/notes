@@ -54,17 +54,30 @@ async function processOp(userId: string, op: SyncOperation): Promise<void> {
 }
 
 async function processDelete(userId: string, op: SyncOperation): Promise<void> {
+  const p = op.payload ?? {};
+  const isHard = p.hard === true;
   const now = new Date();
+
   switch (op.entityType) {
     case 'note':
-      await db.update(notes)
-        .set({ deletedAt: now, updatedAt: now })
-        .where(and(eq(notes.id, op.entityId), eq(notes.userId, userId)));
+      if (isHard) {
+        await db.delete(notes)
+          .where(and(eq(notes.id, op.entityId), eq(notes.userId, userId)));
+      } else {
+        await db.update(notes)
+          .set({ deletedAt: now, updatedAt: now })
+          .where(and(eq(notes.id, op.entityId), eq(notes.userId, userId)));
+      }
       break;
     case 'folder':
-      await db.update(folders)
-        .set({ deletedAt: now, updatedAt: now })
-        .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
+      if (isHard) {
+        await db.delete(folders)
+          .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
+      } else {
+        await db.update(folders)
+          .set({ deletedAt: now, updatedAt: now })
+          .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
+      }
       break;
   }
 }

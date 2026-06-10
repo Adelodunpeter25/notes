@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import '../utils/note.dart';
 import 'daos.dart';
 
 part 'database.g.dart';
@@ -43,12 +44,106 @@ class Notes extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Users, Folders, Notes], daos: [NoteDao, FolderDao])
+/// Queue of local mutations waiting to be pushed to the server.
+///
+/// Shape matches the server's SyncOperation contract
+/// (see server/types/sync.ts):
+///   id         — client-generated UUID (idempotency key)
+///   opType     — 'upsert' | 'delete'
+///   entityType — 'note' | 'folder'
+///   entityId   — the entity's UUID
+///   payload    — JSON snapshot of the entity at op time
+///   updatedAt  — ISO timestamp, used by the server for conflict resolution
+class SyncOps extends Table {
+  TextColumn get id => text()();             // client UUID
+  TextColumn get opType => text()();         // upsert | delete
+  TextColumn get entityType => text()();     // note | folder
+  TextColumn get entityId => text()();
+  TextColumn get payload => text()();        // JSON snapshot
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Users, Folders, Notes, SyncOps], daos: [NoteDao, FolderDao, SyncOpDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 4;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.createTable(syncOps);
+        }
+        if (from < 3) {
+          await customStatement('DROP TABLE IF EXISTS ${syncOps.actualTableName}');
+          await m.createTable(syncOps);
+        }
+        if (from < 4) {
+          await customStatement('''
+            CREATE VIRTUAL TABLE notes_fts USING fts5(
+              note_id,
+              title,
+              plain_content,
+              user_id
+            )
+          ''');
+        }
+      },
+      onCreate: (m) async {
+        await m.createAll();
+        await customStatement('''
+          CREATE VIRTUAL TABLE notes_fts USING fts5(
+            note_id,
+            title,
+            plain_content,
+            user_id
+          )
+        ''');
+      },
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+        // Guard against running before Drift has created the tables
+        // (can happen on fresh install during the first migration cycle).
+        try {
+          await rebuildNoteFts();
+        } catch (_) {}
+      },
+    );
+  }
+
+  /// Rebuilds the FTS index from all non-deleted notes.
+  /// Called on startup to guarantee the index is in sync.
+  Future<void> rebuildNoteFts() async {
+    await customStatement('DELETE FROM notes_fts');
+    final notesList = await select(notes).get();
+    for (final note in notesList) {
+      if (note.deletedAt != null) continue;
+      final plainContent = NoteUtils.extractLines(note.content).join(' ');
+      await upsertNoteFts(note.id, note.title, plainContent, note.userId);
+    }
+  }
+
+  Future<void> upsertNoteFts(
+      String noteId, String title, String plainContent, String userId) async {
+    await deleteNoteFts(noteId);
+    await customStatement(
+      'INSERT INTO notes_fts (note_id, title, plain_content, user_id) VALUES (?, ?, ?, ?)',
+      [noteId, title, plainContent, userId],
+    );
+  }
+
+  Future<void> deleteNoteFts(String noteId) async {
+    await customStatement(
+      'DELETE FROM notes_fts WHERE note_id = ?',
+      [noteId],
+    );
+  }
 }
 
 LazyDatabase _openConnection() {

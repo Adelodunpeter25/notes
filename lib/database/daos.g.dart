@@ -13,3 +13,6 @@ mixin _$FolderDaoMixin on DatabaseAccessor<AppDatabase> {
   $FoldersTable get folders => attachedDatabase.folders;
   $NotesTable get notes => attachedDatabase.notes;
 }
+mixin _$SyncOpDaoMixin on DatabaseAccessor<AppDatabase> {
+  $SyncOpsTable get syncOps => attachedDatabase.syncOps;
+}

@@ -4,6 +4,7 @@ import '../services/auth.dart';
 import '../services/folder_service.dart';
 import '../services/note_service.dart';
 import '../services/sync_service.dart';
+import '../services/quick_action_service.dart';
 
 class ServiceProvider extends InheritedWidget {
   final AppDatabase db;
@@ -11,6 +12,7 @@ class ServiceProvider extends InheritedWidget {
   final FolderService folderService;
   final NoteService noteService;
   final SyncService syncService;
+  final QuickActionService quickActionService;
 
   const ServiceProvider({
     super.key,
@@ -19,6 +21,7 @@ class ServiceProvider extends InheritedWidget {
     required this.folderService,
     required this.noteService,
     required this.syncService,
+    required this.quickActionService,
     required super.child,
   });
 

@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/note_list.dart';
 import '../widgets/editor_view.dart';
 import '../widgets/folders_view.dart';
+import '../utils/dialogs.dart';
 
 import '../models/user.dart';
 import '../database/daos.dart';
@@ -25,12 +28,24 @@ class _AppLayoutState extends State<AppLayout> {
   
   User? _currentUser;
   Stream<List<FolderWithCount>>? _foldersStream;
+  StreamSubscription? _quickActionSub;
   bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _quickActionSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -43,10 +58,53 @@ class _AppLayoutState extends State<AppLayout> {
         _isLoading = false;
         if (user != null) {
           _foldersStream = services.folderService.watchFolders(user.id);
+          _setupQuickActions(services, user.id);
         }
       });
       _performSync();
     }
+  }
+
+  Future<void> _handleNewFolder() async {
+    if (_currentUser == null) return;
+    final services = ServiceProvider.of(context);
+    final folderName = await DialogUtils.showTextInputDialog(
+      context: context,
+      title: 'New Folder',
+      placeholder: 'Enter folder name',
+      primaryButtonText: 'Create',
+    );
+    if (folderName != null && folderName.trim().isNotEmpty) {
+      await services.folderService.createFolder(
+        folderName.trim(),
+        _currentUser!.id,
+      );
+    }
+  }
+
+  void _setupQuickActions(ServiceProvider services, String userId) {
+    _quickActionSub?.cancel();
+    _quickActionSub = services.quickActionService.onActionTriggered.listen((type) async {
+      if (type == 'new_note') {
+        final newNote = await services.noteService.createNote(
+          title: '',
+          content: '',
+          userId: userId,
+          folderId: null,
+        );
+        _onNoteSelected(newNote);
+      } else if (type == 'new_folder') {
+        setState(() {
+          _currentScreen = ScreenType.folders;
+        });
+        // Delay slightly to ensure FoldersView is rendered if we were on Notes
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _handleNewFolder();
+        });
+      }
+    });
+
+    services.quickActionService.updateShortcuts();
   }
 
   Future<void> _performSync() async {
@@ -68,6 +126,10 @@ class _AppLayoutState extends State<AppLayout> {
     setState(() {
       _currentScreen = ScreenType.notes;
     });
+    if (_currentUser != null) {
+      final services = ServiceProvider.of(context);
+      services.noteService.autoDeleteEmptyNotes(_currentUser!.id);
+    }
   }
 
   void _onFolderSelected(int index) {
@@ -148,6 +210,8 @@ class _AppLayoutState extends State<AppLayout> {
                 );
                 _onNoteSelected(newNote);
               },
+              onNewFolder: _handleNewFolder,
+              onSync: _performSync,
             );
             break;
           case ScreenType.notes:
@@ -187,26 +251,38 @@ class _AppLayoutState extends State<AppLayout> {
             break;
         }
 
-        return Scaffold(
-          body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              if (child.key == const ValueKey('folders_screen')) {
-                return FadeTransition(opacity: animation, child: child);
-              }
-              // Slide transition for NoteList and Editor
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
-                child: child,
-              );
-            },
-            child: screen,
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (_currentScreen == ScreenType.editor) {
+              _onBackFromEditor();
+            } else if (_currentScreen == ScreenType.notes) {
+              _onBackFromNotes();
+            } else {
+              SystemNavigator.pop();
+            }
+          },
+          child: Scaffold(
+            body: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                if (child.key == const ValueKey('folders_screen')) {
+                  return FadeTransition(opacity: animation, child: child);
+                }
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: child,
+                );
+              },
+              child: screen,
+            ),
           ),
         );
       },

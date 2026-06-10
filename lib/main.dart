@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:appflowy_editor/appflowy_editor.dart';
 import 'database/database.dart';
 import 'database/daos.dart';
 import 'services/api_service.dart';
@@ -6,6 +8,8 @@ import 'services/auth.dart';
 import 'services/folder_service.dart';
 import 'services/note_service.dart';
 import 'services/sync_service.dart';
+import 'services/sync_op_recorder.dart';
+import 'services/quick_action_service.dart';
 import 'layouts/layout.dart';
 import 'pages/auth_page.dart';
 import 'widgets/service_provider.dart';
@@ -17,10 +21,15 @@ void main() async {
   final db = AppDatabase();
   final api = ApiService();
   final auth = AuthService(db, api);
-  final folderService = FolderService(FolderDao(db));
-  final noteService = NoteService(NoteDao(db));
-  final syncService = SyncService(db, api);
+  final syncOpDao = SyncOpDao(db);
+  final recorder = SyncOpRecorder(syncOpDao);
+  final noteService = NoteService(NoteDao(db), recorder);
+  final folderService = FolderService(FolderDao(db), noteService, recorder);
+  final syncService = SyncService(db, api, syncOpDao);
+  final quickActionService = QuickActionService();
   
+  quickActionService.initialize();
+
   // Check session persistence
   final token = await auth.getSessionToken();
 
@@ -30,6 +39,7 @@ void main() async {
     folderService: folderService,
     noteService: noteService,
     syncService: syncService,
+    quickActionService: quickActionService,
     child: NoteApp(
       authService: auth,
       isLoggedIn: token != null,
@@ -55,6 +65,15 @@ class NoteApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        AppFlowyEditorLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+      ],
       home: isLoggedIn
           ? const AppLayout()
           : AuthPage(authService: authService),

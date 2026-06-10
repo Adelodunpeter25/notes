@@ -71,4 +71,16 @@ class TimeUtils {
     final shortYear = yearStr.length >= 4 ? yearStr.substring(2) : yearStr;
     return '${date.month}/${date.day}/$shortYear';
   }
+
+  /// Formats a date for the editor header: "4 Jun 2026 at 3:45 PM".
+  static String formatEditorHeader(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final ampm = date.hour >= 12 ? 'PM' : 'AM';
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '${date.day} ${months[date.month - 1]} ${date.year} at $hour:$minute $ampm';
+  }
 }
