@@ -52,9 +52,43 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     }
     
     public func reloadData() {
+        let selectedRow = listView.outlineView.selectedRow
+        var previousSelection: FolderSelection? = nil
+        if selectedRow != -1, let node = listView.outlineView.item(atRow: selectedRow) as? SidebarNode {
+            switch node.type {
+            case .allNotes: previousSelection = .allNotes
+            case .folder: if let f = node.folder { previousSelection = .folder(f) }
+            case .trash: previousSelection = .trash
+            default: break
+            }
+        }
+        
         viewModel.reloadData()
         listView.outlineView.reloadData()
         listView.outlineView.expandItem(nil, expandChildren: true)
+        
+        if let selection = previousSelection {
+            selectSelection(selection)
+        }
+    }
+    
+    public func selectSelection(_ selection: FolderSelection) {
+        let node: SidebarNode?
+        switch selection {
+        case .allNotes:
+            node = viewModel.data.first(where: { $0.type == .allNotes })
+        case .folder(let folder):
+            node = viewModel.data.first(where: { $0.folder?.id == folder.id })
+        case .trash:
+            node = viewModel.data.first(where: { $0.type == .trash })
+        }
+        
+        if let node = node {
+            let row = listView.outlineView.row(forItem: node)
+            if row != -1 {
+                listView.outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            }
+        }
     }
     
     public func createNewFolder() { newFolderButtonTapped() }
@@ -68,10 +102,7 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     }
     
     private func selectFolder(_ folder: DBFolder) {
-        if let node = viewModel.data.first(where: { $0.folder?.id == folder.id }) {
-            let row = listView.outlineView.row(forItem: node)
-            if row != -1 { listView.outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false) }
-        }
+        selectSelection(.folder(folder))
     }
     
     @objc private func contextRenameTapped() {
