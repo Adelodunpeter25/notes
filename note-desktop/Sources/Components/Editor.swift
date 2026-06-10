@@ -77,9 +77,18 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     }
     
     /// Loads a specific database note inside the editor view.
-    public func loadNote(_ note: DBNote) {
+    public func loadNote(_ note: DBNote?) {
+        guard let note = note else {
+            self.activeNote = nil
+            headerLabel.stringValue = ""
+            textView.string = ""
+            self.view.window?.title = "Notes"
+            return
+        }
+        
         if self.activeNote?.id == note.id {
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
+            self.view.window?.title = note.title.isEmpty ? "Untitled" : note.title
             return
         }
         
@@ -87,6 +96,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         
         // Update header
         headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
+        self.view.window?.title = note.title.isEmpty ? "Untitled" : note.title
         
         // Extract plain text from AppFlowy JSON for display
         let blocks = AppFlowyConverter.toBlocks(jsonString: note.content)
@@ -108,6 +118,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         if noteService.updateNote(note) {
             self.activeNote = note
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
+            self.view.window?.title = note.title.isEmpty ? "Untitled" : note.title
             onNoteUpdated?(note)
         }
     }

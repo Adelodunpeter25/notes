@@ -10,13 +10,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private lazy var apiService = ApiService()
     private lazy var authService = AuthService(storage: storageService, api: apiService)
 
+    private var recorder: SyncOpRecorder!
+    private var searchService: SearchService!
+    private var noteService: NoteService!
+    private var folderService: FolderService!
+    private var syncService: SyncService!
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 1. Initialize core layers & databases
-        let recorder = SyncOpRecorder(storage: storageService)
-        let searchService = SearchService(database: database)
-        let noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
-        let folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
-        let syncService = SyncService(storage: storageService, api: apiService)
+        self.recorder = SyncOpRecorder(storage: storageService)
+        self.searchService = SearchService(database: database)
+        self.noteService = NoteService(storage: storageService, recorder: recorder, searchService: searchService)
+        self.folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
+        self.syncService = SyncService(storage: storageService, api: apiService)
 
         // 2. Setup macOS Window (Modern cmux-like configuration)
         let windowRect = NSRect(x: 0, y: 0, width: 1000, height: 700)
@@ -28,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         )
         window.title = "Notes"
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.titleVisibility = .visible
         window.toolbarStyle = .unified
         window.delegate = self
         window.isReleasedWhenClosed = false
@@ -37,15 +43,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let toolbar = NSToolbar(identifier: "NotesToolbar")
         toolbar.autosavesConfiguration = true
         toolbar.displayMode = .iconOnly
+        toolbar.delegate = self
         window.toolbar = toolbar
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
            let firstUserRow = database.query(sql: "SELECT id FROM users LIMIT 1;").first,
            let activeUserId = firstUserRow["id"] as? String {
-            showMainContent(userId: activeUserId, syncService: syncService, noteService: noteService, folderService: folderService)
+            showMainContent(userId: activeUserId)
         } else {
-            showAuthContent(syncService: syncService, noteService: noteService, folderService: folderService)
+            showAuthContent()
         }
 
         window.makeKeyAndOrderFront(nil)
@@ -61,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         )
     }
     
-    private func showMainContent(userId: String, syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+    private func showMainContent(userId: String) {
         let mainVC = MainSplitViewController(
             storage: storageService,
             folderService: folderService,
@@ -71,7 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.mainSplitVC = mainVC
         
         mainVC.onLogout = { [weak self] in
-            self?.handleLogout(syncService: syncService, noteService: noteService, folderService: folderService)
+            self?.handleLogout()
         }
         
         window.contentViewController = mainVC
@@ -84,20 +91,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     
-    private func showAuthContent(syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+    private func showAuthContent() {
         let authVC = AuthViewController(authService: authService)
         authVC.onAuthSuccess = { [weak self] userId in
             DispatchQueue.main.async {
-                self?.showMainContent(userId: userId, syncService: syncService, noteService: noteService, folderService: folderService)
+                self?.showMainContent(userId: userId)
             }
         }
         window.contentViewController = authVC
     }
     
-    private func handleLogout(syncService: SyncService, noteService: NoteService, folderService: FolderService) {
+    private func handleLogout() {
         authService.logout()
         self.mainSplitVC = nil
-        showAuthContent(syncService: syncService, noteService: noteService, folderService: folderService)
+        showAuthContent()
     }
     
     private func restoreWindowFrame() {
@@ -114,8 +121,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         mainSplitVC?.createNewFolder()
     }
     
+    @objc private func handleLogoutToolbarAction() {
+        handleLogout()
+    }
+    
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+}
+
+extension AppDelegate: NSToolbarDelegate {
+    func toolbar(
+        _ toolbar: NSToolbar,
+        itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+        willBeInsertedIntoToolbar flag: Bool
+    ) -> NSToolbarItem? {
+        if itemIdentifier == .toggleSidebar {
+            return NSToolbarItem(itemIdentifier: itemIdentifier)
+        } else if itemIdentifier == NSToolbarItem.Identifier("logout") {
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.label = "Log Out"
+            item.paletteLabel = "Log Out"
+            item.toolTip = "Log out of Notes"
+            item.image = NSImage(systemSymbolName: "rectangle.portrait.and.arrow.right", accessibilityDescription: "Log Out")
+            item.target = self
+            item.action = #selector(handleLogoutToolbarAction)
+            return item
+        }
+        return nil
+    }
+    
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
+    }
+    
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
     }
 }
 

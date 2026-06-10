@@ -7,10 +7,6 @@ public final class NoteListView: NSView {
     public let headerLabel = NSTextField(labelWithString: "All Notes")
     public let addNoteButton = NSButton()
     
-    #if DEBUG
-    public let logoutButton = NSButton()
-    #endif
-    
     public override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupUI()
@@ -45,18 +41,6 @@ public final class NoteListView: NSView {
         titleStack.addArrangedSubview(NSView()) // spacer
         titleStack.addArrangedSubview(addNoteButton)
         
-        #if DEBUG
-        logoutButton.isBordered = false
-        logoutButton.imagePosition = .imageOnly
-        logoutButton.bezelStyle = .texturedRounded
-        logoutButton.image = NSImage(systemSymbolName: "rectangle.portrait.and.arrow.right", accessibilityDescription: "Logout")
-        logoutButton.contentTintColor = .secondaryLabelColor
-        logoutButton.translatesAutoresizingMaskIntoConstraints = false
-        logoutButton.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        logoutButton.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        
-        titleStack.addArrangedSubview(logoutButton)
-        #endif
         
         // 2. Table View
         tableView.headerView = nil

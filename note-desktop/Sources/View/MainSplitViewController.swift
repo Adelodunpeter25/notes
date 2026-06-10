@@ -79,12 +79,7 @@ public final class MainSplitViewController: NSSplitViewController {
         
         // Note List selection changes
         noteList.onNoteSelected = { [weak self] note in
-            guard let self = self else { return }
-            if let note = note {
-                self.editor.loadNote(note)
-            } else {
-                // Editor handles nil note by clearing backing stores and UI strings
-            }
+            self?.editor.loadNote(note)
         }
         
         // Add Note action
@@ -107,11 +102,6 @@ public final class MainSplitViewController: NSSplitViewController {
             guard let self = self else { return }
             self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             self.folderList.reloadData()
-        }
-        
-        // Logout action (Debug only)
-        noteList.onLogoutTapped = { [weak self] in
-            self?.onLogout?()
         }
     }
     
@@ -157,6 +147,7 @@ public final class MainSplitViewController: NSSplitViewController {
             editor.loadNote(firstNote)
         } else {
             noteList.selectNote(nil)
+            editor.loadNote(nil)
         }
     }
     
