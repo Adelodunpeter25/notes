@@ -38,4 +38,22 @@ public struct AppColors {
 }
 
 public final class ThemeTableRowView: NSTableRowView {
+    public override func drawSelection(in dirtyRect: NSRect) {
+        if self.selectionHighlightStyle == .none { return }
+        
+        let isDark = self.effectiveAppearance.name.rawValue.contains("Dark")
+        
+        // Modern rounded selection look
+        let selectionRect = self.bounds.insetBy(dx: 8, dy: 1)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+        
+        if self.isEmphasized {
+            AppColors.accent.set()
+        } else {
+            // Unfocused selection color: solid opaque gray to block desktop/wallpaper tint bleeding
+            let inactiveColor = isDark ? NSColor(red: 0x2C/255.0, green: 0x2C/255.0, blue: 0x2E/255.0, alpha: 1.0) : NSColor(red: 0xE5/255.0, green: 0xE5/255.0, blue: 0xEA/255.0, alpha: 1.0)
+            inactiveColor.set()
+        }
+        path.fill()
+    }
 }
