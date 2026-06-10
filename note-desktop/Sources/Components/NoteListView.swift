@@ -67,7 +67,7 @@ public final class NoteListView: NSView {
         NSLayoutConstraint.activate([
             titleStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             titleStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            titleStack.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 16),
+            titleStack.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 2),
             titleStack.heightAnchor.constraint(equalToConstant: 28),
             
             searchField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),

@@ -4,6 +4,7 @@ import NoteCore
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
     private var mainSplitVC: MainSplitViewController?
+    private var activeUserId: String?
     
     private let database = Database(dbName: "note_app_db.sqlite")
     private lazy var storageService = StorageService(database: database)
@@ -69,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     
     private func showMainContent(userId: String) {
+        self.activeUserId = userId
         let mainVC = MainSplitViewController(
             storage: storageService,
             folderService: folderService,
@@ -83,10 +85,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         window.contentViewController = mainVC
         
-        // Initial sync on launch
-        syncService.syncData(userId: userId) { _ in
+        // Initial sync on launch (with toolbar sync button animation)
+        animateSyncButton()
+        syncService.syncData(userId: userId) { [weak self] result in
             DispatchQueue.main.async {
-                mainVC.refreshAllData()
+                self?.stopSyncButtonAnimation()
+                if case .success = result {
+                    mainVC.refreshAllData()
+                }
             }
         }
     }
@@ -104,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func handleLogout() {
         authService.logout()
         self.mainSplitVC = nil
+        self.activeUserId = nil
         showAuthContent()
     }
     
@@ -127,6 +134,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     #endif
     
+    private func animateSyncButton() {
+        guard let toolbar = window.toolbar,
+              let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
+              let button = syncItem.view as? NSButton else { return }
+        
+        button.isEnabled = false
+        
+        let animation = CABasicAnimation(keyPath: "transform.rotation")
+        animation.fromValue = 0.0
+        animation.toValue = -Double.pi * 2.0
+        animation.duration = 1.0
+        animation.repeatCount = .infinity
+        
+        button.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        button.layer?.position = CGPoint(x: button.frame.midX, y: button.frame.midY)
+        button.layer?.add(animation, forKey: "rotationAnimation")
+    }
+    
+    private func stopSyncButtonAnimation() {
+        guard let toolbar = window.toolbar,
+              let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
+              let button = syncItem.view as? NSButton else { return }
+        
+        button.isEnabled = true
+        button.layer?.removeAnimation(forKey: "rotationAnimation")
+    }
+    
+    @objc private func handleSyncToolbarAction() {
+        guard let userId = activeUserId else { return }
+        
+        animateSyncButton()
+        syncService.syncData(userId: userId) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.stopSyncButtonAnimation()
+                if case .success = result {
+                    self?.mainSplitVC?.refreshAllData()
+                } else if case .failure(let error) = result {
+                    let alert = NSAlert()
+                    alert.messageText = "Sync Failed"
+                    alert.informativeText = error.localizedDescription
+                    alert.alertStyle = .warning
+                    alert.addButton(withTitle: "OK")
+                    alert.runModal()
+                }
+            }
+        }
+    }
+    
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }
@@ -140,6 +195,22 @@ extension AppDelegate: NSToolbarDelegate {
     ) -> NSToolbarItem? {
         if itemIdentifier == .toggleSidebar {
             return NSToolbarItem(itemIdentifier: itemIdentifier)
+        } else if itemIdentifier == NSToolbarItem.Identifier("sync") {
+            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 24, height: 24))
+            button.isBordered = false
+            button.imagePosition = .imageOnly
+            button.bezelStyle = .texturedRounded
+            button.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Sync")
+            button.target = self
+            button.action = #selector(handleSyncToolbarAction)
+            button.wantsLayer = true
+            
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = button
+            item.label = "Sync"
+            item.paletteLabel = "Sync"
+            item.toolTip = "Sync Notes"
+            return item
         } else if itemIdentifier == NSToolbarItem.Identifier("logout") {
             #if DEBUG
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
@@ -159,17 +230,17 @@ extension AppDelegate: NSToolbarDelegate {
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         #if DEBUG
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync"), NSToolbarItem.Identifier("logout")]
         #else
-        return [.toggleSidebar, .flexibleSpace]
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync")]
         #endif
     }
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         #if DEBUG
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync"), NSToolbarItem.Identifier("logout")]
         #else
-        return [.toggleSidebar, .flexibleSpace]
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync")]
         #endif
     }
 }

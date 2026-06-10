@@ -68,7 +68,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 2),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
             scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
