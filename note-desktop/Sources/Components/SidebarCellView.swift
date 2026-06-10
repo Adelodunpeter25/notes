@@ -22,7 +22,7 @@ public final class SidebarCellView: NSTableCellView {
         nameField.isBordered = false
         nameField.drawsBackground = false
         nameField.isEditable = false
-        nameField.isSelectable = true
+        nameField.isSelectable = false
         nameField.font = NSFont.systemFont(ofSize: 12)
         nameField.textColor = .labelColor
         nameField.lineBreakMode = .byTruncatingTail

@@ -144,9 +144,8 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell.badgeField.stringValue = count > 0 ? "\(count)" : ""
         return cell
     }
-    
     public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
-        ov.makeView(withIdentifier: NSUserInterfaceItemIdentifier("ThemeRowView"), owner: self) as? ThemeTableRowView ?? ThemeTableRowView(frame: .zero)
+        return nil
     }
     
     public func outlineViewSelectionDidChange(_ n: Notification) {

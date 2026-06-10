@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Notes"
+        window.title = "Note"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .visible
         window.toolbarStyle = .unified
@@ -121,9 +121,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         mainSplitVC?.createNewFolder()
     }
     
+    #if DEBUG
     @objc private func handleLogoutToolbarAction() {
         handleLogout()
     }
+    #endif
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
@@ -139,6 +141,7 @@ extension AppDelegate: NSToolbarDelegate {
         if itemIdentifier == .toggleSidebar {
             return NSToolbarItem(itemIdentifier: itemIdentifier)
         } else if itemIdentifier == NSToolbarItem.Identifier("logout") {
+            #if DEBUG
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.label = "Log Out"
             item.paletteLabel = "Log Out"
@@ -147,16 +150,27 @@ extension AppDelegate: NSToolbarDelegate {
             item.target = self
             item.action = #selector(handleLogoutToolbarAction)
             return item
+            #else
+            return nil
+            #endif
         }
         return nil
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        #if DEBUG
         return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
+        #else
+        return [.toggleSidebar, .flexibleSpace]
+        #endif
     }
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        #if DEBUG
         return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("logout")]
+        #else
+        return [.toggleSidebar, .flexibleSpace]
+        #endif
     }
 }
 

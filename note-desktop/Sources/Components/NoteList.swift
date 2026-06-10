@@ -108,7 +108,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         }
     }
     
-    public func tableView(_ tv: NSTableView, rowViewForRow row: Int) -> NSTableRowView? { tv.makeView(withIdentifier: NSUserInterfaceItemIdentifier("ThemeRowView"), owner: self) as? ThemeTableRowView ?? ThemeTableRowView(frame: .zero) }
+    public func tableView(_ tv: NSTableView, rowViewForRow row: Int) -> NSTableRowView? { return nil }
     
     public func tableViewSelectionDidChange(_ n: Notification) {
         let row = listView.tableView.selectedRow
