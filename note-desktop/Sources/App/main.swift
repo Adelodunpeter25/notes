@@ -182,6 +182,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     
+    func applicationWillTerminate(_ notification: Notification) {
+        if let userId = activeUserId {
+            noteService.autoDeleteEmptyNotes(userId: userId)
+        }
+    }
+    
+    func applicationDidResignActive(_ notification: Notification) {
+        if let userId = activeUserId {
+            noteService.autoDeleteEmptyNotes(userId: userId)
+            mainSplitVC?.refreshAllData()
+        }
+    }
+    
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }

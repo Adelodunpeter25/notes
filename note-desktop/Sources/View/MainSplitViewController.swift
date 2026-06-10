@@ -15,6 +15,7 @@ public final class MainSplitViewController: NSSplitViewController {
     
     // MARK: - State
     private var currentSelection: FolderSelection = .allNotes
+    private var isUpdating = false
     
     public var onLogout: (() -> Void)?
     
@@ -73,13 +74,28 @@ public final class MainSplitViewController: NSSplitViewController {
         // Folder Sidebar selection changes
         folderList.onSelectionChanged = { [weak self] selection in
             guard let self = self else { return }
+            if self.isUpdating { return }
+            self.isUpdating = true
+            
+            self.noteService.autoDeleteEmptyNotes(userId: self.userId)
             self.currentSelection = selection
             self.loadNotesForCurrentSelection()
+            self.folderList.reloadData()
+            
+            self.isUpdating = false
         }
         
         // Note List selection changes
         noteList.onNoteSelected = { [weak self] note in
-            self?.editor.loadNote(note)
+            guard let self = self else { return }
+            if self.isUpdating { return }
+            self.isUpdating = true
+            
+            self.noteService.autoDeleteEmptyNotes(userId: self.userId)
+            self.loadNotesForCurrentSelection(retainSelectedNoteId: note?.id)
+            self.folderList.reloadData()
+            
+            self.isUpdating = false
         }
         
         // Add Note action
@@ -91,17 +107,27 @@ public final class MainSplitViewController: NSSplitViewController {
         // Editor update events (saves body / updates titles in list)
         editor.onNoteUpdated = { [weak self] updatedNote in
             guard let self = self else { return }
+            if self.isUpdating { return }
+            self.isUpdating = true
+            
             // Reload list items to refresh title/snippet in real-time
             self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             // Update folder badge counts since note counts changed
             self.folderList.reloadData()
+            
+            self.isUpdating = false
         }
         
         // Note List update events (pin, delete, restore, empty trash)
         noteList.onNoteUpdated = { [weak self] updatedNote in
             guard let self = self else { return }
+            if self.isUpdating { return }
+            self.isUpdating = true
+            
             self.loadNotesForCurrentSelection(retainSelectedNoteId: updatedNote?.id)
             self.folderList.reloadData()
+            
+            self.isUpdating = false
         }
     }
     
@@ -116,8 +142,11 @@ public final class MainSplitViewController: NSSplitViewController {
     
     // MARK: - Data Synchronization
     public func refreshAllData() {
+        let wasUpdating = isUpdating
+        isUpdating = true
         folderList.reloadData()
         loadNotesForCurrentSelection()
+        isUpdating = wasUpdating
     }
     
     private func loadNotesForCurrentSelection(retainSelectedNoteId: String? = nil) {
@@ -162,6 +191,8 @@ public final class MainSplitViewController: NSSplitViewController {
             return
         }
         
+        self.noteService.autoDeleteEmptyNotes(userId: self.userId)
+        
         let folderId: String?
         if case .folder(let folder) = currentSelection {
             folderId = folder.id
@@ -170,9 +201,12 @@ public final class MainSplitViewController: NSSplitViewController {
         }
         
         if let note = noteService.createNote(title: "Untitled", content: "", userId: userId, folderId: folderId) {
+            let wasUpdating = isUpdating
+            isUpdating = true
             refreshAllData()
             noteList.selectNote(note)
             editor.loadNote(note)
+            isUpdating = wasUpdating
         }
     }
 }
