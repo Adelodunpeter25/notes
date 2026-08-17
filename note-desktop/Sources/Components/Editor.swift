@@ -106,6 +106,12 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         textView.allowsUndo = true
         textView.isEditable = true
         textView.isSelectable = true
+        textView.isAutomaticLinkDetectionEnabled = true
+        textView.linkTextAttributes = [
+            .foregroundColor: AppColors.accent,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+            .cursor: NSCursor.pointingHand
+        ]
         textView.font = NSFont.systemFont(ofSize: 14)
         textView.textColor = .textColor
         textView.backgroundColor = .textBackgroundColor
@@ -360,6 +366,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         let blocks = AppFlowyConverter.toBlocks(jsonString: note.content)
         let attrString = renderAttributedContent(from: blocks)
         textView.textStorage?.setAttributedString(attrString)
+        textView.checkTextInDocument(nil)
     }
     
     private func renderAttributedContent(from blocks: [Block]) -> NSAttributedString {
@@ -447,6 +454,17 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     }
     
     // MARK: - NSTextViewDelegate
+    
+    public func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+        if let url = link as? URL {
+            NSWorkspace.shared.open(url)
+            return true
+        } else if let string = link as? String, let url = URL(string: string) {
+            NSWorkspace.shared.open(url)
+            return true
+        }
+        return false
+    }
     
     public func textDidChange(_ notification: Notification) {
         saveNoteContent()
