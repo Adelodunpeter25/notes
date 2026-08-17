@@ -31,7 +31,7 @@ public final class SidebarCellView: NSTableCellView {
         nameField.drawsBackground = false
         nameField.isEditable = false
         nameField.isSelectable = false
-        nameField.font = NSFont.systemFont(ofSize: 12)
+        nameField.font = NSFont.systemFont(ofSize: 14)
         nameField.textColor = .labelColor
         nameField.lineBreakMode = .byTruncatingTail
         self.textField = nameField

@@ -21,11 +21,14 @@ public final class AppFlowyConverter {
         for child in children {
             let typeStr = child["type"] as? String ?? "paragraph"
             
-            // Extract plain text string from delta array
+            // Extract plain text string from delta array in data, attributes, or root
             var text = ""
-            if let dataNode = child["data"] as? [String: Any],
-               let delta = dataNode["delta"] as? [[String: Any]] {
-                for op in delta {
+            let delta = (child["data"] as? [String: Any])?["delta"] as? [[String: Any]] ??
+                        (child["delta"] as? [[String: Any]]) ??
+                        (child["attributes"] as? [String: Any])?["delta"] as? [[String: Any]]
+            
+            if let deltaList = delta {
+                for op in deltaList {
                     if let insert = op["insert"] as? String {
                         text += insert
                     }
@@ -35,10 +38,10 @@ public final class AppFlowyConverter {
             
             let blockType: BlockType
             var isChecked: Bool? = nil
+            let attributes = (child["attributes"] as? [String: Any]) ?? (child["data"] as? [String: Any])
             
             switch typeStr {
             case "heading":
-                let attributes = child["attributes"] as? [String: Any]
                 let level = attributes?["level"] as? Int ?? 1
                 if level == 1 {
                     blockType = .title
@@ -49,7 +52,6 @@ public final class AppFlowyConverter {
                 }
             case "todo_list":
                 blockType = .todo
-                let attributes = child["attributes"] as? [String: Any]
                 isChecked = attributes?["checked"] as? Bool ?? false
             case "bullet_list":
                 blockType = .bulletList
