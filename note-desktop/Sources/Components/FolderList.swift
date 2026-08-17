@@ -115,11 +115,6 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell.nameField.isEditable = true
         cell.nameField.isSelectable = true
         cell.nameField.isEnabled = true
-        cell.nameField.drawsBackground = true
-        cell.nameField.backgroundColor = NSColor.textBackgroundColor
-        cell.nameField.textColor = NSColor.textColor
-        cell.nameField.isBordered = true
-        cell.nameField.bezelStyle = .roundedBezel
         listView.outlineView.window?.makeFirstResponder(cell.nameField)
         cell.nameField.currentEditor()?.selectAll(nil)
     }
@@ -189,10 +184,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         return cell
     }
     public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
-        let identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
-        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? ThemeTableRowView
+        let identifier = NSUserInterfaceItemIdentifier("DefaultRowView")
+        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? NSTableRowView
         if rowView == nil {
-            rowView = ThemeTableRowView(frame: .zero)
+            rowView = NSTableRowView(frame: .zero)
             rowView?.identifier = identifier
         }
         return rowView

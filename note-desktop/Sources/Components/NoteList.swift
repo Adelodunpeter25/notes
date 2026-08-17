@@ -109,6 +109,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     public func numberOfRows(in tv: NSTableView) -> Int { viewModel?.rowItems.count ?? 0 }
     public func tableView(_ tv: NSTableView, isGroupRow row: Int) -> Bool { if case .header = viewModel?.rowItems[row] { return true } else { return false } }
+    public func tableView(_ tv: NSTableView, shouldSelectRow row: Int) -> Bool { if case .header = viewModel?.rowItems[row] { return false } else { return true } }
     public func tableView(_ tv: NSTableView, heightOfRow row: Int) -> CGFloat { if case .header = viewModel?.rowItems[row] { return 22 } else { return 68 } }
     
     public func tableView(_ tv: NSTableView, viewFor tc: NSTableColumn?, row: Int) -> NSView? {
