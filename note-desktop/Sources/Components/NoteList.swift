@@ -43,7 +43,18 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         if viewModel == nil { viewModel = NoteListViewModel(noteService: noteService, storage: storage, userId: userId) }
         viewModel?.updateNotes(notes, searchquery: listView.searchField.stringValue)
         updateHeaderButtonState()
+        updateEmptyState()
         listView.tableView.reloadData()
+    }
+    
+    private func updateEmptyState() {
+        let count = viewModel?.rowItems.count ?? 0
+        if count == 0 {
+            listView.emptyStateLabel.stringValue = isTrashSelected ? "No Notes in Trash" : "No Notes"
+            listView.emptyStateLabel.isHidden = false
+        } else {
+            listView.emptyStateLabel.isHidden = true
+        }
     }
     
     private func updateHeaderButtonState() {
@@ -90,11 +101,15 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         if noteService.moveNoteToFolder(note, folderId: fId) { var u = note; u.folderId = fId; onNoteUpdated?(u) }
     }
     
-    public func controlTextDidChange(_ obj: Notification) { viewModel?.filterNotes(query: listView.searchField.stringValue); listView.tableView.reloadData() }
+    public func controlTextDidChange(_ obj: Notification) {
+        viewModel?.filterNotes(query: listView.searchField.stringValue)
+        updateEmptyState()
+        listView.tableView.reloadData()
+    }
     
     public func numberOfRows(in tv: NSTableView) -> Int { viewModel?.rowItems.count ?? 0 }
     public func tableView(_ tv: NSTableView, isGroupRow row: Int) -> Bool { if case .header = viewModel?.rowItems[row] { return true } else { return false } }
-    public func tableView(_ tv: NSTableView, heightOfRow row: Int) -> CGFloat { if case .header = viewModel?.rowItems[row] { return 22 } else { return 52 } }
+    public func tableView(_ tv: NSTableView, heightOfRow row: Int) -> CGFloat { if case .header = viewModel?.rowItems[row] { return 22 } else { return 68 } }
     
     public func tableView(_ tv: NSTableView, viewFor tc: NSTableColumn?, row: Int) -> NSView? {
         guard let item = viewModel?.rowItems[row] else { return nil }

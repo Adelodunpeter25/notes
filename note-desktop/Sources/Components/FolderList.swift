@@ -113,7 +113,13 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
               node.type == .folder else { return }
         
         cell.nameField.isEditable = true
+        cell.nameField.isSelectable = true
         cell.nameField.isEnabled = true
+        cell.nameField.drawsBackground = true
+        cell.nameField.backgroundColor = NSColor.textBackgroundColor
+        cell.nameField.textColor = NSColor.textColor
+        cell.nameField.isBordered = true
+        cell.nameField.bezelStyle = .roundedBezel
         listView.outlineView.window?.makeFirstResponder(cell.nameField)
         cell.nameField.currentEditor()?.selectAll(nil)
     }
@@ -147,6 +153,9 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
             }
         } else { textField.stringValue = folder.name }
         textField.isEditable = false
+        textField.isSelectable = false
+        textField.drawsBackground = false
+        textField.isBordered = false
     }
     
     // MARK: - NSOutlineView Data & Delegate

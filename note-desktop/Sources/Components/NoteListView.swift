@@ -7,6 +7,8 @@ public final class NoteListView: NSView {
     public let headerLabel = NSTextField(labelWithString: "All Notes")
     public let addNoteButton = NSButton()
     
+    public let emptyStateLabel = NSTextField(labelWithString: "")
+    
     public override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupUI()
@@ -44,7 +46,7 @@ public final class NoteListView: NSView {
         
         // 2. Table View
         tableView.headerView = nil
-        tableView.rowHeight = 52
+        tableView.rowHeight = 68
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("NoteColumn"))
@@ -55,14 +57,22 @@ public final class NoteListView: NSView {
         scrollView.drawsBackground = false
         scrollView.documentView = tableView
         
+        // 3. Empty state label
+        emptyStateLabel.font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        emptyStateLabel.textColor = .secondaryLabelColor
+        emptyStateLabel.alignment = .center
+        emptyStateLabel.isHidden = true
+        
         // Layout views
         addSubview(titleStack)
         addSubview(searchField)
         addSubview(scrollView)
+        addSubview(emptyStateLabel)
         
         titleStack.translatesAutoresizingMaskIntoConstraints = false
         searchField.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
             titleStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
@@ -77,7 +87,12 @@ public final class NoteListView: NSView {
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
-            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            emptyStateLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor, constant: -20),
+            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 20),
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -20)
         ])
     }
 }

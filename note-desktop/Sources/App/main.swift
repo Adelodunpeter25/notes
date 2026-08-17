@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         self.folderService = FolderService(storage: storageService, noteService: noteService, recorder: recorder)
         self.syncService = SyncService(storage: storageService, api: apiService)
 
-        // 2. Setup macOS Window (Modern cmux-like configuration)
+        // 2. Setup macOS Window (Modern Notes-like configuration)
         let windowRect = NSRect(x: 0, y: 0, width: 1000, height: 700)
         window = NSWindow(
             contentRect: windowRect,
@@ -33,9 +33,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Note"
+        window.title = ""
         window.titlebarAppearsTransparent = true
-        window.titleVisibility = .visible
+        window.titleVisibility = .hidden
         window.toolbarStyle = .unified
         window.delegate = self
         window.isReleasedWhenClosed = false
@@ -208,12 +208,30 @@ extension AppDelegate: NSToolbarDelegate {
     ) -> NSToolbarItem? {
         if itemIdentifier == .toggleSidebar {
             return NSToolbarItem(itemIdentifier: itemIdentifier)
+        } else if itemIdentifier == NSToolbarItem.Identifier("newNote") {
+            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+            button.isBordered = false
+            button.imagePosition = .imageOnly
+            button.bezelStyle = .texturedRounded
+            button.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
+            button.contentTintColor = AppColors.accent
+            button.target = self
+            button.action = #selector(handleNewNoteShortcut)
+            button.wantsLayer = true
+            
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = button
+            item.label = "New Note"
+            item.paletteLabel = "New Note"
+            item.toolTip = "Create a New Note (⌘N)"
+            return item
         } else if itemIdentifier == NSToolbarItem.Identifier("sync") {
-            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 24, height: 24))
+            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
             button.isBordered = false
             button.imagePosition = .imageOnly
             button.bezelStyle = .texturedRounded
             button.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Sync")
+            button.contentTintColor = AppColors.accent
             button.target = self
             button.action = #selector(handleSyncToolbarAction)
             button.wantsLayer = true
@@ -224,37 +242,16 @@ extension AppDelegate: NSToolbarDelegate {
             item.paletteLabel = "Sync"
             item.toolTip = "Sync Notes"
             return item
-        } else if itemIdentifier == NSToolbarItem.Identifier("logout") {
-            #if DEBUG
-            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-            item.label = "Log Out"
-            item.paletteLabel = "Log Out"
-            item.toolTip = "Log out of Notes"
-            item.image = NSImage(systemSymbolName: "rectangle.portrait.and.arrow.right", accessibilityDescription: "Log Out")
-            item.target = self
-            item.action = #selector(handleLogoutToolbarAction)
-            return item
-            #else
-            return nil
-            #endif
         }
         return nil
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        #if DEBUG
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync"), NSToolbarItem.Identifier("logout")]
-        #else
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync")]
-        #endif
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .space, NSToolbarItem.Identifier("sync")]
     }
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        #if DEBUG
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync"), NSToolbarItem.Identifier("logout")]
-        #else
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("sync")]
-        #endif
+        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
     }
 }
 

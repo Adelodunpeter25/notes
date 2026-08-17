@@ -52,12 +52,12 @@ public final class NoteCellView: NSTableCellView {
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: pinImageView.leadingAnchor, constant: -8),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
             
             subtitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             subtitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
+            subtitleLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -12),
             
             pinImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             pinImageView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
