@@ -157,12 +157,13 @@ public final class MainSplitViewController: NSSplitViewController {
     public func refreshAllData() {
         let wasUpdating = isUpdating
         isUpdating = true
+        let currentNoteId = noteList.selectedNote?.id
         folderList.reloadData()
-        loadNotesForCurrentSelection()
+        loadNotesForCurrentSelection(retainSelectedNoteId: currentNoteId, autoSelectFirstIfNone: false)
         isUpdating = wasUpdating
     }
     
-    private func loadNotesForCurrentSelection(retainSelectedNoteId: String? = nil) {
+    private func loadNotesForCurrentSelection(retainSelectedNoteId: String? = nil, autoSelectFirstIfNone: Bool = false) {
         let notes: [DBNote]
         let title: String
         
@@ -183,7 +184,7 @@ public final class MainSplitViewController: NSSplitViewController {
         if let selectedId = retainSelectedNoteId, let matchedNote = notes.first(where: { $0.id == selectedId }) {
             noteList.selectNote(matchedNote)
             editor.loadNote(matchedNote)
-        } else if let firstNote = notes.first {
+        } else if autoSelectFirstIfNone, let firstNote = notes.first {
             noteList.selectNote(firstNote)
             editor.loadNote(firstNote)
         } else {

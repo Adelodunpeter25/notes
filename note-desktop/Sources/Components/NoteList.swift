@@ -42,6 +42,12 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     public var onEscapePressed: (() -> Void)?
     
+    public var selectedNote: DBNote? {
+        let row = listView.tableView.selectedRow
+        guard row != -1, let vm = viewModel, case .note(let note) = vm.rowItems[row] else { return nil }
+        return note
+    }
+    
     public func clearSelection() {
         listView.tableView.deselectAll(nil)
     }
