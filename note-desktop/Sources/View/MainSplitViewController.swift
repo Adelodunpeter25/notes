@@ -9,9 +9,9 @@ public final class MainSplitViewController: NSSplitViewController {
     private let userId: String
     
     // MARK: - Components
-    private let folderList: FolderList
-    private let noteList: NoteList
-    private let editor: Editor
+    public let folderList: FolderList
+    public let noteList: NoteList
+    public let editor: Editor
     
     // MARK: - State
     private var currentSelection: FolderSelection = .allNotes

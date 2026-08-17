@@ -228,6 +228,24 @@ extension AppDelegate: NSToolbarDelegate {
             item.paletteLabel = "New Note"
             item.toolTip = "Create a New Note (⌘N)"
             return item
+        } else if itemIdentifier == NSToolbarItem.Identifier("formatToolbar") {
+            let tb = EditorToolbar()
+            tb.onBold = { [weak self] in self?.mainSplitVC?.editor.toggleBold() }
+            tb.onItalic = { [weak self] in self?.mainSplitVC?.editor.toggleItalic() }
+            tb.onUnderline = { [weak self] in self?.mainSplitVC?.editor.toggleUnderline() }
+            tb.onStrikethrough = { [weak self] in self?.mainSplitVC?.editor.toggleStrikethrough() }
+            tb.onTitle = { [weak self] in self?.mainSplitVC?.editor.applyTitle() }
+            tb.onHeading = { [weak self] in self?.mainSplitVC?.editor.applyHeading() }
+            tb.onSubheading = { [weak self] in self?.mainSplitVC?.editor.applySubheading() }
+            tb.onCheckbox = { [weak self] in self?.mainSplitVC?.editor.insertCheckbox() }
+            tb.onBulletList = { [weak self] in self?.mainSplitVC?.editor.insertBulletList() }
+            tb.onNumberedList = { [weak self] in self?.mainSplitVC?.editor.insertNumberedList() }
+            
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            item.view = tb
+            item.label = "Format"
+            item.paletteLabel = "Format"
+            return item
         } else if itemIdentifier == NSToolbarItem.Identifier("sync") {
             let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
             button.isBordered = false
@@ -249,11 +267,11 @@ extension AppDelegate: NSToolbarDelegate {
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .space, NSToolbarItem.Identifier("sync")]
+        return [.toggleSidebar, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("formatToolbar"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
     }
     
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
+        return [.toggleSidebar, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("formatToolbar"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
     }
 }
 

@@ -92,8 +92,6 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             self?.saveNoteContent()
         }
         
-        setupToolbarActions()
-        
         // 1. Setup Header Date Display
         headerLabel.textColor = .secondaryLabelColor
         headerLabel.font = NSFont.systemFont(ofSize: 11)
@@ -135,7 +133,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         }
         
         // Stack and align layouts
-        let stack = NSStackView(views: [headerLabel, toolbar, searchBar, scrollView])
+        let stack = NSStackView(views: [headerLabel, searchBar, scrollView])
         stack.orientation = .vertical
         stack.spacing = 6
         stack.alignment = .centerX
@@ -144,7 +142,6 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         view.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
@@ -153,47 +150,54 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 2),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
-            toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            toolbar.heightAnchor.constraint(equalToConstant: 28),
             searchBar.widthAnchor.constraint(equalTo: stack.widthAnchor),
             searchBar.heightAnchor.constraint(equalToConstant: 28),
             scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
         ])
+        
+        updateEmptyStateVisibility()
     }
     
-    private func setupToolbarActions() {
-        toolbar.onBold = { [weak self] in
-            self?.toggleFontTrait(.boldFontMask)
-        }
-        toolbar.onItalic = { [weak self] in
-            self?.toggleFontTrait(.italicFontMask)
-        }
-        toolbar.onUnderline = { [weak self] in
-            self?.toggleUnderline()
-        }
-        toolbar.onStrikethrough = { [weak self] in
-            self?.toggleStrikethrough()
-        }
-        toolbar.onTitle = { [weak self] in
-            self?.applyLineFormatting(fontSize: 22, weight: .bold)
-        }
-        toolbar.onHeading = { [weak self] in
-            self?.applyLineFormatting(fontSize: 18, weight: .semibold)
-        }
-        toolbar.onSubheading = { [weak self] in
-            self?.applyLineFormatting(fontSize: 15, weight: .medium)
-        }
-        toolbar.onCheckbox = { [weak self] in
-            self?.insertCheckboxAtCurrentLine()
-        }
-        toolbar.onBulletList = { [weak self] in
-            self?.insertListPrefix("• ")
-        }
-        toolbar.onNumberedList = { [weak self] in
-            self?.insertListPrefix("1. ")
+    private func updateEmptyStateVisibility() {
+        let hasNote = (activeNote != nil)
+        headerLabel.isHidden = !hasNote
+        scrollView.isHidden = !hasNote
+        if !hasNote {
+            searchBar.isHidden = true
         }
     }
+    
+    // MARK: - Rich Text Formatting Actions (Available for Titlebar/Shortcuts)
+    
+    public func toggleBold() { toggleFontTrait(.boldFontMask) }
+    public func toggleItalic() { toggleFontTrait(.italicFontMask) }
+    public func toggleUnderline() {
+        let range = textView.selectedRange()
+        guard range.length > 0, let storage = textView.textStorage else { return }
+        storage.beginEditing()
+        let current = storage.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
+        storage.addAttribute(.underlineStyle, value: newStyle, range: range)
+        storage.endEditing()
+        saveNoteContent()
+    }
+    public func toggleStrikethrough() {
+        let range = textView.selectedRange()
+        guard range.length > 0, let storage = textView.textStorage else { return }
+        storage.beginEditing()
+        let current = storage.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
+        storage.addAttribute(.strikethroughStyle, value: newStyle, range: range)
+        storage.endEditing()
+        saveNoteContent()
+    }
+    public func applyTitle() { applyLineFormatting(fontSize: 22, weight: .bold) }
+    public func applyHeading() { applyLineFormatting(fontSize: 18, weight: .semibold) }
+    public func applySubheading() { applyLineFormatting(fontSize: 15, weight: .medium) }
+    public func insertCheckbox() { insertCheckboxAtCurrentLine() }
+    public func insertBulletList() { insertListPrefix("• ") }
+    public func insertNumberedList() { insertListPrefix("1. ") }
     
     private func toggleFontTrait(_ trait: NSFontTraitMask) {
         let range = textView.selectedRange()
@@ -206,28 +210,6 @@ public final class Editor: NSViewController, NSTextViewDelegate {
                 storage.addAttribute(.font, value: newFont, range: subrange)
             }
         }
-        storage.endEditing()
-        saveNoteContent()
-    }
-    
-    private func toggleUnderline() {
-        let range = textView.selectedRange()
-        guard range.length > 0, let storage = textView.textStorage else { return }
-        storage.beginEditing()
-        let current = storage.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
-        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
-        storage.addAttribute(.underlineStyle, value: newStyle, range: range)
-        storage.endEditing()
-        saveNoteContent()
-    }
-    
-    private func toggleStrikethrough() {
-        let range = textView.selectedRange()
-        guard range.length > 0, let storage = textView.textStorage else { return }
-        storage.beginEditing()
-        let current = storage.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
-        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
-        storage.addAttribute(.strikethroughStyle, value: newStyle, range: range)
         storage.endEditing()
         saveNoteContent()
     }
@@ -359,16 +341,19 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             headerLabel.stringValue = ""
             textView.string = ""
             closeFindBar()
+            updateEmptyStateVisibility()
             return
         }
         
         if self.activeNote?.id == note.id {
             headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
+            updateEmptyStateVisibility()
             return
         }
         
         self.activeNote = note
         closeFindBar()
+        updateEmptyStateVisibility()
         headerLabel.stringValue = TimeUtils.formatEditorHeader(for: note.updatedAt)
         
         // Render rich text blocks (Option A)
