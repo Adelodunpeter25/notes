@@ -6,7 +6,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DESKTOP_DIR="${PROJECT_ROOT}/note-desktop"
 BUILD_DIR="${DESKTOP_DIR}/.build/release"
 DIST_DIR="${PROJECT_ROOT}/dist"
-APP_NAME="Notes"
+APP_NAME="Note"
 APP_BUNDLE="${DIST_DIR}/${APP_NAME}.app"
 DMG_NAME="${APP_NAME}.dmg"
 DMG_PATH="${DIST_DIR}/${DMG_NAME}"
@@ -35,7 +35,7 @@ cat <<EOF > "${APP_BUNDLE}/Contents/Info.plist"
     <key>CFBundleExecutable</key>
     <string>${APP_NAME}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.notes.desktop</string>
+    <string>com.adelodunpeter.note</string>
     <key>CFBundleName</key>
     <string>${APP_NAME}</string>
     <key>CFBundleDisplayName</key>
