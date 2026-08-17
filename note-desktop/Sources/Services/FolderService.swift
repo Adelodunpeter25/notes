@@ -12,7 +12,7 @@ public final class FolderService {
     }
     
     public func createFolder(name: String, userId: String) -> DBFolder? {
-        let folderId = UUID().uuidString
+        let folderId = UUID().uuidString.lowercased()
         let folder = DBFolder(id: folderId, name: name, userId: userId)
         
         guard storage.insertFolder(folder) else { return nil }

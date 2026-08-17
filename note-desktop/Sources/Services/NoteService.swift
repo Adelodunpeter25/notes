@@ -16,7 +16,7 @@ public final class NoteService {
     }
     
     public func createNote(title: String, content: String, userId: String, folderId: String? = nil) -> DBNote? {
-        let noteId = UUID().uuidString
+        let noteId = UUID().uuidString.lowercased()
         let now = Date()
         let note = DBNote(
             id: noteId,
