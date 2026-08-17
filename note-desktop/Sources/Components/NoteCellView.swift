@@ -34,7 +34,7 @@ public final class NoteCellView: NSTableCellView {
             titleLabel.textColor = .labelColor
             subtitleLabel.textColor = .secondaryLabelColor
             folderLabel.textColor = .secondaryLabelColor
-            folderImageView.contentTintColor = AppColors.accent
+            folderImageView.contentTintColor = .secondaryLabelColor
             pinImageView.contentTintColor = AppColors.accent
         }
     }
@@ -57,7 +57,7 @@ public final class NoteCellView: NSTableCellView {
         
         folderImageView.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
         folderImageView.imageScaling = .scaleProportionallyDown
-        folderImageView.contentTintColor = AppColors.accent
+        folderImageView.contentTintColor = .secondaryLabelColor
         folderImageView.isHidden = true
         addSubview(folderImageView)
         
