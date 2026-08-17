@@ -149,6 +149,10 @@ public final class MainSplitViewController: NSSplitViewController {
         folderList.createNewFolder()
     }
     
+    public func toggleFindInCurrentNote() {
+        editor.toggleFindBar()
+    }
+    
     // MARK: - Data Synchronization
     public func refreshAllData() {
         let wasUpdating = isUpdating

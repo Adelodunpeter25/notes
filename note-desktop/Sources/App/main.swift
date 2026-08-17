@@ -128,6 +128,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         mainSplitVC?.createNewFolder()
     }
     
+    @objc func handleFindShortcut() {
+        mainSplitVC?.toggleFindInCurrentNote()
+    }
+    
     #if DEBUG
     @objc private func handleLogoutToolbarAction() {
         handleLogout()

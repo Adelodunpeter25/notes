@@ -22,7 +22,7 @@ public final class FolderListView: NSView {
         // 1. Setup Outline View
         outlineView.headerView = nil
         outlineView.floatsGroupRows = false
-        outlineView.rowHeight = 28
+        outlineView.rowHeight = 30
         
         if #available(macOS 12.0, *) {
             outlineView.style = .sourceList

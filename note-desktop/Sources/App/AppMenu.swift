@@ -56,5 +56,10 @@ public final class AppMenu: NSMenu {
         editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         editMenu.addItem(withTitle: "Select All", action: #selector(NSStandardKeyBindingResponding.selectAll(_:)), keyEquivalent: "a")
+        editMenu.addItem(NSMenuItem.separator())
+        
+        let findItem = NSMenuItem(title: "Find in Note…", action: #selector(AppDelegate.handleFindShortcut), keyEquivalent: "f")
+        findItem.target = target
+        editMenu.addItem(findItem)
     }
 }
