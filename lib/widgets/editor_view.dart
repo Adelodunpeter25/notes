@@ -230,6 +230,7 @@ class _EditorViewState extends State<EditorView> {
               child: MobileFloatingToolbar(
                 editorState: _editorState!,
                 editorScrollController: _editorScrollController,
+                floatingToolbarHeight: 44.0,
                 toolbarBuilder: (context, anchor, closeToolbar) {
                   return EditorSelectionMenu(
                     editorState: _editorState!,
