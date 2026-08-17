@@ -8,6 +8,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     
     private var userId: String = ""
     private var isTrashSelected = false
+    private var isAllNotesView = false
     private var contextMenuNote: DBNote?
     
     public var onNoteSelected: ((DBNote?) -> Void)?
@@ -56,6 +57,7 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         self.userId = userId
         self.listView.headerLabel.stringValue = title
         self.isTrashSelected = (title == "Trash")
+        self.isAllNotesView = (title == "All Notes")
         if viewModel == nil { viewModel = NoteListViewModel(noteService: noteService, storage: storage, userId: userId) }
         viewModel?.updateNotes(notes, searchquery: listView.searchField.stringValue)
         updateHeaderButtonState()
@@ -136,7 +138,21 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
             cell.identifier = NSUserInterfaceItemIdentifier("HeaderRowCell"); cell.stringValue = title; cell.font = NSFont.systemFont(ofSize: 10, weight: .bold); cell.textColor = .secondaryLabelColor; return cell
         case .note(let note):
             let cell = tv.makeView(withIdentifier: NSUserInterfaceItemIdentifier("NoteCell"), owner: self) as? NoteCellView ?? NoteCellView(frame: .zero)
-            cell.identifier = NSUserInterfaceItemIdentifier("NoteCell"); cell.titleLabel.stringValue = note.title.isEmpty ? "Untitled" : note.title; cell.subtitleLabel.stringValue = "\(TimeUtils.formatCardTime(for: note.updatedAt))   \(NoteCellView.previewFromContent(note.content))"; cell.pinImageView.isHidden = !note.isPinned; return cell
+            cell.identifier = NSUserInterfaceItemIdentifier("NoteCell")
+            cell.titleLabel.stringValue = note.title.isEmpty ? "Untitled" : note.title
+            cell.subtitleLabel.stringValue = "\(TimeUtils.formatCardTime(for: note.updatedAt))   \(NoteCellView.previewFromContent(note.content))"
+            cell.pinImageView.isHidden = !note.isPinned
+            
+            // Show folder tag if in All Notes view and note belongs to a folder
+            if isAllNotesView, let folderId = note.folderId, let folder = storage.getFolder(id: folderId) {
+                cell.folderLabel.stringValue = folder.name
+                cell.folderLabel.isHidden = false
+                cell.folderImageView.isHidden = false
+            } else {
+                cell.folderLabel.isHidden = true
+                cell.folderImageView.isHidden = true
+            }
+            return cell
         }
     }
     

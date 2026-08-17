@@ -3,6 +3,8 @@ import AppKit
 public final class NoteCellView: NSTableCellView {
     let titleLabel = NSTextField(labelWithString: "")
     let subtitleLabel = NSTextField(labelWithString: "")
+    let folderImageView = NSImageView()
+    let folderLabel = NSTextField(labelWithString: "")
     let pinImageView = NSImageView()
     
     public override init(frame frameRect: NSRect) {
@@ -25,10 +27,14 @@ public final class NoteCellView: NSTableCellView {
         if isSelected {
             titleLabel.textColor = .white
             subtitleLabel.textColor = NSColor.white.withAlphaComponent(0.8)
+            folderLabel.textColor = NSColor.white.withAlphaComponent(0.8)
+            folderImageView.contentTintColor = .white
             pinImageView.contentTintColor = .white
         } else {
             titleLabel.textColor = .labelColor
             subtitleLabel.textColor = .secondaryLabelColor
+            folderLabel.textColor = .secondaryLabelColor
+            folderImageView.contentTintColor = AppColors.accent
             pinImageView.contentTintColor = AppColors.accent
         }
     }
@@ -49,6 +55,18 @@ public final class NoteCellView: NSTableCellView {
         subtitleLabel.lineBreakMode = .byTruncatingTail
         addSubview(subtitleLabel)
         
+        folderImageView.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
+        folderImageView.imageScaling = .scaleProportionallyDown
+        folderImageView.contentTintColor = AppColors.accent
+        folderImageView.isHidden = true
+        addSubview(folderImageView)
+        
+        folderLabel.font = NSFont.systemFont(ofSize: 11)
+        folderLabel.textColor = .secondaryLabelColor
+        folderLabel.lineBreakMode = .byTruncatingTail
+        folderLabel.isHidden = true
+        addSubview(folderLabel)
+        
         pinImageView.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "Pinned")
         pinImageView.imageScaling = .scaleProportionallyDown
         pinImageView.contentTintColor = AppColors.accent
@@ -56,17 +74,28 @@ public final class NoteCellView: NSTableCellView {
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        folderImageView.translatesAutoresizingMaskIntoConstraints = false
+        folderLabel.translatesAutoresizingMaskIntoConstraints = false
         pinImageView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: pinImageView.leadingAnchor, constant: -8),
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             
             subtitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             subtitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
-            subtitleLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -12),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            
+            folderImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            folderImageView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 4),
+            folderImageView.widthAnchor.constraint(equalToConstant: 12),
+            folderImageView.heightAnchor.constraint(equalToConstant: 12),
+            folderImageView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -8),
+            
+            folderLabel.leadingAnchor.constraint(equalTo: folderImageView.trailingAnchor, constant: 4),
+            folderLabel.centerYAnchor.constraint(equalTo: folderImageView.centerYAnchor),
+            folderLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
             
             pinImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             pinImageView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
