@@ -22,10 +22,12 @@ class QuickActionService {
       const ShortcutItem(
         type: 'new_note',
         localizedTitle: 'New Note',
+        icon: 'ic_new_note',
       ),
       const ShortcutItem(
         type: 'new_folder',
         localizedTitle: 'New Folder',
+        icon: 'ic_new_folder',
       ),
     ];
 
