@@ -37,25 +37,29 @@ public final class TimeUtils {
             return "Yesterday"
         }
         
-        // "This Week" (within the last 7 days)
+        // "Previous 7 Days"
         guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: todayMidnight) else { return "Older" }
-        if itemDate > sevenDaysAgo {
-            return "This Week"
+        if itemDate >= sevenDaysAgo {
+            return "Previous 7 Days"
         }
         
-        // "Last Month" (within the last 30 days)
+        // "Previous 30 Days"
         guard let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: todayMidnight) else { return "Older" }
-        if itemDate > thirtyDaysAgo {
-            return "Last Month"
+        if itemDate >= thirtyDaysAgo {
+            return "Previous 30 Days"
         }
         
-        // "Last Year" (within the last 365 days)
-        guard let yearAgo = calendar.date(byAdding: .day, value: -365, to: todayMidnight) else { return "Older" }
-        if itemDate > yearAgo {
-            return "Last Year"
+        // Same Year check
+        let nowYear = calendar.component(.year, from: now)
+        let itemYear = calendar.component(.year, from: date)
+        
+        if itemYear == nowYear {
+            let monthFormatter = DateFormatter()
+            monthFormatter.dateFormat = "MMMM"
+            return monthFormatter.string(from: date)
         }
         
-        return "Older"
+        return "\(itemYear)"
     }
     
     /// Formats note creation/update time for display in the list card.

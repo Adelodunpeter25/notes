@@ -41,8 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 800, height: 600)
 
-        let toolbar = NSToolbar(identifier: "NotesToolbar")
-        toolbar.autosavesConfiguration = true
+        let toolbar = NSToolbar(identifier: "NotesToolbar_v4")
+        toolbar.allowsUserCustomization = false
+        toolbar.autosavesConfiguration = false
         toolbar.displayMode = .iconOnly
         toolbar.delegate = self
         window.toolbar = toolbar
