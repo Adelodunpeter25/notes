@@ -22,15 +22,19 @@ public final class SearchService {
         guard !terms.isEmpty else { return [] }
         
         let sql = """
-        SELECT n.* FROM notes n
-        JOIN notes_fts f ON n.id = f.id
+        SELECT DISTINCT n.* FROM notes n
         WHERE n.userId = ? 
           AND (n.deletedAt IS NULL OR n.deletedAt = '')
-          AND notes_fts MATCH ?
+          AND (
+            n.id IN (SELECT id FROM notes_fts WHERE notes_fts MATCH ?)
+            OR n.title LIKE ?
+            OR n.content LIKE ?
+          )
         ORDER BY n.isPinned DESC, n.updatedAt DESC;
         """
         
-        let results = database.query(sql: sql, params: [userId, terms])
+        let likeTerm = "%\(trimmed)%"
+        let results = database.query(sql: sql, params: [userId, terms, likeTerm, likeTerm])
         return results.map { row in
             let isPinnedInt = row["isPinned"] as? Int ?? 0
             return DBNote(
