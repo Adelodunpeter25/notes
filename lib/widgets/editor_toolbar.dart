@@ -309,7 +309,7 @@ class _ToolbarButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isActive
-                ? accentColor.withOpacity(0.15)
+                ? accentColor.withValues(alpha: 0.15)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -354,7 +354,7 @@ class _BlockChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: isActive
-          ? AppColors.accent.withOpacity(0.2)
+          ? AppColors.accent.withValues(alpha: 0.2)
           : AppSurfaces.elevated(context),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
@@ -369,7 +369,7 @@ class _BlockChip extends StatelessWidget {
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               color: isActive
                   ? AppColors.accent
-                  : AppTextColors.primary(context).withOpacity(0.7),
+                  : AppTextColors.primary(context).withValues(alpha: 0.7),
             ),
           ),
         ),

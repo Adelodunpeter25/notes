@@ -244,7 +244,7 @@ class _EditorViewState extends State<EditorView> {
                   editorStyle: EditorStyle.mobile(
                     cursorColor: AppColors.accent,
                     dragHandleColor: AppColors.accent,
-                    selectionColor: AppColors.accent.withOpacity(0.2),
+                    selectionColor: AppColors.accent.withValues(alpha: 0.2),
                     textStyleConfiguration: TextStyleConfiguration(
                       text: TextStyle(
                         fontSize: 16.0,
