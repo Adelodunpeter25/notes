@@ -41,3 +41,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Desktop / Swift build artifacts & distributables
+/dist/
+*.dmg
+*.app
+.build/
+note-desktop/.build/
