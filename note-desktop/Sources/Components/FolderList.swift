@@ -169,8 +169,12 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         cell.identifier = NSUserInterfaceItemIdentifier("SidebarCell")
         cell.nameField.stringValue = node.name
         cell.nameField.delegate = self
-        let icon: String = { switch node.type { case .trash: return "trash"; default: return "folder" } }()
-        cell.iconView.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
+        let iconName: String = { switch node.type { case .trash: return "trash"; default: return "folder" } }()
+        if let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
+            let config = NSImage.SymbolConfiguration(paletteColors: [AppColors.accent])
+            cell.iconView.image = img.withSymbolConfiguration(config) ?? img
+        }
+        cell.iconView.contentTintColor = AppColors.accent
         let count = viewModel.getCount(for: node)
         cell.badgeField.stringValue = count > 0 ? "\(count)" : ""
         return cell

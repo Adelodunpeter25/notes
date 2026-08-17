@@ -92,7 +92,7 @@ public final class MainSplitViewController: NSSplitViewController {
             self.isUpdating = true
             
             self.noteService.autoDeleteEmptyNotes(userId: self.userId)
-            self.loadNotesForCurrentSelection(retainSelectedNoteId: note?.id)
+            self.editor.loadNote(note)
             self.folderList.reloadData()
             
             self.isUpdating = false
@@ -167,10 +167,9 @@ public final class MainSplitViewController: NSSplitViewController {
         
         noteList.setNotes(notes, title: title, userId: userId)
         
-        if let selectedId = retainSelectedNoteId {
-            if let matchedNote = notes.first(where: { $0.id == selectedId }) {
-                noteList.selectNote(matchedNote)
-            }
+        if let selectedId = retainSelectedNoteId, let matchedNote = notes.first(where: { $0.id == selectedId }) {
+            noteList.selectNote(matchedNote)
+            editor.loadNote(matchedNote)
         } else if let firstNote = notes.first {
             noteList.selectNote(firstNote)
             editor.loadNote(firstNote)
