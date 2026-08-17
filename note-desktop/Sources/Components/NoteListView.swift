@@ -22,7 +22,7 @@ public final class NoteListView: NSView {
         wantsLayer = true
         layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         
-        // 1. Title + Action Stack
+        // 1. Title Stack
         let titleStack = NSStackView()
         titleStack.orientation = .horizontal
         titleStack.alignment = .centerY
@@ -31,18 +31,10 @@ public final class NoteListView: NSView {
         headerLabel.font = NSFont.systemFont(ofSize: 18, weight: .bold)
         headerLabel.textColor = .labelColor
         
-        addNoteButton.isBordered = false
-        addNoteButton.imagePosition = .imageOnly
-        addNoteButton.bezelStyle = .texturedRounded
-        addNoteButton.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
-        addNoteButton.translatesAutoresizingMaskIntoConstraints = false
-        addNoteButton.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        addNoteButton.heightAnchor.constraint(equalToConstant: 24).isActive = true
+        addNoteButton.isHidden = true
         
         titleStack.addArrangedSubview(headerLabel)
         titleStack.addArrangedSubview(NSView()) // spacer
-        titleStack.addArrangedSubview(addNoteButton)
-        
         
         // 2. Table View
         tableView.headerView = nil

@@ -15,6 +15,7 @@ public final class SearchField: NSSearchField {
     private func setup() {
         placeholderString = "Search notes"
         bezelStyle = .roundedBezel
+        focusRingType = .none
         sendsWholeSearchString = false
         sendsSearchStringImmediately = true
         font = NSFont.systemFont(ofSize: 13)

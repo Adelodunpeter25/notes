@@ -47,3 +47,15 @@ public final class ThemeTableRowView: NSTableRowView {
         }
     }
 }
+
+public final class FolderTableRowView: NSTableRowView {
+    public override func drawSelection(in dirtyRect: NSRect) {
+        if selectionHighlightStyle != .none {
+            let selectionRect = bounds.insetBy(dx: 6, dy: 1)
+            let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+            let highlightColor = NSColor(white: 1.0, alpha: 0.10)
+            highlightColor.setFill()
+            path.fill()
+        }
+    }
+}

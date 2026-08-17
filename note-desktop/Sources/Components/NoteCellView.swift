@@ -16,17 +16,27 @@ public final class NoteCellView: NSTableCellView {
     
     public override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
-            let isSelected = (backgroundStyle == .emphasized)
-            if isSelected {
-                titleLabel.textColor = .black
-                subtitleLabel.textColor = NSColor.black.withAlphaComponent(0.7)
-                pinImageView.contentTintColor = .black
-            } else {
-                titleLabel.textColor = .labelColor
-                subtitleLabel.textColor = .secondaryLabelColor
-                pinImageView.contentTintColor = AppColors.accent
-            }
+            updateColors()
         }
+    }
+    
+    private func updateColors() {
+        // When row view is selected or emphasized, keep dark text on the yellow pill
+        let isSelected = (backgroundStyle == .emphasized || (superview as? NSTableRowView)?.isSelected == true)
+        if isSelected {
+            titleLabel.textColor = .black
+            subtitleLabel.textColor = NSColor.black.withAlphaComponent(0.75)
+            pinImageView.contentTintColor = .black
+        } else {
+            titleLabel.textColor = .labelColor
+            subtitleLabel.textColor = .secondaryLabelColor
+            pinImageView.contentTintColor = AppColors.accent
+        }
+    }
+    
+    public override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        updateColors()
     }
     
     private func setupViews() {

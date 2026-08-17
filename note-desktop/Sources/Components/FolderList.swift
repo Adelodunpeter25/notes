@@ -184,10 +184,10 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
         return cell
     }
     public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
-        let identifier = NSUserInterfaceItemIdentifier("DefaultRowView")
-        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? NSTableRowView
+        let identifier = NSUserInterfaceItemIdentifier("FolderRowView")
+        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? FolderTableRowView
         if rowView == nil {
-            rowView = NSTableRowView(frame: .zero)
+            rowView = FolderTableRowView(frame: .zero)
             rowView?.identifier = identifier
         }
         return rowView
