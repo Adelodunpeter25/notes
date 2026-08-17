@@ -1,8 +1,20 @@
 import AppKit
 
+public final class CustomNoteTableView: NSTableView {
+    public var onEscapePressed: (() -> Void)?
+    
+    public override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53 { // ESC key
+            onEscapePressed?()
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 public final class NoteListView: NSView {
     public let searchField = SearchField()
-    public let tableView = NSTableView()
+    public let tableView = CustomNoteTableView()
     public let scrollView = NSScrollView()
     public let headerLabel = NSTextField(labelWithString: "All Notes")
     public let addNoteButton = NSButton()

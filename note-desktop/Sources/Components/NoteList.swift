@@ -34,6 +34,16 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
         
         listView.tableView.menu = NoteContextMenu(target: self, pinAction: #selector(contextPinTapped), deleteAction: #selector(contextDeleteTapped), restoreAction: #selector(contextRestoreTapped), moveAction: #selector(contextMoveTapped))
         listView.tableView.menu?.delegate = self
+        
+        listView.tableView.onEscapePressed = { [weak self] in
+            self?.onEscapePressed?()
+        }
+    }
+    
+    public var onEscapePressed: (() -> Void)?
+    
+    public func clearSelection() {
+        listView.tableView.deselectAll(nil)
     }
     
     public func setNotes(_ notes: [DBNote], title: String, userId: String) {

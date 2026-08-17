@@ -21,12 +21,11 @@ public final class NoteCellView: NSTableCellView {
     }
     
     private func updateColors() {
-        // When row view is selected or emphasized, keep dark text on the yellow pill
         let isSelected = (backgroundStyle == .emphasized || (superview as? NSTableRowView)?.isSelected == true)
         if isSelected {
-            titleLabel.textColor = .black
-            subtitleLabel.textColor = NSColor.black.withAlphaComponent(0.75)
-            pinImageView.contentTintColor = .black
+            titleLabel.textColor = .white
+            subtitleLabel.textColor = NSColor.white.withAlphaComponent(0.8)
+            pinImageView.contentTintColor = .white
         } else {
             titleLabel.textColor = .labelColor
             subtitleLabel.textColor = .secondaryLabelColor

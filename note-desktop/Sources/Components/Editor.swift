@@ -1,15 +1,28 @@
 import AppKit
 
+public final class CustomEditorTextView: NSTextView {
+    public var onEscapePressed: (() -> Void)?
+    
+    public override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53 { // ESC key
+            onEscapePressed?()
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 public final class Editor: NSViewController, NSTextViewDelegate {
     private let noteService: NoteService
     private var activeNote: DBNote?
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
-    private let textView = NSTextView()
+    private let textView = CustomEditorTextView()
     private let scrollView = NSScrollView()
     
     public var onNoteUpdated: ((DBNote?) -> Void)?
+    public var onEscapePressed: (() -> Void)?
     
     public init(noteService: NoteService) {
         self.noteService = noteService
@@ -28,6 +41,10 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     private func setupUI() {
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+        
+        textView.onEscapePressed = { [weak self] in
+            self?.onEscapePressed?()
+        }
         
         // 1. Setup Header Date Display
         headerLabel.textColor = .secondaryLabelColor

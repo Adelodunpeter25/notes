@@ -118,6 +118,15 @@ public final class MainSplitViewController: NSSplitViewController {
             self.isUpdating = false
         }
         
+        // Escape key handling from Note List and Editor
+        let handleEscape: () -> Void = { [weak self] in
+            guard let self = self else { return }
+            self.noteList.clearSelection()
+            self.editor.loadNote(nil)
+        }
+        noteList.onEscapePressed = handleEscape
+        editor.onEscapePressed = handleEscape
+        
         // Note List update events (pin, delete, restore, empty trash)
         noteList.onNoteUpdated = { [weak self] updatedNote in
             guard let self = self else { return }

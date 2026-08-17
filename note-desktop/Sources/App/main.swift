@@ -214,7 +214,6 @@ extension AppDelegate: NSToolbarDelegate {
             button.imagePosition = .imageOnly
             button.bezelStyle = .texturedRounded
             button.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
-            button.contentTintColor = AppColors.accent
             button.target = self
             button.action = #selector(handleNewNoteShortcut)
             button.wantsLayer = true
@@ -231,7 +230,6 @@ extension AppDelegate: NSToolbarDelegate {
             button.imagePosition = .imageOnly
             button.bezelStyle = .texturedRounded
             button.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Sync")
-            button.contentTintColor = AppColors.accent
             button.target = self
             button.action = #selector(handleSyncToolbarAction)
             button.wantsLayer = true
