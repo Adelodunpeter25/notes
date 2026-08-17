@@ -14,6 +14,21 @@ public final class NoteCellView: NSTableCellView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    public override var backgroundStyle: NSView.BackgroundStyle {
+        didSet {
+            let isSelected = (backgroundStyle == .emphasized)
+            if isSelected {
+                titleLabel.textColor = .black
+                subtitleLabel.textColor = NSColor.black.withAlphaComponent(0.7)
+                pinImageView.contentTintColor = .black
+            } else {
+                titleLabel.textColor = .labelColor
+                subtitleLabel.textColor = .secondaryLabelColor
+                pinImageView.contentTintColor = AppColors.accent
+            }
+        }
+    }
+    
     private func setupViews() {
         titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .labelColor

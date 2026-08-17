@@ -14,6 +14,21 @@ public final class SidebarCellView: NSTableCellView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    public override var backgroundStyle: NSView.BackgroundStyle {
+        didSet {
+            let isSelected = (backgroundStyle == .emphasized)
+            if isSelected {
+                nameField.textColor = .black
+                badgeField.textColor = NSColor.black.withAlphaComponent(0.7)
+                iconView.contentTintColor = .black
+            } else {
+                nameField.textColor = .labelColor
+                badgeField.textColor = .secondaryLabelColor
+                iconView.contentTintColor = AppColors.accent
+            }
+        }
+    }
+    
     private func setupViews() {
         iconView.imageScaling = .scaleProportionallyDown
         iconView.contentTintColor = AppColors.accent

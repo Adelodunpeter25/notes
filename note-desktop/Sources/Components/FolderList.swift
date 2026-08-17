@@ -181,9 +181,9 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     }
     public func outlineView(_ ov: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
         let identifier = NSUserInterfaceItemIdentifier("ThemeRowView")
-        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? NSTableRowView
+        var rowView = ov.makeView(withIdentifier: identifier, owner: self) as? ThemeTableRowView
         if rowView == nil {
-            rowView = NSTableRowView(frame: .zero)
+            rowView = ThemeTableRowView(frame: .zero)
             rowView?.identifier = identifier
         }
         return rowView
