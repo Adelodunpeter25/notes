@@ -22,9 +22,9 @@ public final class CheckboxAttachmentCell: NSTextAttachmentCell {
             
             // Draw Checkmark
             let checkPath = NSBezierPath()
-            checkPath.move(to: NSPoint(x: boxRect.minX + 3.5, y: boxRect.minY + 7.5))
-            checkPath.line(to: NSPoint(x: boxRect.minX + 6.5, y: boxRect.minY + 4.0))
-            checkPath.line(to: NSPoint(x: boxRect.minX + 11.5, y: boxRect.minY + 11.5))
+            checkPath.move(to: NSPoint(x: boxRect.minX + 3.5, y: boxRect.midY))
+            checkPath.line(to: NSPoint(x: boxRect.minX + 6.0, y: boxRect.minY + 3.5))
+            checkPath.line(to: NSPoint(x: boxRect.maxX - 3.5, y: boxRect.maxY - 4.0))
             checkPath.lineWidth = 1.8
             checkPath.lineCapStyle = .round
             checkPath.lineJoinStyle = .round
