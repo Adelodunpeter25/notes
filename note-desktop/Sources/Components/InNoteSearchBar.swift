@@ -83,17 +83,17 @@ public final class InNoteSearchBar: NSView, NSSearchFieldDelegate {
         doneButton.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 4),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
             
-            searchField.widthAnchor.constraint(greaterThanOrEqualToConstant: 180),
-            prevButton.widthAnchor.constraint(equalToConstant: 20),
-            prevButton.heightAnchor.constraint(equalToConstant: 20),
-            nextButton.widthAnchor.constraint(equalToConstant: 20),
-            nextButton.heightAnchor.constraint(equalToConstant: 20),
-            doneButton.heightAnchor.constraint(equalToConstant: 22)
+            searchField.widthAnchor.constraint(greaterThanOrEqualToConstant: 160),
+            prevButton.widthAnchor.constraint(equalToConstant: 18),
+            prevButton.heightAnchor.constraint(equalToConstant: 18),
+            nextButton.widthAnchor.constraint(equalToConstant: 18),
+            nextButton.heightAnchor.constraint(equalToConstant: 18),
+            doneButton.heightAnchor.constraint(equalToConstant: 20)
         ])
     }
     

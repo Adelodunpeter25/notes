@@ -46,6 +46,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
+    private let toolbar = EditorToolbar()
     private let textView = CustomEditorTextView()
     private let scrollView = NSScrollView()
     public let searchBar = InNoteSearchBar()
@@ -91,6 +92,8 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             self?.saveNoteContent()
         }
         
+        setupToolbarActions()
+        
         // 1. Setup Header Date Display
         headerLabel.textColor = .secondaryLabelColor
         headerLabel.font = NSFont.systemFont(ofSize: 11)
@@ -132,15 +135,16 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         }
         
         // Stack and align layouts
-        let stack = NSStackView(views: [headerLabel, searchBar, scrollView])
+        let stack = NSStackView(views: [headerLabel, toolbar, searchBar, scrollView])
         stack.orientation = .vertical
-        stack.spacing = 8
+        stack.spacing = 6
         stack.alignment = .centerX
         stack.distribution = .fill
         
         view.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
@@ -149,11 +153,116 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 2),
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
             
+            toolbar.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            toolbar.heightAnchor.constraint(equalToConstant: 28),
             searchBar.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            searchBar.heightAnchor.constraint(equalToConstant: 34),
+            searchBar.heightAnchor.constraint(equalToConstant: 28),
             scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
             scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
         ])
+    }
+    
+    private func setupToolbarActions() {
+        toolbar.onBold = { [weak self] in
+            self?.toggleFontTrait(.boldFontMask)
+        }
+        toolbar.onItalic = { [weak self] in
+            self?.toggleFontTrait(.italicFontMask)
+        }
+        toolbar.onUnderline = { [weak self] in
+            self?.toggleUnderline()
+        }
+        toolbar.onStrikethrough = { [weak self] in
+            self?.toggleStrikethrough()
+        }
+        toolbar.onTitle = { [weak self] in
+            self?.applyLineFormatting(fontSize: 22, weight: .bold)
+        }
+        toolbar.onHeading = { [weak self] in
+            self?.applyLineFormatting(fontSize: 18, weight: .semibold)
+        }
+        toolbar.onSubheading = { [weak self] in
+            self?.applyLineFormatting(fontSize: 15, weight: .medium)
+        }
+        toolbar.onCheckbox = { [weak self] in
+            self?.insertCheckboxAtCurrentLine()
+        }
+        toolbar.onBulletList = { [weak self] in
+            self?.insertListPrefix("• ")
+        }
+        toolbar.onNumberedList = { [weak self] in
+            self?.insertListPrefix("1. ")
+        }
+    }
+    
+    private func toggleFontTrait(_ trait: NSFontTraitMask) {
+        let range = textView.selectedRange()
+        guard range.length > 0, let storage = textView.textStorage else { return }
+        let fontManager = NSFontManager.shared
+        storage.beginEditing()
+        storage.enumerateAttribute(.font, in: range, options: []) { value, subrange, _ in
+            if let font = value as? NSFont {
+                let newFont = fontManager.convert(font, toHaveTrait: trait)
+                storage.addAttribute(.font, value: newFont, range: subrange)
+            }
+        }
+        storage.endEditing()
+        saveNoteContent()
+    }
+    
+    private func toggleUnderline() {
+        let range = textView.selectedRange()
+        guard range.length > 0, let storage = textView.textStorage else { return }
+        storage.beginEditing()
+        let current = storage.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
+        storage.addAttribute(.underlineStyle, value: newStyle, range: range)
+        storage.endEditing()
+        saveNoteContent()
+    }
+    
+    private func toggleStrikethrough() {
+        let range = textView.selectedRange()
+        guard range.length > 0, let storage = textView.textStorage else { return }
+        storage.beginEditing()
+        let current = storage.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+        let newStyle = (current == 0) ? NSUnderlineStyle.single.rawValue : 0
+        storage.addAttribute(.strikethroughStyle, value: newStyle, range: range)
+        storage.endEditing()
+        saveNoteContent()
+    }
+    
+    private func applyLineFormatting(fontSize: CGFloat, weight: NSFont.Weight) {
+        let range = (textView.string as NSString).lineRange(for: textView.selectedRange())
+        guard let storage = textView.textStorage else { return }
+        storage.beginEditing()
+        let font = NSFont.systemFont(ofSize: fontSize, weight: weight)
+        storage.addAttribute(.font, value: font, range: range)
+        storage.endEditing()
+        saveNoteContent()
+    }
+    
+    private func insertCheckboxAtCurrentLine() {
+        let cell = CheckboxAttachmentCell()
+        cell.isChecked = false
+        let attachment = NSTextAttachment()
+        attachment.attachmentCell = cell
+        
+        let attr = NSMutableAttributedString(attachment: attachment)
+        attr.append(NSAttributedString(string: " ", attributes: [.font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.textColor]))
+        
+        let selectedRange = textView.selectedRange()
+        textView.textStorage?.insert(attr, at: selectedRange.location)
+        textView.setSelectedRange(NSRange(location: selectedRange.location + attr.length, length: 0))
+        saveNoteContent()
+    }
+    
+    private func insertListPrefix(_ prefix: String) {
+        let selectedRange = textView.selectedRange()
+        let attr = NSAttributedString(string: prefix, attributes: [.font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.textColor])
+        textView.textStorage?.insert(attr, at: selectedRange.location)
+        textView.setSelectedRange(NSRange(location: selectedRange.location + attr.length, length: 0))
+        saveNoteContent()
     }
     
     // MARK: - Find / Search Bar Controls

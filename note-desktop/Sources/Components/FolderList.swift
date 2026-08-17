@@ -158,7 +158,7 @@ public final class FolderList: NSViewController, NSOutlineViewDataSource, NSOutl
     public func outlineView(_ ov: NSOutlineView, child index: Int, ofItem item: Any?) -> Any { viewModel.data[index] }
     public func outlineView(_ ov: NSOutlineView, isItemExpandable item: Any) -> Bool { false }
     public func outlineView(_ ov: NSOutlineView, shouldSelectItem item: Any) -> Bool { (item as? SidebarNode)?.type != .divider }
-    public func outlineView(_ ov: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat { (item as? SidebarNode)?.type == .divider ? 12 : 34 }
+    public func outlineView(_ ov: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat { (item as? SidebarNode)?.type == .divider ? 12 : 28 }
     
     public func outlineView(_ ov: NSOutlineView, viewFor tc: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? SidebarNode else { return nil }
