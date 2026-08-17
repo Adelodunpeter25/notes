@@ -366,12 +366,8 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         let result = NSMutableAttributedString()
         
         for (index, block) in blocks.enumerated() {
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 4
-            paragraphStyle.paragraphSpacing = 8
-            
             var font: NSFont = NSFont.systemFont(ofSize: 14)
-            var textColor: NSColor = .textColor
+            let textColor: NSColor = .textColor
             
             switch block.type {
             case .title:
@@ -398,8 +394,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
             
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: font,
-                .foregroundColor: textColor,
-                .paragraphStyle: paragraphStyle
+                .foregroundColor: textColor
             ]
             result.append(NSAttributedString(string: block.content, attributes: attrs))
             
