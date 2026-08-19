@@ -43,6 +43,7 @@ public final class CustomEditorTextView: NSTextView {
 public final class Editor: NSViewController, NSTextViewDelegate {
     private let noteService: NoteService
     private var activeNote: DBNote?
+    private var isLoadingNote = false
     
     // UI Outlets
     private let headerLabel = NSTextField(labelWithString: "")
@@ -342,6 +343,9 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     
     /// Loads a specific database note inside the editor view.
     public func loadNote(_ note: DBNote?) {
+        isLoadingNote = true
+        defer { isLoadingNote = false }
+        
         guard let note = note else {
             self.activeNote = nil
             headerLabel.stringValue = ""
@@ -467,6 +471,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     }
     
     public func textDidChange(_ notification: Notification) {
+        guard !isLoadingNote else { return }
         saveNoteContent()
         if !searchBar.isHidden, !searchBar.searchField.stringValue.isEmpty {
             performSearch(query: searchBar.searchField.stringValue)
