@@ -1,0 +1,10 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Platform
+**/ios/Flutter/.last_build_id
+macos/Flutter/ephemeral/

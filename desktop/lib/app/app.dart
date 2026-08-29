@@ -183,7 +183,6 @@ class _Editor extends StatefulWidget {
 class _EditorState extends State<_Editor> {
   late final TextEditingController _titleController;
   late final TextEditingController _documentController;
-  String? _noteId;
 
   @override
   void initState() {
@@ -200,7 +199,6 @@ class _EditorState extends State<_Editor> {
   }
 
   void _loadNote() {
-    _noteId = widget.note?.id;
     _titleController.text = widget.note?.title ?? '';
     _documentController.text = widget.note?.document ?? '';
   }

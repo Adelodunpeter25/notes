@@ -2,7 +2,7 @@ import '../../domain/models/folder.dart';
 import '../../domain/models/note.dart';
 
 class NoteRepository {
-  NoteRepository({String userId = 'local-user'}) : userId = userId;
+  NoteRepository({this.userId = 'local-user'});
 
   final String userId;
   final List<Note> _notes = <Note>[];
