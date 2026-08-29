@@ -10,7 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.6
+  appflowy_editor: ^6.2.0
   drift: ^2.20.0
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.1.0
