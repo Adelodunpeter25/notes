@@ -23,9 +23,20 @@ class _ShellPageState extends State<ShellPage> {
   Note? _selectedNote;
   bool _isSyncing = false;
 
+  bool _bootstrapped = false;
+
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Run once after the initial build so ServiceScope is available
+    // without registering a dependency inside initState.
+    if (_bootstrapped) return;
+    _bootstrapped = true;
     _bootstrap();
   }
 
