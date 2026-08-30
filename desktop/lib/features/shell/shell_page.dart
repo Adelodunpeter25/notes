@@ -41,6 +41,8 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Future<void> _bootstrap() async {
+    // Capture the scope before any await so we don't read the context
+    // across an async gap.
     final scope = ServiceScope.of(context);
     final user = await scope.authService.getCurrentUser();
     if (!mounted) return;
@@ -57,9 +59,11 @@ class _ShellPageState extends State<ShellPage> {
 
   Future<void> _sync() async {
     if (_userId == null || _isSyncing) return;
+    // Capture services before the await; the try/finally still owns
+    // setState for the spinner.
+    final scope = ServiceScope.of(context);
     setState(() => _isSyncing = true);
     try {
-      final scope = ServiceScope.of(context);
       await scope.syncService.syncData(_userId!);
     } finally {
       if (mounted) setState(() => _isSyncing = false);
@@ -68,6 +72,8 @@ class _ShellPageState extends State<ShellPage> {
 
   Future<void> _createNote() async {
     if (_userId == null) return;
+    // Capture scope before the await; setState after the await is
+    // guarded by mounted.
     final scope = ServiceScope.of(context);
     final folderId =
         _selection.view == SidebarView.folder ? _selection.folderId : null;
@@ -77,10 +83,13 @@ class _ShellPageState extends State<ShellPage> {
       userId: _userId!,
       folderId: folderId,
     );
+    if (!mounted) return;
     setState(() => _selectedNote = note);
   }
 
   Future<void> _createFolder() async {
+    // The first await (promptText) uses the passed-in context; capture
+    // the scope before the second await (createFolder).
     final name = await promptText(context, 'New Folder', '');
     if (name == null || name.isEmpty || _userId == null) return;
     if (!mounted) return;
