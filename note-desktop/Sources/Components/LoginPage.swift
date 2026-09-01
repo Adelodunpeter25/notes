@@ -172,3 +172,4 @@ public final class LoginPage: NSViewController {
         }
     }
 }
+extension LoginPage: @unchecked Sendable {}

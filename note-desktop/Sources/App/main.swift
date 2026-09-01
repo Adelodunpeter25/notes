@@ -95,11 +95,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         // Initial sync on launch (with toolbar sync button animation)
         animateSyncButton()
-        syncService.syncData(userId: userId) { [weak self, weak mainVC] result in
+        syncService.syncData(userId: userId) { [weak self] result in
             Task { @MainActor in
                 self?.stopSyncButtonAnimation()
                 if case .success = result {
-                    mainVC?.refreshAllData()
+                    self?.mainSplitVC?.refreshAllData()
                 }
             }
         }
@@ -266,3 +266,5 @@ app.setActivationPolicy(.regular)
 let delegate = AppDelegate()
 app.delegate = delegate
 app.run()
+
+extension AppDelegate: @unchecked Sendable {}

@@ -181,3 +181,4 @@ public final class SignupPage: NSViewController {
         }
     }
 }
+extension SignupPage: @unchecked Sendable {}

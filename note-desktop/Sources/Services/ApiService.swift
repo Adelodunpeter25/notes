@@ -36,13 +36,13 @@ public final class ApiService: @unchecked Sendable {
         try await sendRequest(path: path, method: "GET", body: nil)
     }
     // Compat wrappers (non-async, no Task capture issue)
-    public func post(path: String, body: [String: Any], completion: @escaping (Result<(Int, Data), Error>) -> Void) {
+    public func post(path: String, body: [String: Any], completion: @escaping @Sendable (Result<(Int, Data), Error>) -> Void) {
         sendRequestLegacy(path: path, method: "POST", body: body, completion: completion)
     }
-    public func get(path: String, completion: @escaping (Result<(Int, Data), Error>) -> Void) {
+    public func get(path: String, completion: @escaping @Sendable (Result<(Int, Data), Error>) -> Void) {
         sendRequestLegacy(path: path, method: "GET", body: nil, completion: completion)
     }
-    private func sendRequestLegacy(path: String, method: String, body: [String: Any]?, completion: @escaping (Result<(Int, Data), Error>) -> Void) {
+    private func sendRequestLegacy(path: String, method: String, body: [String: Any]?, completion: @escaping @Sendable (Result<(Int, Data), Error>) -> Void) {
         let requestURL = baseUrl.appendingPathComponent(path.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
         var request = URLRequest(url: requestURL)
         request.httpMethod = method
