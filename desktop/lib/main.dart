@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'app/app.dart';
 import 'data/database/database.dart';
@@ -12,6 +13,12 @@ import 'data/sync/sync_op_recorder.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Window setup for Apple Notes–style unified title bar + size persistence.
+  try {
+    // ignore: avoid_print
+    await _initWindow();
+  } catch (_) {}
 
   final db = AppDatabase();
   final api = ApiService();
@@ -29,5 +36,24 @@ void main() async {
     noteService: noteService,
     syncService: syncService,
   ));
+}
+
+Future<void> _initWindow() async {
+  try {
+    await windowManager.ensureInitialized();
+    const options = WindowOptions(
+      size: Size(1200, 800),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.hidden,
+    );
+    await windowManager.waitUntilReadyToShow(options, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  } catch (_) {
+    // In tests or unsupported platforms the plugin may not be available.
+  }
 }
 

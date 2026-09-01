@@ -25,12 +25,17 @@ class NoteRow extends StatelessWidget {
   String _preview(String content) {
     final lines = NoteUtils.extractLines(content);
     if (lines.isEmpty) return 'No additional text';
-    final body =
-        lines.skip(1).where((l) => l.trim().isNotEmpty).join(' ').trim();
-    final text = body.isEmpty ? lines.join(' ').trim() : body;
-    if (text.isEmpty) return 'No additional text';
-    if (text.length > 80) return '${text.substring(0, 80)}…';
-    return text;
+    // Skip the first non-empty line (the title), show body only.
+    final firstNonEmptyIndex = lines.indexWhere((l) => l.trim().isNotEmpty);
+    final bodyStart = firstNonEmptyIndex == -1 ? 0 : firstNonEmptyIndex + 1;
+    final body = lines
+        .skip(bodyStart)
+        .where((l) => l.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+    if (body.isEmpty) return 'No additional text';
+    if (body.length > 80) return '${body.substring(0, 80)}…';
+    return body;
   }
 
   @override
@@ -138,9 +143,12 @@ extension NoteRowActions on NoteRow {
         await scope.noteService.pinNote(note, !note.isPinned);
         break;
       case 'move':
-        final folders = await scope.db.select(scope.db.folders).get();
+        // Only show non-deleted folders.
+        final folders = await (scope.db.select(scope.db.folders)
+              ..where((t) => t.deletedAt.isNull()))
+            .get();
         if (!context.mounted) return;
-        final folderId = await showDialog<String>(
+        final rawFolderId = await showDialog<String>(
           context: context,
           builder: (context) => SimpleDialog(
             title: const Text('Move to Folder'),
@@ -157,9 +165,10 @@ extension NoteRowActions on NoteRow {
             ],
           ),
         );
-        if (folderId == null) break; // dismissed
-        if (folderId != note.folderId) {
-          await scope.noteService.moveNoteToFolder(note, folderId);
+        if (rawFolderId == null) break; // dismissed
+        final String? targetFolderId = rawFolderId.isEmpty ? null : rawFolderId;
+        if (targetFolderId != note.folderId) {
+          await scope.noteService.moveNoteToFolder(note, targetFolderId);
         }
         break;
       case 'trash':

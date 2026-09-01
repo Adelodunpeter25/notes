@@ -22,7 +22,10 @@ class SidebarSelection {
 }
 
 /// Left pane: All Notes / folders / Trash with live note counts.
-class SidebarPane extends StatelessWidget {
+///
+/// Caches its streams so parent rebuilds (e.g. selecting a note) don't
+/// resubscribe and cause flicker/rerender of the whole list.
+class SidebarPane extends StatefulWidget {
   final String userId;
   final SidebarSelection selection;
   final ValueChanged<SidebarSelection> onSelectionChanged;
@@ -39,8 +42,35 @@ class SidebarPane extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  State<SidebarPane> createState() => _SidebarPaneState();
+}
+
+class _SidebarPaneState extends State<SidebarPane> {
+  late Stream<List<FolderWithCount>> _foldersStream;
+  late Stream<int> _allCountStream;
+  late Stream<int> _trashCountStream;
+  ServiceScope? _scope;
+  String? _boundUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     final scope = ServiceScope.of(context);
+    // Recreate streams only when the user changes or scope changes.
+    if (_boundUserId != widget.userId || _scope != scope) {
+      _scope = scope;
+      _boundUserId = widget.userId;
+      _foldersStream = scope.folderService.watchFolders(widget.userId);
+      // Cache count streams separately so we don't rebuild them on every
+      // ShellPage setState (e.g. note selection change).
+      _allCountStream = scope.noteService.watchAllNotesCount(widget.userId);
+      _trashCountStream = scope.noteService.watchTrashNotesCount(widget.userId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = _scope ?? ServiceScope.of(context);
 
     return Container(
       color: AppSurfaces.surface(context),
@@ -67,7 +97,7 @@ class SidebarPane extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.create_new_folder_outlined, size: 20),
                   tooltip: 'New Folder',
-                  onPressed: onNewFolder,
+                  onPressed: widget.onNewFolder,
                 ),
               ],
             ),
@@ -75,36 +105,52 @@ class SidebarPane extends StatelessWidget {
           const Divider(height: 1),
           Expanded(
             child: StreamBuilder<List<FolderWithCount>>(
-              stream: scope.folderService.watchFolders(userId),
+              stream: _foldersStream,
               builder: (context, snapshot) {
                 final folders = snapshot.data ?? const <FolderWithCount>[];
                 return ListView(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   children: [
-                    SidebarItem(
-                      icon: Icons.notes_outlined,
-                      label: 'All Notes',
-                      selected: selection.view == SidebarView.all,
-                      onTap: () =>
-                          onSelectionChanged(const SidebarSelection.all()),
+                    // All Notes with live count
+                    StreamBuilder<int>(
+                      stream: _allCountStream,
+                      builder: (context, countSnap) => SidebarItem(
+                        icon: Icons.notes_outlined,
+                        label: 'All Notes',
+                        count: countSnap.data,
+                        selected:
+                            widget.selection.view == SidebarView.all,
+                        onTap: () => widget.onSelectionChanged(
+                            const SidebarSelection.all()),
+                      ),
                     ),
                     ...folders.map((f) => SidebarItem(
                           icon: Icons.folder_outlined,
                           label: f.folder.name,
                           count: f.noteCount,
-                          selected: selection.view == SidebarView.folder &&
-                              selection.folderId == f.folder.id,
-                          onTap: () => onSelectionChanged(
+                          selected: widget.selection.view ==
+                                  SidebarView.folder &&
+                              widget.selection.folderId == f.folder.id,
+                          onTap: () => widget.onSelectionChanged(
                               SidebarSelection.folder(f.folder.id)),
                           onSecondaryTapUp: (details) =>
                               _showFolderMenu(context, scope, f, details),
                         )),
-                    SidebarItem(
-                      icon: Icons.delete_outline,
-                      label: 'Trash',
-                      selected: selection.view == SidebarView.trash,
-                      onTap: () =>
-                          onSelectionChanged(const SidebarSelection.trash()),
+                    // Trash with live count
+                    StreamBuilder<int>(
+                      stream: _trashCountStream,
+                      builder: (context, countSnap) => SidebarItem(
+                        icon: Icons.delete_outline,
+                        label: 'Trash',
+                        count:
+                            (countSnap.data != null && countSnap.data! > 0)
+                                ? countSnap.data
+                                : null,
+                        selected:
+                            widget.selection.view == SidebarView.trash,
+                        onTap: () => widget.onSelectionChanged(
+                            const SidebarSelection.trash()),
+                      ),
                     ),
                   ],
                 );
@@ -115,7 +161,7 @@ class SidebarPane extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: TextButton.icon(
-              onPressed: onLogout,
+              onPressed: widget.onLogout,
               icon: Icon(Icons.logout,
                   size: 16, color: AppTextColors.secondary(context)),
               label: Text(
@@ -164,8 +210,8 @@ class SidebarPane extends StatelessWidget {
       );
       if (confirmed == true) {
         await scope.folderService.deleteFolder(folder.folder);
-        if (selection.folderId == folder.folder.id) {
-          onSelectionChanged(const SidebarSelection.all());
+        if (widget.selection.folderId == folder.folder.id) {
+          widget.onSelectionChanged(const SidebarSelection.all());
         }
       }
     }

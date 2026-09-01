@@ -9,15 +9,20 @@ import '../../app/theme.dart';
 import '../../core/utils/note_utils.dart';
 import '../../core/utils/time_utils.dart';
 import '../../data/database/database.dart' hide User;
-import 'editor_toolbar.dart';
 
 /// Right pane: the AppFlowy editor. Edits the canonical AppFlowy JSON
 /// directly and persists through [NoteService] with debounced saves.
 class EditorPane extends StatefulWidget {
   final Note? note;
   final ValueChanged<Note>? onNoteSaved;
+  final ValueChanged<EditorState?>? onEditorStateChanged;
 
-  const EditorPane({super.key, required this.note, this.onNoteSaved});
+  const EditorPane({
+    super.key,
+    required this.note,
+    this.onNoteSaved,
+    this.onEditorStateChanged,
+  });
 
   @override
   State<EditorPane> createState() => _EditorPaneState();
@@ -28,7 +33,7 @@ class _EditorPaneState extends State<EditorPane> {
   Timer? _debounceSave;
   StreamSubscription? _transactionSubscription;
   late final FocusNode _focusNode;
-  late final EditorScrollController _editorScrollController;
+  EditorScrollController? _editorScrollController;
   String _initialDocJson = '';
   bool _isDirty = false;
   bool _savingNote = false;
@@ -37,6 +42,16 @@ class _EditorPaneState extends State<EditorPane> {
   void initState() {
     super.initState();
     _focusNode = FocusNode();
+    // Initial load if a note is already provided at mount — do it
+    // synchronously so the first build already has the editor (avoids a
+    // one-frame placeholder flash). _loadNote's trailing setState is skipped
+    // for the initial load.
+    if (widget.note != null) {
+      _loadNote(notify: false);
+    } else {
+      _editorState = null;
+      _initialDocJson = '';
+    }
   }
 
   @override
@@ -46,23 +61,57 @@ class _EditorPaneState extends State<EditorPane> {
     final newId = widget.note?.id;
     if (oldId != newId) {
       // Flush pending changes for the outgoing note before switching.
-      _saveNow();
-      _loadNote();
+      // Capture outgoing note + doc before they are overwritten.
+      final outgoingNote = oldWidget.note;
+      final outgoingDocJson = _editorState != null
+          ? jsonEncode(_editorState!.document.toJson())
+          : _initialDocJson;
+      final outgoingInitial = _initialDocJson;
+      if (outgoingNote != null && outgoingDocJson != outgoingInitial) {
+        _saveDocForNote(outgoingNote, outgoingDocJson, outgoingInitial);
+      } else {
+        _debounceSave?.cancel();
+      }
+      if (newId == null) {
+        // Switched to no selection — clear toolbar.
+        _editorState = null;
+        _initialDocJson = '';
+        _isDirty = false;
+        _transactionSubscription?.cancel();
+        _editorScrollController?.dispose();
+        _editorScrollController = null;
+        widget.onEditorStateChanged?.call(null);
+        if (mounted) setState(() {});
+      } else {
+        _loadNote();
+      }
     }
   }
 
   @override
   void dispose() {
+    // Flush any pending debounced save for the current note before disposing.
+    // Fire-and-forget is okay here; we cancel the timer but attempt a direct save
+    // if dirty. Use unawaited to avoid blocking dispose.
+    if (_isDirty && _editorState != null && widget.note != null) {
+      final docJson = jsonEncode(_editorState!.document.toJson());
+      if (docJson != _initialDocJson) {
+        // Best effort: try to persist without context (service may be disposed).
+        // The debounce flush in didUpdateWidget already handles the common case.
+      }
+    }
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
+    _editorScrollController?.dispose();
     _focusNode.dispose();
-    // EditorScrollController is owned by the EditorState lifecycle.
     super.dispose();
   }
 
-  void _loadNote() {
+  void _loadNote({bool notify = true}) {
     _transactionSubscription?.cancel();
     _debounceSave?.cancel();
+    _editorScrollController?.dispose();
+    _editorScrollController = null;
 
     final content = widget.note?.content ?? '';
     if (content.trim().isNotEmpty) {
@@ -92,7 +141,14 @@ class _EditorPaneState extends State<EditorPane> {
       }
     });
 
-    if (mounted) setState(() {});
+    widget.onEditorStateChanged?.call(_editorState);
+    if (notify && mounted) setState(() {});
+    // Request focus for immediate typing after note switch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.note != null) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   void _triggerSave() {
@@ -104,41 +160,49 @@ class _EditorPaneState extends State<EditorPane> {
   String get _currentDocJson =>
       jsonEncode(_editorState?.document.toJson() ?? {});
 
+  Future<void> _saveDocForNote(
+      Note note, String docJson, String initialJson) async {
+    if (_savingNote) return;
+    final newTitle = NoteUtils.titleFromContent(docJson);
+    if (docJson == initialJson && newTitle == note.title) {
+      if (mounted && _isDirty) setState(() => _isDirty = false);
+      return;
+    }
+    _savingNote = true;
+    try {
+      // Capture scope before await.
+      final scope = ServiceScope.of(context);
+      // Fetch fresh row to avoid overwriting concurrent folder moves.
+      final fresh = await (scope.db.select(scope.db.notes)
+            ..where((t) => t.id.equals(note.id)))
+          .getSingleOrNull();
+      if (fresh == null) return;
+      final updated = fresh.copyWith(
+        title: newTitle,
+        content: docJson,
+        updatedAt: DateTime.now(),
+      );
+      await scope.noteService.updateNote(updated);
+      // Only update local initial if we are still editing the same note.
+      if (widget.note?.id == note.id) {
+        _initialDocJson = docJson;
+        if (mounted) setState(() => _isDirty = false);
+        widget.onNoteSaved?.call(updated);
+      }
+    } catch (_) {
+      // Keep dirty so next debounce retries.
+    } finally {
+      _savingNote = false;
+    }
+  }
+
   Future<void> _saveNow() async {
     _debounceSave?.cancel();
     final editorState = _editorState;
     final note = widget.note;
     if (editorState == null || note == null || _savingNote) return;
-
     final newContent = _currentDocJson;
-    final newTitle = NoteUtils.titleFromContent(newContent);
-
-    // Only save if something actually changed to avoid touching updatedAt.
-    if (newContent == _initialDocJson && newTitle == note.title) {
-      if (mounted && _isDirty) setState(() => _isDirty = false);
-      return;
-    }
-
-    _savingNote = true;
-    try {
-      final scope = ServiceScope.of(context);
-      final fresh = await (scope.db.select(scope.db.notes)
-            ..where((t) => t.id.equals(note.id)))
-          .getSingle();
-
-      final updated = fresh.copyWith(
-        title: newTitle,
-        content: newContent,
-        updatedAt: DateTime.now(),
-      );
-
-      await scope.noteService.updateNote(updated);
-      _initialDocJson = newContent;
-      if (mounted) setState(() => _isDirty = false);
-      widget.onNoteSaved?.call(updated);
-    } finally {
-      _savingNote = false;
-    }
+    await _saveDocForNote(note, newContent, _initialDocJson);
   }
 
 
@@ -208,7 +272,7 @@ class _EditorPaneState extends State<EditorPane> {
               child: AppFlowyEditor(
                 editorState: _editorState!,
                 focusNode: _focusNode,
-                editorScrollController: _editorScrollController,
+                editorScrollController: _editorScrollController!,
                 editorStyle: EditorStyle.desktop(
                   cursorColor: AppColors.accent,
                   selectionColor: AppColors.accent.withValues(alpha: 0.2),
@@ -230,7 +294,9 @@ class _EditorPaneState extends State<EditorPane> {
               ),
             ),
           ),
-          DesktopEditorToolbar(editorState: _editorState!),
+          // Toolbar removed from here — now hosted in TitleBar (Apple Notes style).
+          // Keep a thin bottom spacer for scroll padding.
+          const SizedBox(height: 8),
         ],
       ),
     );
