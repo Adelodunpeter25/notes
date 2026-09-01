@@ -20,11 +20,18 @@ public final class CheckboxAttachmentCell: NSTextAttachmentCell {
             AppColors.accent.setFill()
             path.fill()
             
-            // Draw Checkmark
+            // Draw Checkmark — NSTextView is flipped (y increases downward) so we must invert Y
+            let isFlipped = controlView?.isFlipped ?? true
             let checkPath = NSBezierPath()
-            checkPath.move(to: NSPoint(x: boxRect.minX + 3.5, y: boxRect.midY))
-            checkPath.line(to: NSPoint(x: boxRect.minX + 6.0, y: boxRect.minY + 3.5))
-            checkPath.line(to: NSPoint(x: boxRect.maxX - 3.5, y: boxRect.maxY - 4.0))
+            if isFlipped {
+                checkPath.move(to: NSPoint(x: boxRect.minX + 3.5, y: boxRect.midY))
+                checkPath.line(to: NSPoint(x: boxRect.minX + 6.0, y: boxRect.maxY - 3.5))
+                checkPath.line(to: NSPoint(x: boxRect.maxX - 3.5, y: boxRect.minY + 4.0))
+            } else {
+                checkPath.move(to: NSPoint(x: boxRect.minX + 3.5, y: boxRect.midY))
+                checkPath.line(to: NSPoint(x: boxRect.minX + 6.0, y: boxRect.minY + 3.5))
+                checkPath.line(to: NSPoint(x: boxRect.maxX - 3.5, y: boxRect.maxY - 4.0))
+            }
             checkPath.lineWidth = 1.8
             checkPath.lineCapStyle = .round
             checkPath.lineJoinStyle = .round
