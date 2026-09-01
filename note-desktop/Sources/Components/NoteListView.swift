@@ -52,6 +52,8 @@ public final class NoteListView: NSView {
         tableView.headerView = nil
         tableView.rowHeight = 68
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        tableView.focusRingType = .none
+        tableView.selectionHighlightStyle = .regular
         
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("NoteColumn"))
         column.resizingMask = .autoresizingMask

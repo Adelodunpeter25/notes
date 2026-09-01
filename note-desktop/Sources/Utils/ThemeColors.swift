@@ -46,6 +46,13 @@ public final class ThemeTableRowView: NSTableRowView {
             path.fill()
         }
     }
+
+    public override var interiorBackgroundStyle: NSView.BackgroundStyle {
+        return isSelected ? .dark : .normal
+    }
+
+    public override func drawFocusRingMask() {}
+    public override var focusRingMaskBounds: NSRect { return .zero }
 }
 
 public final class FolderTableRowView: NSTableRowView {
@@ -58,4 +65,7 @@ public final class FolderTableRowView: NSTableRowView {
             path.fill()
         }
     }
+
+    public override func drawFocusRingMask() {}
+    public override var focusRingMaskBounds: NSRect { return .zero }
 }

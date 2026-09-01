@@ -29,6 +29,7 @@ public final class FolderListView: NSView {
         } else {
             outlineView.selectionHighlightStyle = .sourceList
         }
+        outlineView.focusRingType = .none
         
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("SidebarColumn"))
         column.resizingMask = .autoresizingMask
