@@ -95,11 +95,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         // Initial sync on launch (with toolbar sync button animation)
         animateSyncButton()
-        syncService.syncData(userId: userId) { [weak self] result in
-            DispatchQueue.main.async {
+        syncService.syncData(userId: userId) { [weak self, weak mainVC] result in
+            Task { @MainActor in
                 self?.stopSyncButtonAnimation()
                 if case .success = result {
-                    mainVC.refreshAllData()
+                    mainVC?.refreshAllData()
                 }
             }
         }
@@ -108,9 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func showAuthContent() {
         let authVC = AuthViewController(authService: authService)
         authVC.onAuthSuccess = { [weak self] userId in
-            DispatchQueue.main.async {
-                self?.showMainContent(userId: userId)
-            }
+            Task { @MainActor in self?.showMainContent(userId: userId) }
         }
         window.contentViewController = authVC
     }
@@ -175,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         
         animateSyncButton()
         syncService.syncData(userId: userId) { [weak self] result in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self?.stopSyncButtonAnimation()
                 if case .success = result {
                     self?.mainSplitVC?.refreshAllData()

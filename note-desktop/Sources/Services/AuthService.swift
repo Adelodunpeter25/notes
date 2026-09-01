@@ -23,7 +23,7 @@ public final class AuthService: @unchecked Sendable {
     }
     
     /// Registers a new user via the backend server.
-    public func registerUser(username: String, email: String, password: [Character], completion: @escaping @Sendable (Result<AuthResponse, Error>) -> Void) {
+    public func registerUser(username: String, email: String, password: [Character], completion: @escaping (Result<AuthResponse, Error>) -> Void) {
         let body: [String: Any] = [
             "username": username,
             "email": email,
@@ -63,7 +63,7 @@ public final class AuthService: @unchecked Sendable {
     }
     
     /// Performs user authentication via the backend server.
-    public func login(email: String, password: [Character], completion: @escaping @Sendable (Result<AuthResponse, Error>) -> Void) {
+    public func login(email: String, password: [Character], completion: @escaping (Result<AuthResponse, Error>) -> Void) {
         let body: [String: Any] = [
             "email": email,
             "password": String(password)

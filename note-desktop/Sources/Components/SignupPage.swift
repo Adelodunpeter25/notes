@@ -148,8 +148,8 @@ public final class SignupPage: NSViewController {
         errorLabel.stringValue = ""
         
         authService.registerUser(username: username, email: email, password: Array(password)) { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
+            Task { @MainActor in
+                guard let self else { return }
                 self.setLoading(false)
                 switch result {
                 case .success(let response):
