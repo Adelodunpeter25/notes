@@ -1,5 +1,11 @@
 import AppKit
 import NoteCore
+import Observation
+
+@available(macOS 14.0, *)
+@Observable final class SyncState {
+    var isSyncing = false
+}
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
@@ -148,15 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
               let button = syncItem.view as? NSButton else { return }
         isSyncing = true
         button.isEnabled = false
-        
-        let animation = CABasicAnimation(keyPath: "transform.rotation.z")
-        animation.fromValue = 0.0
-        animation.toValue = -Double.pi * 2.0
-        animation.duration = 1.0
-        animation.repeatCount = .infinity
-        animation.isRemovedOnCompletion = false
-        
-        button.layer?.add(animation, forKey: "rotationAnimation")
+        button.alphaValue = 0.5
     }
     
     private func stopSyncButtonAnimation() {
@@ -167,7 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
         button.isEnabled = true
-        button.layer?.removeAnimation(forKey: "rotationAnimation")
+        button.alphaValue = 1.0
         isSyncing = false
     }
     

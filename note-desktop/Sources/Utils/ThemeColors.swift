@@ -48,7 +48,7 @@ public final class ThemeTableRowView: NSTableRowView {
     }
 
     public override var interiorBackgroundStyle: NSView.BackgroundStyle {
-        return isSelected ? .dark : .normal
+        return isSelected ? .emphasized : .normal
     }
 
     public override func drawFocusRingMask() {}
