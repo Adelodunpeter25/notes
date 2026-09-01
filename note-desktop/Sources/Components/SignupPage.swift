@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 public protocol SignupPageDelegate: AnyObject {
     func signupPage(_ page: SignupPage, didSignupWithUser user: AuthUser)
     func signupPageDidTapSwitchToLogin(_ page: SignupPage)

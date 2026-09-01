@@ -1,18 +1,18 @@
 import Foundation
 
-public struct AuthResponse: Decodable {
+public struct AuthResponse: Decodable, Sendable {
     public let token: String
     public let user: AuthUser
 }
 
-public struct AuthUser: Decodable {
+public struct AuthUser: Decodable, Sendable {
     public let id: String
     public let email: String
     public let username: String?
     public let name: String?
 }
 
-public final class AuthService {
+public final class AuthService: @unchecked Sendable {
     private let storage: StorageService
     private let api: ApiService
     private let sessionKey = "user_session_token"
@@ -23,7 +23,7 @@ public final class AuthService {
     }
     
     /// Registers a new user via the backend server.
-    public func registerUser(username: String, email: String, password: [Character], completion: @escaping (Result<AuthResponse, Error>) -> Void) {
+    public func registerUser(username: String, email: String, password: [Character], completion: @escaping @Sendable (Result<AuthResponse, Error>) -> Void) {
         let body: [String: Any] = [
             "username": username,
             "email": email,
@@ -63,7 +63,7 @@ public final class AuthService {
     }
     
     /// Performs user authentication via the backend server.
-    public func login(email: String, password: [Character], completion: @escaping (Result<AuthResponse, Error>) -> Void) {
+    public func login(email: String, password: [Character], completion: @escaping @Sendable (Result<AuthResponse, Error>) -> Void) {
         let body: [String: Any] = [
             "email": email,
             "password": String(password)

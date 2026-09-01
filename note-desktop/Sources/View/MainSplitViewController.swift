@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 public final class MainSplitViewController: NSSplitViewController {
     
     // MARK: - Services

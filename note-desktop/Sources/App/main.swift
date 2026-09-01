@@ -7,6 +7,7 @@ import Observation
     var isSyncing = false
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
     private var mainSplitVC: MainSplitViewController?

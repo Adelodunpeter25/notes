@@ -1,6 +1,6 @@
 import Foundation
 
-public final class SearchService {
+public final class SearchService: @unchecked Sendable {
     private let database: Database
     
     public init(database: Database) {
@@ -8,7 +8,7 @@ public final class SearchService {
     }
     
     /// Searches active notes for a given user using the SQLite FTS virtual table.
-    public func searchNotes(query: String, userId: String) -> [DBNote] {
+    public func searchNotes(query: borrowing String, userId: String) -> [DBNote] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return [] }
         
@@ -18,8 +18,8 @@ public final class SearchService {
             .filter { !$0.isEmpty }
             .map { "\($0)*" }
             .joined(separator: " ")
-        
-        guard !terms.isEmpty else { return [] }
+        // Swift 6 count(where:) avoids intermediate filter array
+        guard terms.count(where: { $0 != " " }) > 0 else { return [] }
         
         let sql = """
         SELECT DISTINCT n.* FROM notes n
@@ -49,5 +49,12 @@ public final class SearchService {
                 deletedAt: (row["deletedAt"] as? String).flatMap { TimeUtils.dateFromString($0) }
             )
         }
+    }
+
+    // Swift 6 concurrent: offload FTS search from MainActor
+    public func searchNotesAsync(query: String, userId: String) async -> [DBNote] {
+        await Task.detached(priority: .userInitiated) { [query, userId] in
+            self.searchNotes(query: query, userId: userId)
+        }.value
     }
 }

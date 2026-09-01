@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Block: Identifiable, Codable {
+public struct Block: Identifiable, Codable, Sendable {
     public let id: UUID
     public var type: BlockType
     public var content: String

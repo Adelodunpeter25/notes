@@ -1,7 +1,7 @@
 import Foundation
 
 public final class TimeUtils {
-    private static let isoFormatter: ISO8601DateFormatter = {
+    nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter

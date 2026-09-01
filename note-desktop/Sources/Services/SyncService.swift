@@ -1,6 +1,6 @@
 import Foundation
 
-public final class SyncService {
+public final class SyncService: @unchecked Sendable {
     private let storage: StorageService
     private let api: ApiService
     
@@ -17,7 +17,7 @@ public final class SyncService {
     }
     
     /// Synchronizes the local database with the remote sync server using ApiService.
-    public func syncData(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    public func syncData(userId: String, completion: @escaping @Sendable (Result<Void, Error>) -> Void) {
         guard !isSyncing else {
             completion(.failure(NSError(domain: "SyncService", code: 429, userInfo: [NSLocalizedDescriptionKey: "Sync already in progress"])))
             return

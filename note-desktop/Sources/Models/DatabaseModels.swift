@@ -1,6 +1,6 @@
 import Foundation
 
-public struct DBUser: Codable {
+public struct DBUser: Codable, Sendable {
     public let id: String
     public let username: String
     public let email: String
@@ -12,7 +12,7 @@ public struct DBUser: Codable {
     }
 }
 
-public struct DBFolder: Codable {
+public struct DBFolder: Codable, Sendable {
     public let id: String
     public var name: String
     public let userId: String
@@ -26,7 +26,7 @@ public struct DBFolder: Codable {
     }
 }
 
-public struct DBNote: Codable {
+public struct DBNote: Codable, Sendable {
     public let id: String
     public var title: String
     public var content: String
@@ -50,7 +50,7 @@ public struct DBNote: Codable {
     }
 }
 
-public struct DBSyncOp: Codable {
+public struct DBSyncOp: Codable, Sendable {
     public let id: String
     public let opType: String
     public let entityType: String

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum BlockType: String, Codable {
+public enum BlockType: String, Codable, Sendable {
     case title
     case heading
     case subheading

@@ -1,8 +1,9 @@
 import AppKit
 
+@MainActor
 public final class ConfirmDialog {
     /// Displays a standard modal confirmation dialog.
-    public static func show(
+    @MainActor public static func show(
         title: String,
         message: String,
         actionTitle: String = "Confirm",
