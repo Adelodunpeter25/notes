@@ -4,17 +4,27 @@ public final class SyncService {
     private let storage: StorageService
     private let api: ApiService
     
-    private let cursorKey = "sync_cursor"
+    private let cursorKeyBase = "sync_cursor"
+    private var isSyncing = false
     
     public init(storage: StorageService, api: ApiService) {
         self.storage = storage
         self.api = api
     }
     
+    private func cursorKey(for userId: String) -> String {
+        return "\(cursorKeyBase)_\(userId)"
+    }
+    
     /// Synchronizes the local database with the remote sync server using ApiService.
     public func syncData(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        // 1. Retrieve the last sync cursor from UserDefaults
-        let cursor = UserDefaults.standard.string(forKey: cursorKey)
+        guard !isSyncing else {
+            completion(.failure(NSError(domain: "SyncService", code: 429, userInfo: [NSLocalizedDescriptionKey: "Sync already in progress"])))
+            return
+        }
+        isSyncing = true
+        // 1. Retrieve the last sync cursor from UserDefaults (per-user)
+        let cursor = UserDefaults.standard.string(forKey: cursorKey(for: userId))
         
         // 2. Fetch pending local mutations from the sync_ops queue
         let pendingOps = storage.listPendingSyncOps()
@@ -46,6 +56,7 @@ public final class SyncService {
         
         api.post(path: "sync", body: requestBody) { [weak self] result in
             guard let self = self else { return }
+            defer { self.isSyncing = false }
             
             switch result {
             case .failure(let error):
@@ -69,7 +80,7 @@ public final class SyncService {
                     
                     // 4. Update the sync cursor in UserDefaults
                     if let nextCursor = jsonResponse["nextCursor"] as? String {
-                        UserDefaults.standard.set(nextCursor, forKey: self.cursorKey)
+                        UserDefaults.standard.set(nextCursor, forKey: self.cursorKey(for: userId))
                     }
                     
                     // 5. Apply incoming folder modifications (folders first due to FK constraints)
@@ -120,7 +131,7 @@ public final class SyncService {
                                   let entityType = d["entityType"] as? String,
                                   let deletedAtStr = d["deletedAt"] as? String,
                                   let deletedAt = TimeUtils.dateFromString(deletedAtStr) else { continue }
-                            
+                             
                             if entityType == "note" {
                                 if var note = self.storage.getNote(id: entityId) {
                                     note.deletedAt = deletedAt

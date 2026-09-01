@@ -139,35 +139,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     #endif
     
+    private var isSyncing = false
+
     private func animateSyncButton() {
-        guard let toolbar = window.toolbar,
+        guard !isSyncing,
+              let toolbar = window.toolbar,
               let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
               let button = syncItem.view as? NSButton else { return }
-        
+        isSyncing = true
         button.isEnabled = false
         
-        let animation = CABasicAnimation(keyPath: "transform.rotation")
+        let animation = CABasicAnimation(keyPath: "transform.rotation.z")
         animation.fromValue = 0.0
         animation.toValue = -Double.pi * 2.0
         animation.duration = 1.0
         animation.repeatCount = .infinity
+        animation.isRemovedOnCompletion = false
         
-        button.layer?.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        button.layer?.position = CGPoint(x: button.frame.midX, y: button.frame.midY)
         button.layer?.add(animation, forKey: "rotationAnimation")
     }
     
     private func stopSyncButtonAnimation() {
         guard let toolbar = window.toolbar,
               let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
-              let button = syncItem.view as? NSButton else { return }
-        
+              let button = syncItem.view as? NSButton else {
+            isSyncing = false
+            return
+        }
         button.isEnabled = true
         button.layer?.removeAnimation(forKey: "rotationAnimation")
+        isSyncing = false
     }
     
     @objc private func handleSyncToolbarAction() {
-        guard let userId = activeUserId else { return }
+        guard !isSyncing, let userId = activeUserId else { return }
         
         animateSyncButton()
         syncService.syncData(userId: userId) { [weak self] result in

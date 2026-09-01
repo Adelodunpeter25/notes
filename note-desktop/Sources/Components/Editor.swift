@@ -257,6 +257,7 @@ public final class Editor: NSViewController, NSTextViewDelegate {
     // MARK: - Find / Search Bar Controls
     
     public func toggleFindBar() {
+        guard activeNote != nil else { return }
         if searchBar.isHidden {
             searchBar.isHidden = false
             searchBar.focusSearchField()
@@ -272,7 +273,9 @@ public final class Editor: NSViewController, NSTextViewDelegate {
         searchBar.isHidden = true
         searchMatches.removeAll()
         currentMatchIndex = -1
-        textView.window?.makeFirstResponder(textView)
+        if activeNote != nil {
+            textView.window?.makeFirstResponder(textView)
+        }
         highlightMatches()
     }
     
