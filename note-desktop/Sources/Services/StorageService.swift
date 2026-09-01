@@ -62,13 +62,13 @@ public final class StorageService {
     public func insertNote(_ note: DBNote) -> Bool {
         let sql = "INSERT OR REPLACE INTO notes (id, title, content, createdAt, updatedAt, isPinned, folderId, userId, deletedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
         return db.execute(sql: sql, params: [
-            note.id,
+            note.id.lowercased(),
             note.title,
             note.content,
             TimeUtils.stringFromDate(note.createdAt),
             TimeUtils.stringFromDate(note.updatedAt),
             note.isPinned ? 1 : 0,
-            note.folderId ?? NSNull(),
+            note.folderId?.lowercased() ?? NSNull(),
             note.userId,
             note.deletedAt.map { TimeUtils.stringFromDate($0) } ?? NSNull()
         ])
