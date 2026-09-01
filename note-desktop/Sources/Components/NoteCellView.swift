@@ -6,6 +6,9 @@ public final class NoteCellView: NSTableCellView {
     let folderImageView = NSImageView()
     let folderLabel = NSTextField(labelWithString: "")
     let pinImageView = NSImageView()
+    private var folderTopConstraint: NSLayoutConstraint!
+    private var folderBottomConstraint: NSLayoutConstraint!
+    private var subtitleBottomConstraint: NSLayoutConstraint!
     
     public override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -78,6 +81,14 @@ public final class NoteCellView: NSTableCellView {
         folderLabel.translatesAutoresizingMaskIntoConstraints = false
         pinImageView.translatesAutoresizingMaskIntoConstraints = false
         
+        folderTopConstraint = folderImageView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 4)
+        folderBottomConstraint = folderImageView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -8)
+        subtitleBottomConstraint = subtitleLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -10)
+        // Start with subtitle bottom active, folder constraints inactive when hidden
+        subtitleBottomConstraint.priority = .defaultHigh
+        folderTopConstraint.priority = .required
+        folderBottomConstraint.priority = .required
+
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: pinImageView.leadingAnchor, constant: -8),
@@ -88,10 +99,8 @@ public final class NoteCellView: NSTableCellView {
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
             
             folderImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            folderImageView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 4),
             folderImageView.widthAnchor.constraint(equalToConstant: 12),
             folderImageView.heightAnchor.constraint(equalToConstant: 12),
-            folderImageView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -8),
             
             folderLabel.leadingAnchor.constraint(equalTo: folderImageView.trailingAnchor, constant: 4),
             folderLabel.centerYAnchor.constraint(equalTo: folderImageView.centerYAnchor),
@@ -102,6 +111,16 @@ public final class NoteCellView: NSTableCellView {
             pinImageView.widthAnchor.constraint(equalToConstant: 12),
             pinImageView.heightAnchor.constraint(equalToConstant: 12)
         ])
+        NSLayoutConstraint.activate([folderTopConstraint, folderBottomConstraint, subtitleBottomConstraint])
+        updateFolderVisibility(false)
+    }
+
+    public func updateFolderVisibility(_ visible: Bool) {
+        folderImageView.isHidden = !visible
+        folderLabel.isHidden = !visible
+        folderTopConstraint.isActive = visible
+        folderBottomConstraint.isActive = visible
+        subtitleBottomConstraint.isActive = !visible
     }
     
     public static func previewFromContent(_ content: String) -> String {

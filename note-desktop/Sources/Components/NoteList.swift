@@ -128,7 +128,15 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
     public func numberOfRows(in tv: NSTableView) -> Int { viewModel?.rowItems.count ?? 0 }
     public func tableView(_ tv: NSTableView, isGroupRow row: Int) -> Bool { if case .header = viewModel?.rowItems[row] { return true } else { return false } }
     public func tableView(_ tv: NSTableView, shouldSelectRow row: Int) -> Bool { if case .header = viewModel?.rowItems[row] { return false } else { return true } }
-    public func tableView(_ tv: NSTableView, heightOfRow row: Int) -> CGFloat { if case .header = viewModel?.rowItems[row] { return 22 } else { return 68 } }
+    public func tableView(_ tv: NSTableView, heightOfRow row: Int) -> CGFloat {
+        guard let item = viewModel?.rowItems[row] else { return 68 }
+        if case .header = item { return 22 }
+        if case .note(let note) = item {
+            if isAllNotesView, let fid = note.folderId, storage.getFolder(id: fid) != nil { return 68 }
+            return 54
+        }
+        return 68
+    }
     
     public func tableView(_ tv: NSTableView, viewFor tc: NSTableColumn?, row: Int) -> NSView? {
         guard let item = viewModel?.rowItems[row] else { return nil }
@@ -143,14 +151,12 @@ public final class NoteList: NSViewController, NSTableViewDataSource, NSTableVie
             cell.subtitleLabel.stringValue = "\(TimeUtils.formatCardTime(for: note.updatedAt))   \(NoteCellView.previewFromContent(note.content))"
             cell.pinImageView.isHidden = !note.isPinned
             
-            // Show folder tag if in All Notes view and note belongs to a folder
+            // Show folder tag only in All Notes view; collapses gap otherwise
             if isAllNotesView, let folderId = note.folderId, let folder = storage.getFolder(id: folderId) {
                 cell.folderLabel.stringValue = folder.name
-                cell.folderLabel.isHidden = false
-                cell.folderImageView.isHidden = false
+                cell.updateFolderVisibility(true)
             } else {
-                cell.folderLabel.isHidden = true
-                cell.folderImageView.isHidden = true
+                cell.updateFolderVisibility(false)
             }
             return cell
         }
