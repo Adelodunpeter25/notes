@@ -20,6 +20,7 @@ class SyncService {
   final ApiService api;
   final SyncOpDao _opDao;
   static const String _cursorKey = 'sync_cursor';
+  static const String _cursorScopeKey = 'sync_cursor_scope';
 
   SyncService(this.db, this.api, this._opDao);
 
@@ -31,7 +32,13 @@ class SyncService {
   ///   {nextCursor, notes, folders, deleted, processedOpIds, errors?}
   Future<void> syncData(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final cursor = prefs.getString(_cursorKey);
+    // A cursor only means something to the server (and user) that issued it.
+    // After moving servers, or switching accounts, the old cursor would hide
+    // every row older than it, so fall back to a full pull instead.
+    final scope = '$userId@${ApiService.baseUrl}';
+    final cursor = prefs.getString(_cursorScopeKey) == scope
+        ? prefs.getString(_cursorKey)
+        : null;
 
     // 1. Drain pending ops FIFO. Only the newest op per entity matters
     //    (every op carries the full row), so collapse the rest — they are
@@ -101,6 +108,7 @@ class SyncService {
       final nextCursor = data['nextCursor'] as String?;
       if (nextCursor != null) {
         await prefs.setString(_cursorKey, nextCursor);
+        await prefs.setString(_cursorScopeKey, scope);
       }
 
       // 4. Apply pulled data (folders first so FKs exist for notes).

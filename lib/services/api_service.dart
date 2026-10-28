@@ -6,6 +6,9 @@ class ApiService {
   static const String _baseUrl = 'https://notes-api.adelodunpeter.workers.dev/api/'; // Production API with trailing slash
   static const String _tokenKey = 'auth_token';
 
+  /// Identifies the server this client talks to. Sync cursors are only valid for one server.
+  static const String baseUrl = _baseUrl;
+
   ApiService() {
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
