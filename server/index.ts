@@ -3,7 +3,9 @@ import cors from '@fastify/cors';
 import { authRoutes, healthRoutes, syncRoutes } from '@routes/index';
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
+  // Sync batches carry full note bodies; the 1 MB default rejected them with 413.
+  bodyLimit: 20 * 1024 * 1024,
 });
 
 await fastify.register(cors, {

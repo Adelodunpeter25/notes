@@ -8,4 +8,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "bun db:push && bun index.ts"]
+CMD ["sh", "-c", "bun db:migrate && bun index.ts"]

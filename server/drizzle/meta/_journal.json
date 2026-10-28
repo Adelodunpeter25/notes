@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "postgresql",
+  "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1774383836212,
-      "tag": "0000_unusual_orphan",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1778532874552,
-      "tag": "0001_good_silver_fox",
+      "version": "6",
+      "when": 1793179462344,
+      "tag": "0000_init_turso",
       "breakpoints": true
     }
   ]

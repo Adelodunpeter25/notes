@@ -33,10 +33,10 @@ async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promis
       return await fn();
     } catch (err: any) {
       const isRetryable =
-        err?.code === '40001' || // serialization failure
-        err?.code === '40P01' || // deadlock
-        err?.message?.includes('deadlock') ||
-        err?.message?.includes('serialization');
+        err?.code === 'SQLITE_BUSY' ||
+        err?.code === 'SQLITE_LOCKED' ||
+        err?.message?.includes('database is locked') ||
+        err?.message?.includes('SQLITE_BUSY');
 
       if (!isRetryable || attempt === retries) throw err;
       await new Promise(r => setTimeout(r, 50 * attempt));
@@ -70,14 +70,14 @@ async function processDelete(userId: string, op: SyncOperation): Promise<void> {
       }
       break;
     case 'folder':
-      if (isHard) {
-        await db.delete(folders)
-          .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
-      } else {
-        await db.update(folders)
-          .set({ deletedAt: now, updatedAt: now })
-          .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
-      }
+      // Always soft-delete folders: a hard delete leaves no tombstone, so other
+      // devices would keep the folder forever. Notes inside are detached.
+      await db.update(notes)
+        .set({ folderId: null })
+        .where(and(eq(notes.folderId, op.entityId), eq(notes.userId, userId)));
+      await db.update(folders)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));
       break;
   }
 }
@@ -101,7 +101,7 @@ async function processUpsert(userId: string, op: SyncOperation): Promise<void> {
             title: (p.title as string) ?? existing.title,
             content: (p.content as string) ?? existing.content,
             isPinned: (p.isPinned as boolean) ?? existing.isPinned,
-            deletedAt: p.deletedAt ? new Date(p.deletedAt as string) : existing.deletedAt,
+            deletedAt: 'deletedAt' in p ? (p.deletedAt ? new Date(p.deletedAt as string) : null) : existing.deletedAt,
             updatedAt: clientUpdatedAt,
           })
           .where(and(eq(notes.id, op.entityId), eq(notes.userId, userId)));
@@ -130,7 +130,7 @@ async function processUpsert(userId: string, op: SyncOperation): Promise<void> {
         await db.update(folders)
           .set({
             name: (p.name as string) ?? existing.name,
-            deletedAt: p.deletedAt ? new Date(p.deletedAt as string) : existing.deletedAt,
+            deletedAt: 'deletedAt' in p ? (p.deletedAt ? new Date(p.deletedAt as string) : null) : existing.deletedAt,
             updatedAt: clientUpdatedAt,
           })
           .where(and(eq(folders.id, op.entityId), eq(folders.userId, userId)));

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as dev;
+import 'package:dio/dio.dart' show Response;
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
@@ -25,9 +26,21 @@ class SyncService {
     final prefs = await SharedPreferences.getInstance();
     final cursor = prefs.getString(_cursorKey);
 
-    // 1. Drain pending ops FIFO.
+    // 1. Drain pending ops FIFO. Only the newest op per entity matters
+    //    (every op carries the full row), so collapse the rest — they are
+    //    acked locally once the surviving op is accepted.
     final pending = await _opDao.pullPending();
-    final ops = pending
+    final latest = <String, SyncOp>{};
+    final superseded = <String>[];
+    for (final op in pending) {
+      final key = '${op.entityType}:${op.entityId}';
+      final prev = latest[key];
+      if (prev != null) superseded.add(prev.id);
+      latest[key] = op;
+    }
+    if (superseded.isNotEmpty) await _opDao.deleteOps(superseded);
+
+    final ops = latest.values
         .map((op) => {
               'id': op.id,
               'type': op.opType,
@@ -39,15 +52,27 @@ class SyncService {
         .toList();
 
     try {
-      final response = await api.post('sync', {
-        'cursor': cursor,
-        'ops': ops,
-      });
-
-      if (response.statusCode != 200) {
-        dev.log('Sync failed: ${response.statusCode}');
-        return;
-      }
+      // Push in small batches so one request never exceeds the server's
+      // body limit; the last response also carries the pull data.
+      const batchSize = 100;
+      Response? response;
+      var i = 0;
+      do {
+        final chunk = ops.sublist(i, (i + batchSize).clamp(0, ops.length));
+        response = await api.post('sync', {
+          'cursor': cursor,
+          'ops': chunk,
+        });
+        if (response.statusCode != 200) {
+          dev.log('Sync failed: ${response.statusCode} ${response.data}');
+          return;
+        }
+        final acked = ((response.data as Map?)?['processedOpIds'] as List? ?? const [])
+            .whereType<String>()
+            .toList();
+        if (acked.isNotEmpty) await _opDao.deleteOps(acked);
+        i += batchSize;
+      } while (i < ops.length);
 
       final data = response.data as Map<String, dynamic>? ?? {};
 
