@@ -1,19 +1,18 @@
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { MiddlewareHandler } from 'hono';
 import { authService } from '@services/index';
 
-export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
-  try {
-    const authHeader = request.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return reply.status(401).send({ error: 'Unauthorized' });
-    }
+export type AppEnv = { Variables: { userId: string } };
 
-    const token = authHeader.substring(7);
-    const { userId } = authService.verifyToken(token);
-    
-    (request as any).userId = userId;
-  } catch (error) {
-    return reply.status(401).send({ error: 'Invalid token' });
+export const authMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const header = c.req.header('authorization');
+  if (!header || !header.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
-}
+  try {
+    const { userId } = await authService.verifyToken(header.substring(7));
+    c.set('userId', userId);
+  } catch {
+    return c.json({ error: 'Invalid token' }, 401);
+  }
+  await next();
+};

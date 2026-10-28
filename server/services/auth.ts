@@ -1,11 +1,17 @@
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
+import { env } from 'cloudflare:workers';
 import { db } from '@db/index';
 import { users } from '@db/schema';
 import type { LoginPayload, SignupPayload, AuthResponse } from '@custom-types/index';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const secretKey = () => new TextEncoder().encode(env.JWT_SECRET);
+
+// HS256 with no expiry, same as the previous jsonwebtoken setup, so tokens
+// already issued to devices keep working as long as JWT_SECRET is unchanged.
+const signToken = (userId: string) =>
+  new SignJWT({ userId }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().sign(secretKey());
 
 export const authService = {
   async signup(payload: SignupPayload): Promise<AuthResponse> {
@@ -29,8 +35,6 @@ export const authService = {
       throw new Error('Failed to create user');
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
-
     return {
       user: {
         id: user.id,
@@ -39,7 +43,7 @@ export const authService = {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
-      token,
+      token: await signToken(user.id),
     };
   },
 
@@ -58,8 +62,6 @@ export const authService = {
       throw new Error('Invalid credentials');
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
-
     return {
       user: {
         id: user.id,
@@ -68,13 +70,15 @@ export const authService = {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
-      token,
+      token: await signToken(user.id),
     };
   },
 
-  verifyToken(token: string): { userId: string } {
+  async verifyToken(token: string): Promise<{ userId: string }> {
     try {
-      return jwt.verify(token, JWT_SECRET) as { userId: string };
+      const { payload } = await jwtVerify(token, secretKey(), { algorithms: ['HS256'] });
+      if (typeof payload.userId !== 'string') throw new Error('bad payload');
+      return { userId: payload.userId };
     } catch {
       throw new Error('Invalid token');
     }

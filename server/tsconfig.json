@@ -2,6 +2,7 @@
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext"],
+    "types": [],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
@@ -37,4 +38,7 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   }
+  ,
+  "include": ["**/*.ts", ".cloudflare/types/index.d.ts"],
+  "exclude": ["node_modules"]
 }

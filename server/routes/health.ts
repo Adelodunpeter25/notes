@@ -1,29 +1,19 @@
-import type { FastifyInstance } from 'fastify';
+import { Hono } from 'hono';
 import { sql } from 'drizzle-orm';
 import { db } from '@db/index';
 
-export async function healthRoutes(fastify: FastifyInstance) {
-  fastify.get('/', async () => {
-    return { status: 'ok', service: 'notes-api' };
-  });
-
-  fastify.get('/health', async (request, reply) => {
+export const healthRoutes = new Hono()
+  .get('/', (c) => c.json({ status: 'ok', service: 'notes-api' }))
+  .get('/health', async (c) => {
     try {
-      // Check database connection
       await db.run(sql`SELECT 1`);
-      
-      return {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        database: 'connected',
-      };
+      return c.json({ status: 'ok', timestamp: new Date().toISOString(), database: 'connected' });
     } catch (error) {
-      return reply.status(503).send({
+      return c.json({
         status: 'error',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
         error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      }, 503);
     }
   });
-}

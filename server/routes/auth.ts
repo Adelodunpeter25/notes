@@ -1,23 +1,19 @@
-import type { FastifyInstance } from 'fastify';
+import { Hono } from 'hono';
 import { authService } from '@services/index';
 import type { LoginPayload, SignupPayload } from '@custom-types/index';
 
-export async function authRoutes(fastify: FastifyInstance) {
-  fastify.post<{ Body: SignupPayload }>('/signup', async (request, reply) => {
+export const authRoutes = new Hono()
+  .post('/signup', async (c) => {
     try {
-      const result = await authService.signup(request.body);
-      return reply.send(result);
+      return c.json(await authService.signup(await c.req.json<SignupPayload>()));
     } catch (error: any) {
-      return reply.status(400).send({ error: error.message });
+      return c.json({ error: error.message }, 400);
+    }
+  })
+  .post('/login', async (c) => {
+    try {
+      return c.json(await authService.login(await c.req.json<LoginPayload>()));
+    } catch (error: any) {
+      return c.json({ error: error.message }, 401);
     }
   });
-
-  fastify.post<{ Body: LoginPayload }>('/login', async (request, reply) => {
-    try {
-      const result = await authService.login(request.body);
-      return reply.send(result);
-    } catch (error: any) {
-      return reply.status(401).send({ error: error.message });
-    }
-  });
-}

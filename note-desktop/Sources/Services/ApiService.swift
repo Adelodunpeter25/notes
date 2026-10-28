@@ -12,7 +12,7 @@ public final class ApiService: @unchecked Sendable {
     private var _token: String?
     private let tokenKey = "auth_token"
     
-    public init(baseUrlString: String = "https://notes-api.scaleitpro.com/api") {
+    public init(baseUrlString: String = "https://notes-api.adelodunpeter.workers.dev/api") {
         guard let url = URL(string: baseUrlString) else { fatalError("Invalid API base URL") }
         self.baseUrl = url
         self._token = UserDefaults.standard.string(forKey: tokenKey)

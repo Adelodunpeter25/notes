@@ -1,31 +1,31 @@
 {
   "name": "server",
-  "module": "index.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch index.ts",
-    "start": "bun index.ts",
+    "dev": "cf dev",
+    "build": "cf build",
+    "deploy": "cf deploy",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-beta.v.6",
     "@types/bcryptjs": "^3.0.0",
-    "@types/bun": "latest",
-    "@types/jsonwebtoken": "^9.0.10",
-    "drizzle-kit": "^0.31.10"
+    "cf": "^1.0.0-beta.24",
+    "drizzle-kit": "^0.31.10",
+    "vite": "^8.3.5"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
     "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
-    "fastify": "^5.8.4",
-    "jsonwebtoken": "^9.0.3"
+    "hono": "^4.13.14",
+    "jose": "^6.2.13"
   }
 }
