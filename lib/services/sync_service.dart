@@ -1,12 +1,19 @@
 import 'dart:convert';
 import 'dart:developer' as dev;
-import 'package:dio/dio.dart' show Response;
+import 'package:dio/dio.dart' show DioException, Response;
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../database/daos.dart';
 import '../utils/note.dart';
 import 'api_service.dart';
+
+/// Thrown by [SyncService.syncData] when the server answers 401: the stored
+/// token is expired or was signed with a rotated secret.
+class SessionExpiredException implements Exception {
+  @override
+  String toString() => 'Your session has expired. Please sign in again.';
+}
 
 class SyncService {
   final AppDatabase db;
@@ -63,6 +70,7 @@ class SyncService {
           'cursor': cursor,
           'ops': chunk,
         });
+        if (response.statusCode == 401) throw SessionExpiredException();
         if (response.statusCode != 200) {
           dev.log('Sync failed: ${response.statusCode} ${response.data}');
           return;
@@ -162,6 +170,12 @@ class SyncService {
           await (db.delete(db.folders)..where((t) => t.id.equals(entityId))).go();
         }
       }
+    } on SessionExpiredException {
+      rethrow;
+    } on DioException catch (e, stackTrace) {
+      if (e.response?.statusCode == 401) throw SessionExpiredException();
+      dev.log('Sync error', error: e, stackTrace: stackTrace);
+      // Ops stay queued for the next attempt — we didn't ack them.
     } catch (e, stackTrace) {
       dev.log('Sync error', error: e, stackTrace: stackTrace);
       // Ops stay queued for the next attempt — we didn't ack them.

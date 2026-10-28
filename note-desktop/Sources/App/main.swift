@@ -100,9 +100,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self?.stopSyncButtonAnimation()
                 if case .success = result {
                     self?.mainSplitVC?.refreshAllData()
+                } else if case .failure(let error) = result {
+                    // Background sync on launch stays quiet, except for a dead session.
+                    self?.handleSyncFailure(error, alertForOtherErrors: false)
                 }
             }
         }
+    }
+    
+    /// A 401 means the token is no longer valid: sign out and return to the login screen
+    /// (local notes and queued changes are kept and sync after the next login).
+    private func handleSyncFailure(_ error: Error, alertForOtherErrors: Bool) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        
+        if case SyncError.sessionExpired = error {
+            handleLogout()
+            alert.messageText = "Session Expired"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+            return
+        }
+        guard alertForOtherErrors else { return }
+        alert.messageText = "Sync Failed"
+        alert.informativeText = error.localizedDescription
+        alert.runModal()
     }
     
     private func showAuthContent() {
@@ -178,12 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 if case .success = result {
                     self?.mainSplitVC?.refreshAllData()
                 } else if case .failure(let error) = result {
-                    let alert = NSAlert()
-                    alert.messageText = "Sync Failed"
-                    alert.informativeText = error.localizedDescription
-                    alert.alertStyle = .warning
-                    alert.addButton(withTitle: "OK")
-                    alert.runModal()
+                    self?.handleSyncFailure(error, alertForOtherErrors: true)
                 }
             }
         }

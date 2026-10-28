@@ -1,5 +1,16 @@
 import Foundation
 
+public enum SyncError: LocalizedError, Sendable {
+    /// The server rejected our token (401): expired, or signed with a rotated secret.
+    case sessionExpired
+    
+    public var errorDescription: String? {
+        switch self {
+        case .sessionExpired: return "Your session has expired. Please sign in again."
+        }
+    }
+}
+
 public final class SyncService: @unchecked Sendable {
     private let storage: StorageService
     private let api: ApiService
@@ -97,6 +108,11 @@ public final class SyncService: @unchecked Sendable {
                 self.isSyncing = false
                 completion(.failure(error))
             case .success(let (statusCode, data)):
+                guard statusCode != 401 else {
+                    self.isSyncing = false
+                    completion(.failure(SyncError.sessionExpired))
+                    return
+                }
                 guard statusCode == 200 else {
                     self.isSyncing = false
                     completion(.failure(NSError(domain: "SyncService", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Sync request failed with status code: \(statusCode)"])))

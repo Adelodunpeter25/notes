@@ -7,6 +7,8 @@ import '../widgets/note_list.dart';
 import '../widgets/editor_view.dart';
 import '../widgets/folders_view.dart';
 import '../utils/dialogs.dart';
+import '../pages/auth_page.dart';
+import '../services/sync_service.dart';
 
 import '../models/user.dart';
 import '../database/daos.dart';
@@ -110,7 +112,24 @@ class _AppLayoutState extends State<AppLayout> {
   Future<void> _performSync() async {
     if (!mounted || _currentUser == null) return;
     final services = ServiceProvider.of(context);
-    await services.syncService.syncData(_currentUser!.id);
+    try {
+      await services.syncService.syncData(_currentUser!.id);
+    } on SessionExpiredException {
+      // Token is no longer valid: sign out and return to the login screen.
+      // Local notes and queued changes are kept and sync after the next login.
+      await services.authService.logout();
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => AuthPage(authService: services.authService),
+        ),
+        (_) => false,
+      );
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Your session expired. Please sign in again.')),
+      );
+    }
   }
 
   void _onNoteSelected(Note note) {
