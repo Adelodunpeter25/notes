@@ -17,7 +17,6 @@ public final class FolderListView: NSView {
     
     private func setupUI() {
         wantsLayer = true
-        layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         
         // 1. Setup Outline View
         outlineView.headerView = nil
@@ -42,7 +41,6 @@ public final class FolderListView: NSView {
         
         // 2. Setup Bottom Bar
         bottomBar.wantsLayer = true
-        bottomBar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         
         newFolderButton.isBordered = false
         newFolderButton.title = "New Folder"

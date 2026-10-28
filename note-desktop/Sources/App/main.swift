@@ -48,12 +48,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 800, height: 600)
 
-        let toolbar = NSToolbar(identifier: "NotesToolbar_v4")
-        toolbar.allowsUserCustomization = false
-        toolbar.autosavesConfiguration = false
-        toolbar.displayMode = .iconOnly
-        toolbar.delegate = self
-        window.toolbar = toolbar
 
         // 3. Conditional routing based on active session
         if authService.getSessionToken() != nil,
@@ -92,6 +86,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         
         window.contentViewController = mainVC
+        // The tracking separators bind to this split view's dividers, so the toolbar is
+        // built after it exists and replaced whenever the main content is recreated.
+        window.toolbar = makeToolbar()
         
         // Initial sync on launch (with toolbar sync button animation)
         animateSyncButton()
@@ -134,6 +131,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             Task { @MainActor in self?.showMainContent(userId: userId) }
         }
         window.contentViewController = authVC
+        // New Note / Sync do nothing on the login screen, so don't show them.
+        window.toolbar = nil
+    }
+    
+    private func makeToolbar() -> NSToolbar {
+        let toolbar = NSToolbar(identifier: "NotesToolbar_v5")
+        toolbar.allowsUserCustomization = false
+        toolbar.autosavesConfiguration = false
+        toolbar.displayMode = .iconOnly
+        toolbar.delegate = self
+        return toolbar
     }
     
     private func handleLogout() {
@@ -169,25 +177,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     
     private var isSyncing = false
 
+    private func setSyncItemEnabled(_ enabled: Bool) {
+        window.toolbar?.items
+            .first(where: { $0.itemIdentifier == AppDelegate.syncItemID })?
+            .isEnabled = enabled
+    }
+    
     private func animateSyncButton() {
-        guard !isSyncing,
-              let toolbar = window.toolbar,
-              let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
-              let button = syncItem.view as? NSButton else { return }
+        guard !isSyncing else { return }
         isSyncing = true
-        button.isEnabled = false
-        button.alphaValue = 0.5
+        setSyncItemEnabled(false)
     }
     
     private func stopSyncButtonAnimation() {
-        guard let toolbar = window.toolbar,
-              let syncItem = toolbar.items.first(where: { $0.itemIdentifier == NSToolbarItem.Identifier("sync") }),
-              let button = syncItem.view as? NSButton else {
-            isSyncing = false
-            return
-        }
-        button.isEnabled = true
-        button.alphaValue = 1.0
+        setSyncItemEnabled(true)
         isSyncing = false
     }
     
@@ -226,55 +229,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 }
 
 extension AppDelegate: NSToolbarDelegate {
+    static let newNoteItemID = NSToolbarItem.Identifier("newNote")
+    static let syncItemID = NSToolbarItem.Identifier("sync")
+    static let editorTrackingSeparatorID = NSToolbarItem.Identifier("editorTrackingSeparator")
+    
     func toolbar(
         _ toolbar: NSToolbar,
         itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
         willBeInsertedIntoToolbar flag: Bool
     ) -> NSToolbarItem? {
-        if itemIdentifier == .toggleSidebar {
-            return NSToolbarItem(itemIdentifier: itemIdentifier)
-        } else if itemIdentifier == NSToolbarItem.Identifier("newNote") {
-            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
-            button.isBordered = false
-            button.imagePosition = .imageOnly
-            button.bezelStyle = .texturedRounded
-            button.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
-            button.target = self
-            button.action = #selector(handleNewNoteShortcut)
-            button.wantsLayer = true
-            
+        switch itemIdentifier {
+        case AppDelegate.newNoteItemID:
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-            item.view = button
+            item.image = NSImage(systemSymbolName: "square.and.pencil", accessibilityDescription: "New Note")
             item.label = "New Note"
             item.paletteLabel = "New Note"
             item.toolTip = "Create a New Note (⌘N)"
+            item.target = self
+            item.action = #selector(handleNewNoteShortcut)
             return item
-        } else if itemIdentifier == NSToolbarItem.Identifier("sync") {
-            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
-            button.isBordered = false
-            button.imagePosition = .imageOnly
-            button.bezelStyle = .texturedRounded
-            button.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Sync")
-            button.target = self
-            button.action = #selector(handleSyncToolbarAction)
-            button.wantsLayer = true
             
+        case AppDelegate.syncItemID:
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-            item.view = button
+            item.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Sync")
             item.label = "Sync"
             item.paletteLabel = "Sync"
             item.toolTip = "Sync Notes"
+            item.target = self
+            item.action = #selector(handleSyncToolbarAction)
+            // Enabled state is driven by the sync lifecycle, not by menu validation.
+            item.autovalidates = false
             return item
+            
+        case AppDelegate.editorTrackingSeparatorID:
+            // Divider 1 sits between the note list and the editor.
+            if let splitView = mainSplitVC?.splitView {
+                return NSTrackingSeparatorToolbarItem(identifier: itemIdentifier, splitView: splitView, dividerIndex: 1)
+            }
+            return nil
+            
+        default:
+            return nil
         }
-        return nil
+    }
+    
+    /// Sidebar toggle | sidebar divider | … New Note (right edge of the note list) | divider | … Sync
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [
+            .toggleSidebar,
+            .sidebarTrackingSeparator,
+            .flexibleSpace,
+            AppDelegate.newNoteItemID,
+            AppDelegate.editorTrackingSeparatorID,
+            .flexibleSpace,
+            AppDelegate.syncItemID
+        ]
     }
     
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
-    }
-    
-    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.toggleSidebar, .flexibleSpace, NSToolbarItem.Identifier("newNote"), .flexibleSpace, NSToolbarItem.Identifier("sync")]
+        toolbarDefaultItemIdentifiers(toolbar)
     }
 }
 
