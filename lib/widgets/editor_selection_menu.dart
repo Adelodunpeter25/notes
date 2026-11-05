@@ -52,6 +52,23 @@ class EditorSelectionMenu extends StatelessWidget {
               },
               label: 'Lookup',
             ),
+            ContextMenuButtonItem(
+              onPressed: () async {
+                final href = editorState.getDeltaAttributeValueInSelection(
+                  AppFlowyRichTextKeys.href,
+                  selection,
+                ) as String?;
+                closeToolbar();
+                if (href == null || href.isEmpty) return;
+                final url = Uri.tryParse(
+                  href.startsWith(RegExp(r'https?://')) ? href : 'https://$href',
+                );
+                if (url != null && await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+              },
+              label: 'Open Link',
+            ),
           ],
           ContextMenuButtonItem(
             onPressed: () {

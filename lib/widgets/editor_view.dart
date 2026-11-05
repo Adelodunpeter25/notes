@@ -238,7 +238,7 @@ class _EditorViewState extends State<EditorView> {
                     closeToolbar: closeToolbar,
                   );
                 },
-                child: AppFlowyEditor(
+                  child: AppFlowyEditor(
                   editorState: _editorState!,
                   focusNode: _focusNode,
                   editorScrollController: _editorScrollController,
@@ -255,6 +255,11 @@ class _EditorViewState extends State<EditorView> {
                         fontFamily: 'monospace',
                         color: AppTextColors.primary(context),
                         backgroundColor: AppSurfaces.elevated(context),
+                      ),
+                      href: const TextStyle(
+                        color: AppColors.accent,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.accent,
                       ),
                     ),
                   ),

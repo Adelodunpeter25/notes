@@ -2,6 +2,7 @@ import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../utils/dialogs.dart';
 
 /// A mobile-optimized formatting toolbar that docks at the bottom of the editor
 /// above the keyboard. Provides quick access to formatting options.
@@ -25,6 +26,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
   bool _isItalic = false;
   bool _isUnderline = false;
   bool _isStrikethrough = false;
+  bool _hasLink = false;
   String _activeBlockType = 'paragraph';
   int _activeHeadingLevel = 0;
 
@@ -58,6 +60,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
     _isItalic = toggled.containsKey(AppFlowyRichTextKeys.italic);
     _isUnderline = toggled.containsKey(AppFlowyRichTextKeys.underline);
     _isStrikethrough = toggled.containsKey(AppFlowyRichTextKeys.strikethrough);
+    _hasLink = widget.editorState.getDeltaAttributeValueInSelection(AppFlowyRichTextKeys.href, selection) != null;
 
     final node = widget.editorState.getNodeAtPath(selection.start.path);
     if (node != null) {
@@ -74,6 +77,63 @@ class _EditorToolbarState extends State<EditorToolbar> {
     widget.editorState.toggleAttribute(key);
     _updateState();
     setState(() {});
+  }
+
+  /// Adds, edits, or removes a link on the selection. With a collapsed cursor
+  /// it inserts new text and links it in one go.
+  Future<void> _toggleLink() async {
+    final editorState = widget.editorState;
+    final selection = editorState.selection;
+    if (selection == null) return;
+
+    final existing = editorState.getDeltaAttributeValueInSelection(AppFlowyRichTextKeys.href, selection) as String?;
+
+    if (selection.isCollapsed) {
+      if (existing != null) return; // cursor sits on a link; use the selection menu to open it
+
+      final text = await DialogUtils.showTextInputDialog(
+        context: context,
+        title: 'Link text',
+        placeholder: 'Text to display',
+        primaryButtonText: 'Next',
+      );
+      if (text == null || text.isEmpty || !mounted) return;
+
+      final url = await DialogUtils.showTextInputDialog(
+        context: context,
+        title: 'Link address',
+        placeholder: 'https://example.com',
+        primaryButtonText: 'Add Link',
+      );
+      if (url == null || url.isEmpty || !mounted) return;
+
+      final anchor = editorState.selection?.startIndex;
+      if (anchor == null) return;
+      await editorState.insertTextAtCurrentSelection(text);
+      await editorState.formatDelta(
+        Selection(
+          start: Position(path: selection.start.path, offset: anchor),
+          end: Position(path: selection.end.path, offset: anchor + text.length),
+        ),
+        {AppFlowyRichTextKeys.href: url},
+      );
+    } else {
+      final url = await DialogUtils.showTextInputDialog(
+        context: context,
+        title: existing == null ? 'Add Link' : 'Edit Link',
+        placeholder: 'https://example.com',
+        primaryButtonText: existing == null ? 'Add' : 'Update',
+      );
+      if (url == null || !mounted) return;
+
+      await editorState.formatDelta(
+        selection,
+        {AppFlowyRichTextKeys.href: url.isEmpty ? null : url},
+      );
+    }
+
+    _updateState();
+    if (mounted) setState(() {});
   }
 
   void _toggleBlock(String blockType, [Map<String, dynamic>? attributes]) {
@@ -179,6 +239,14 @@ class _EditorToolbarState extends State<EditorToolbar> {
 
                     // Separator
                     Container(width: 1, height: 24, color: AppSurfaces.divider(context)),
+
+                    // Link
+                    _ToolbarButton(
+                      icon: CupertinoIcons.link,
+                      isActive: _hasLink,
+                      accentColor: AppColors.accent,
+                      onTap: _toggleLink,
+                    ),
 
                     // Checklist
                     _ToolbarButton(
