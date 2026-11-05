@@ -10,8 +10,11 @@ import 'services/note_service.dart';
 import 'services/sync_service.dart';
 import 'services/sync_op_recorder.dart';
 import 'services/quick_action_service.dart';
+import 'services/reminder_service.dart';
+import 'services/app_lock_service.dart';
 import 'layouts/layout.dart';
 import 'pages/auth_page.dart';
+import 'widgets/app_lock_gate.dart';
 import 'widgets/service_provider.dart';
 import 'theme.dart';
 
@@ -27,8 +30,14 @@ void main() async {
   final folderService = FolderService(FolderDao(db), noteService, recorder);
   final syncService = SyncService(db, api, syncOpDao);
   final quickActionService = QuickActionService();
+  final reminderService = ReminderService(db);
+  final appLockService = AppLockService();
   
   quickActionService.initialize();
+  // Re-arm reminder notifications after a reboot or plugin-storage wipe, and
+  // drop reminders whose note was deleted. Reminders are local-only; they are
+  // never part of the sync queue.
+  await reminderService.rescheduleAll();
 
   // Check session persistence
   final token = await auth.getSessionToken();
@@ -40,8 +49,10 @@ void main() async {
     noteService: noteService,
     syncService: syncService,
     quickActionService: quickActionService,
+    reminderService: reminderService,
     child: NoteApp(
       authService: auth,
+      appLockService: appLockService,
       isLoggedIn: token != null,
     ),
   ));
@@ -49,11 +60,13 @@ void main() async {
 
 class NoteApp extends StatelessWidget {
   final AuthService authService;
+  final AppLockService appLockService;
   final bool isLoggedIn;
 
   const NoteApp({
     super.key, 
     required this.authService,
+    required this.appLockService,
     required this.isLoggedIn,
   });
 
@@ -75,7 +88,10 @@ class NoteApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       home: isLoggedIn
-          ? const AppLayout()
+          ? AppLockGate(
+              service: appLockService,
+              child: const AppLayout(),
+            )
           : AuthPage(authService: authService),
     );
   }

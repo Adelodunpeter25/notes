@@ -1329,6 +1329,479 @@ class SyncOpsCompanion extends UpdateCompanion<SyncOp> {
   }
 }
 
+class $RemindersTable extends Reminders
+    with TableInfo<$RemindersTable, Reminder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _noteIdMeta = const VerificationMeta('noteId');
+  @override
+  late final GeneratedColumn<String> noteId = GeneratedColumn<String>(
+      'note_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _scheduledAtMeta =
+      const VerificationMeta('scheduledAt');
+  @override
+  late final GeneratedColumn<DateTime> scheduledAt = GeneratedColumn<DateTime>(
+      'scheduled_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _repeatIntervalMeta =
+      const VerificationMeta('repeatInterval');
+  @override
+  late final GeneratedColumn<String> repeatInterval = GeneratedColumn<String>(
+      'repeat_interval', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _repeatCountMeta =
+      const VerificationMeta('repeatCount');
+  @override
+  late final GeneratedColumn<int> repeatCount = GeneratedColumn<int>(
+      'repeat_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+      'body', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        noteId,
+        userId,
+        scheduledAt,
+        repeatInterval,
+        repeatCount,
+        title,
+        body,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reminders';
+  @override
+  VerificationContext validateIntegrity(Insertable<Reminder> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('note_id')) {
+      context.handle(_noteIdMeta,
+          noteId.isAcceptableOrUnknown(data['note_id']!, _noteIdMeta));
+    } else if (isInserting) {
+      context.missing(_noteIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('scheduled_at')) {
+      context.handle(
+          _scheduledAtMeta,
+          scheduledAt.isAcceptableOrUnknown(
+              data['scheduled_at']!, _scheduledAtMeta));
+    } else if (isInserting) {
+      context.missing(_scheduledAtMeta);
+    }
+    if (data.containsKey('repeat_interval')) {
+      context.handle(
+          _repeatIntervalMeta,
+          repeatInterval.isAcceptableOrUnknown(
+              data['repeat_interval']!, _repeatIntervalMeta));
+    } else if (isInserting) {
+      context.missing(_repeatIntervalMeta);
+    }
+    if (data.containsKey('repeat_count')) {
+      context.handle(
+          _repeatCountMeta,
+          repeatCount.isAcceptableOrUnknown(
+              data['repeat_count']!, _repeatCountMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Reminder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Reminder(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      noteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note_id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}user_id'])!,
+      scheduledAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}scheduled_at'])!,
+      repeatInterval: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}repeat_interval'])!,
+      repeatCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}repeat_count']),
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      body: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $RemindersTable createAlias(String alias) {
+    return $RemindersTable(attachedDatabase, alias);
+  }
+}
+
+class Reminder extends DataClass implements Insertable<Reminder> {
+  final String id;
+  final String noteId;
+  final String userId;
+  final DateTime scheduledAt;
+  final String repeatInterval;
+  final int? repeatCount;
+  final String title;
+  final String body;
+  final DateTime createdAt;
+  const Reminder(
+      {required this.id,
+      required this.noteId,
+      required this.userId,
+      required this.scheduledAt,
+      required this.repeatInterval,
+      this.repeatCount,
+      required this.title,
+      required this.body,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['note_id'] = Variable<String>(noteId);
+    map['user_id'] = Variable<String>(userId);
+    map['scheduled_at'] = Variable<DateTime>(scheduledAt);
+    map['repeat_interval'] = Variable<String>(repeatInterval);
+    if (!nullToAbsent || repeatCount != null) {
+      map['repeat_count'] = Variable<int>(repeatCount);
+    }
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  RemindersCompanion toCompanion(bool nullToAbsent) {
+    return RemindersCompanion(
+      id: Value(id),
+      noteId: Value(noteId),
+      userId: Value(userId),
+      scheduledAt: Value(scheduledAt),
+      repeatInterval: Value(repeatInterval),
+      repeatCount: repeatCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(repeatCount),
+      title: Value(title),
+      body: Value(body),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Reminder.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Reminder(
+      id: serializer.fromJson<String>(json['id']),
+      noteId: serializer.fromJson<String>(json['noteId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      scheduledAt: serializer.fromJson<DateTime>(json['scheduledAt']),
+      repeatInterval: serializer.fromJson<String>(json['repeatInterval']),
+      repeatCount: serializer.fromJson<int?>(json['repeatCount']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'noteId': serializer.toJson<String>(noteId),
+      'userId': serializer.toJson<String>(userId),
+      'scheduledAt': serializer.toJson<DateTime>(scheduledAt),
+      'repeatInterval': serializer.toJson<String>(repeatInterval),
+      'repeatCount': serializer.toJson<int?>(repeatCount),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Reminder copyWith(
+          {String? id,
+          String? noteId,
+          String? userId,
+          DateTime? scheduledAt,
+          String? repeatInterval,
+          Value<int?> repeatCount = const Value.absent(),
+          String? title,
+          String? body,
+          DateTime? createdAt}) =>
+      Reminder(
+        id: id ?? this.id,
+        noteId: noteId ?? this.noteId,
+        userId: userId ?? this.userId,
+        scheduledAt: scheduledAt ?? this.scheduledAt,
+        repeatInterval: repeatInterval ?? this.repeatInterval,
+        repeatCount: repeatCount.present ? repeatCount.value : this.repeatCount,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  Reminder copyWithCompanion(RemindersCompanion data) {
+    return Reminder(
+      id: data.id.present ? data.id.value : this.id,
+      noteId: data.noteId.present ? data.noteId.value : this.noteId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      scheduledAt:
+          data.scheduledAt.present ? data.scheduledAt.value : this.scheduledAt,
+      repeatInterval: data.repeatInterval.present
+          ? data.repeatInterval.value
+          : this.repeatInterval,
+      repeatCount:
+          data.repeatCount.present ? data.repeatCount.value : this.repeatCount,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Reminder(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('userId: $userId, ')
+          ..write('scheduledAt: $scheduledAt, ')
+          ..write('repeatInterval: $repeatInterval, ')
+          ..write('repeatCount: $repeatCount, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, noteId, userId, scheduledAt,
+      repeatInterval, repeatCount, title, body, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Reminder &&
+          other.id == this.id &&
+          other.noteId == this.noteId &&
+          other.userId == this.userId &&
+          other.scheduledAt == this.scheduledAt &&
+          other.repeatInterval == this.repeatInterval &&
+          other.repeatCount == this.repeatCount &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.createdAt == this.createdAt);
+}
+
+class RemindersCompanion extends UpdateCompanion<Reminder> {
+  final Value<String> id;
+  final Value<String> noteId;
+  final Value<String> userId;
+  final Value<DateTime> scheduledAt;
+  final Value<String> repeatInterval;
+  final Value<int?> repeatCount;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const RemindersCompanion({
+    this.id = const Value.absent(),
+    this.noteId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.scheduledAt = const Value.absent(),
+    this.repeatInterval = const Value.absent(),
+    this.repeatCount = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemindersCompanion.insert({
+    required String id,
+    required String noteId,
+    required String userId,
+    required DateTime scheduledAt,
+    required String repeatInterval,
+    this.repeatCount = const Value.absent(),
+    required String title,
+    required String body,
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        noteId = Value(noteId),
+        userId = Value(userId),
+        scheduledAt = Value(scheduledAt),
+        repeatInterval = Value(repeatInterval),
+        title = Value(title),
+        body = Value(body);
+  static Insertable<Reminder> custom({
+    Expression<String>? id,
+    Expression<String>? noteId,
+    Expression<String>? userId,
+    Expression<DateTime>? scheduledAt,
+    Expression<String>? repeatInterval,
+    Expression<int>? repeatCount,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (noteId != null) 'note_id': noteId,
+      if (userId != null) 'user_id': userId,
+      if (scheduledAt != null) 'scheduled_at': scheduledAt,
+      if (repeatInterval != null) 'repeat_interval': repeatInterval,
+      if (repeatCount != null) 'repeat_count': repeatCount,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemindersCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? noteId,
+      Value<String>? userId,
+      Value<DateTime>? scheduledAt,
+      Value<String>? repeatInterval,
+      Value<int?>? repeatCount,
+      Value<String>? title,
+      Value<String>? body,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return RemindersCompanion(
+      id: id ?? this.id,
+      noteId: noteId ?? this.noteId,
+      userId: userId ?? this.userId,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      repeatInterval: repeatInterval ?? this.repeatInterval,
+      repeatCount: repeatCount ?? this.repeatCount,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (noteId.present) {
+      map['note_id'] = Variable<String>(noteId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (scheduledAt.present) {
+      map['scheduled_at'] = Variable<DateTime>(scheduledAt.value);
+    }
+    if (repeatInterval.present) {
+      map['repeat_interval'] = Variable<String>(repeatInterval.value);
+    }
+    if (repeatCount.present) {
+      map['repeat_count'] = Variable<int>(repeatCount.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemindersCompanion(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('userId: $userId, ')
+          ..write('scheduledAt: $scheduledAt, ')
+          ..write('repeatInterval: $repeatInterval, ')
+          ..write('repeatCount: $repeatCount, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1336,15 +1809,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoldersTable folders = $FoldersTable(this);
   late final $NotesTable notes = $NotesTable(this);
   late final $SyncOpsTable syncOps = $SyncOpsTable(this);
+  late final $RemindersTable reminders = $RemindersTable(this);
   late final NoteDao noteDao = NoteDao(this as AppDatabase);
   late final FolderDao folderDao = FolderDao(this as AppDatabase);
   late final SyncOpDao syncOpDao = SyncOpDao(this as AppDatabase);
+  late final ReminderDao reminderDao = ReminderDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [users, folders, notes, syncOps];
+      [users, folders, notes, syncOps, reminders];
 }
 
 typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
@@ -1367,11 +1842,11 @@ final class $$UsersTableReferences
   static MultiTypedResultKey<$FoldersTable, List<Folder>> _foldersRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.folders,
-          aliasName: $_aliasNameGenerator(db.users.id, db.folders.userId));
+          aliasName: 'users__id__folders__user_id');
 
   $$FoldersTableProcessedTableManager get foldersRefs {
     final manager = $$FoldersTableTableManager($_db, $_db.folders)
-        .filter((f) => f.userId.id($_item.id));
+        .filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_foldersRefsTable($_db));
     return ProcessedTableManager(
@@ -1381,11 +1856,11 @@ final class $$UsersTableReferences
   static MultiTypedResultKey<$NotesTable, List<Note>> _notesRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.notes,
-          aliasName: $_aliasNameGenerator(db.users.id, db.notes.userId));
+          aliasName: 'users__id__notes__user_id');
 
   $$NotesTableProcessedTableManager get notesRefs {
     final manager = $$NotesTableTableManager($_db, $_db.notes)
-        .filter((f) => f.userId.id($_item.id));
+        .filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_notesRefsTable($_db));
     return ProcessedTableManager(
@@ -1594,7 +2069,7 @@ class $$UsersTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (foldersRefs)
-                    await $_getPrefetchedData(
+                    await $_getPrefetchedData<User, $UsersTable, Folder>(
                         currentTable: table,
                         referencedTable:
                             $$UsersTableReferences._foldersRefsTable(db),
@@ -1605,7 +2080,7 @@ class $$UsersTableTableManager extends RootTableManager<
                             referencedItems.where((e) => e.userId == item.id),
                         typedResults: items),
                   if (notesRefs)
-                    await $_getPrefetchedData(
+                    await $_getPrefetchedData<User, $UsersTable, Note>(
                         currentTable: table,
                         referencedTable:
                             $$UsersTableReferences._notesRefsTable(db),
@@ -1653,12 +2128,14 @@ final class $$FoldersTableReferences
     extends BaseReferences<_$AppDatabase, $FoldersTable, Folder> {
   $$FoldersTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $UsersTable _userIdTable(_$AppDatabase db) => db.users
-      .createAlias($_aliasNameGenerator(db.folders.userId, db.users.id));
+  static $UsersTable _userIdTable(_$AppDatabase db) =>
+      db.users.createAlias('folders__user_id__users__id');
 
   $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<String>('user_id')!;
+
     final manager = $$UsersTableTableManager($_db, $_db.users)
-        .filter((f) => f.id($_item.userId));
+        .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_userIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -1668,11 +2145,11 @@ final class $$FoldersTableReferences
   static MultiTypedResultKey<$NotesTable, List<Note>> _notesRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.notes,
-          aliasName: $_aliasNameGenerator(db.folders.id, db.notes.folderId));
+          aliasName: 'folders__id__notes__folder_id');
 
   $$NotesTableProcessedTableManager get notesRefs {
     final manager = $$NotesTableTableManager($_db, $_db.notes)
-        .filter((f) => f.folderId.id($_item.id));
+        .filter((f) => f.folderId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_notesRefsTable($_db));
     return ProcessedTableManager(
@@ -1925,7 +2402,7 @@ class $$FoldersTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (notesRefs)
-                    await $_getPrefetchedData(
+                    await $_getPrefetchedData<Folder, $FoldersTable, Note>(
                         currentTable: table,
                         referencedTable:
                             $$FoldersTableReferences._notesRefsTable(db),
@@ -1983,13 +2460,14 @@ final class $$NotesTableReferences
     extends BaseReferences<_$AppDatabase, $NotesTable, Note> {
   $$NotesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $FoldersTable _folderIdTable(_$AppDatabase db) => db.folders
-      .createAlias($_aliasNameGenerator(db.notes.folderId, db.folders.id));
+  static $FoldersTable _folderIdTable(_$AppDatabase db) =>
+      db.folders.createAlias('notes__folder_id__folders__id');
 
   $$FoldersTableProcessedTableManager? get folderId {
-    if ($_item.folderId == null) return null;
+    final $_column = $_itemColumn<String>('folder_id');
+    if ($_column == null) return null;
     final manager = $$FoldersTableTableManager($_db, $_db.folders)
-        .filter((f) => f.id($_item.folderId!));
+        .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_folderIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -1997,11 +2475,13 @@ final class $$NotesTableReferences
   }
 
   static $UsersTable _userIdTable(_$AppDatabase db) =>
-      db.users.createAlias($_aliasNameGenerator(db.notes.userId, db.users.id));
+      db.users.createAlias('notes__user_id__users__id');
 
   $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<String>('user_id')!;
+
     final manager = $$UsersTableTableManager($_db, $_db.users)
-        .filter((f) => f.id($_item.userId));
+        .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_userIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
@@ -2533,6 +3013,233 @@ typedef $$SyncOpsTableProcessedTableManager = ProcessedTableManager<
     (SyncOp, BaseReferences<_$AppDatabase, $SyncOpsTable, SyncOp>),
     SyncOp,
     PrefetchHooks Function()>;
+typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
+  required String id,
+  required String noteId,
+  required String userId,
+  required DateTime scheduledAt,
+  required String repeatInterval,
+  Value<int?> repeatCount,
+  required String title,
+  required String body,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
+  Value<String> id,
+  Value<String> noteId,
+  Value<String> userId,
+  Value<DateTime> scheduledAt,
+  Value<String> repeatInterval,
+  Value<int?> repeatCount,
+  Value<String> title,
+  Value<String> body,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$RemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get noteId => $composableBuilder(
+      column: $table.noteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get scheduledAt => $composableBuilder(
+      column: $table.scheduledAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get repeatInterval => $composableBuilder(
+      column: $table.repeatInterval,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get repeatCount => $composableBuilder(
+      column: $table.repeatCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get noteId => $composableBuilder(
+      column: $table.noteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+      column: $table.userId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get scheduledAt => $composableBuilder(
+      column: $table.scheduledAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get repeatInterval => $composableBuilder(
+      column: $table.repeatInterval,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get repeatCount => $composableBuilder(
+      column: $table.repeatCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get noteId =>
+      $composableBuilder(column: $table.noteId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scheduledAt => $composableBuilder(
+      column: $table.scheduledAt, builder: (column) => column);
+
+  GeneratedColumn<String> get repeatInterval => $composableBuilder(
+      column: $table.repeatInterval, builder: (column) => column);
+
+  GeneratedColumn<int> get repeatCount => $composableBuilder(
+      column: $table.repeatCount, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$RemindersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemindersTable,
+    Reminder,
+    $$RemindersTableFilterComposer,
+    $$RemindersTableOrderingComposer,
+    $$RemindersTableAnnotationComposer,
+    $$RemindersTableCreateCompanionBuilder,
+    $$RemindersTableUpdateCompanionBuilder,
+    (Reminder, BaseReferences<_$AppDatabase, $RemindersTable, Reminder>),
+    Reminder,
+    PrefetchHooks Function()> {
+  $$RemindersTableTableManager(_$AppDatabase db, $RemindersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> noteId = const Value.absent(),
+            Value<String> userId = const Value.absent(),
+            Value<DateTime> scheduledAt = const Value.absent(),
+            Value<String> repeatInterval = const Value.absent(),
+            Value<int?> repeatCount = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> body = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemindersCompanion(
+            id: id,
+            noteId: noteId,
+            userId: userId,
+            scheduledAt: scheduledAt,
+            repeatInterval: repeatInterval,
+            repeatCount: repeatCount,
+            title: title,
+            body: body,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String noteId,
+            required String userId,
+            required DateTime scheduledAt,
+            required String repeatInterval,
+            Value<int?> repeatCount = const Value.absent(),
+            required String title,
+            required String body,
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemindersCompanion.insert(
+            id: id,
+            noteId: noteId,
+            userId: userId,
+            scheduledAt: scheduledAt,
+            repeatInterval: repeatInterval,
+            repeatCount: repeatCount,
+            title: title,
+            body: body,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemindersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemindersTable,
+    Reminder,
+    $$RemindersTableFilterComposer,
+    $$RemindersTableOrderingComposer,
+    $$RemindersTableAnnotationComposer,
+    $$RemindersTableCreateCompanionBuilder,
+    $$RemindersTableUpdateCompanionBuilder,
+    (Reminder, BaseReferences<_$AppDatabase, $RemindersTable, Reminder>),
+    Reminder,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2545,4 +3252,6 @@ class $AppDatabaseManager {
       $$NotesTableTableManager(_db, _db.notes);
   $$SyncOpsTableTableManager get syncOps =>
       $$SyncOpsTableTableManager(_db, _db.syncOps);
+  $$RemindersTableTableManager get reminders =>
+      $$RemindersTableTableManager(_db, _db.reminders);
 }

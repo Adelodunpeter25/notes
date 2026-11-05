@@ -164,6 +164,49 @@ class FolderDao extends DatabaseAccessor<AppDatabase> with _$FolderDaoMixin {
   Future<int> deleteFolder(Folder entry) => (delete(folders)..where((t) => t.id.equals(entry.id))).go();
 }
 
+/// Local-only reminders. Never part of the sync queue: these rows exist only
+/// on this device and are re-scheduled into the OS notification scheduler on
+/// every app start (see ReminderService).
+@DriftAccessor(tables: [Reminders, Notes])
+class ReminderDao extends DatabaseAccessor<AppDatabase> with _$ReminderDaoMixin {
+  ReminderDao(super.db);
+
+  Future<List<Reminder>> all() => select(reminders).get();
+
+  /// Every reminder belonging to [userId], soonest first.
+  Future<List<Reminder>> forUser(String userId) {
+    return (select(reminders)..where((t) => t.userId.equals(userId))).get();
+  }
+
+  Future<Reminder?> forNote(String noteId) {
+    return (select(reminders)..where((t) => t.noteId.equals(noteId))).getSingleOrNull();
+  }
+
+  Future insertReminder(RemindersCompanion entry) => into(reminders).insert(entry);
+
+  Future<int> deleteReminder(String id) {
+    return (delete(reminders)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<int> deleteForNote(String noteId) {
+    return (delete(reminders)..where((t) => t.noteId.equals(noteId))).go();
+  }
+
+  /// Drops reminders whose note no longer exists locally (deleted note, or a
+  /// row removed by Empty Trash). Called on startup alongside re-scheduling.
+  Future<int> deleteOrphaned() async {
+    final noteIds = await (select(notes)..where((t) => t.deletedAt.isNull()))
+        .get()
+        .then((rows) => rows.map((r) => r.id).toSet());
+    final allReminders = await all();
+    final orphaned = allReminders.where((r) => !noteIds.contains(r.noteId)).toList();
+    for (final r in orphaned) {
+      await deleteReminder(r.id);
+    }
+    return orphaned.length;
+  }
+}
+
 class FolderWithCount {
   final Folder folder;
   final int noteCount;

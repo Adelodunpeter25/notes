@@ -6,6 +6,7 @@ import '../utils/time.dart';
 import '../utils/dialogs.dart';
 import '../theme.dart';
 import 'app_bottom_sheet.dart';
+import 'reminder_sheet.dart';
 import 'service_provider.dart';
 
 class NoteCard extends StatelessWidget {
@@ -213,6 +214,16 @@ class NoteCard extends StatelessWidget {
                   if (result != null && result.confirmed) {
                     await services.noteService.moveNoteToFolder(note, result.folder?.id);
                   }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.alarm),
+              title: const Text('Remind Me...'),
+              onTap: () async {
+                Navigator.pop(context);
+                if (context.mounted) {
+                  await showReminderSheet(context, note);
                 }
               },
             ),

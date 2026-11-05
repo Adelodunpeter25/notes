@@ -66,12 +66,37 @@ class SyncOps extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Users, Folders, Notes, SyncOps], daos: [NoteDao, FolderDao, SyncOpDao])
+/// Local note reminders. Never synced to the server: they only exist on this
+/// device. The notification shows a snapshot (title/body) of the note taken
+/// when the reminder was scheduled, so later note edits don't change it.
+///
+/// Deliberately no foreign keys on noteId/userId: notes can be hard-deleted
+/// locally (Trash, Empty Trash) while a reminder row still points at them.
+/// ReminderService.rescheduleAll() drops such orphans on every app start.
+class Reminders extends Table {
+  TextColumn get id => text()(); // client UUID
+  TextColumn get noteId => text()();
+  TextColumn get userId => text()();
+  DateTimeColumn get scheduledAt => dateTime()(); // first occurrence
+  TextColumn get repeatInterval => text()(); // none | daily | weekly | monthly
+  IntColumn get repeatCount => integer().nullable()(); // occurrences when repeating (null = does not repeat)
+  TextColumn get title => text()(); // snapshot used by the notification
+  TextColumn get body => text()();  // snapshot used by the notification
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Users, Folders, Notes, SyncOps, Reminders], daos: [NoteDao, FolderDao, SyncOpDao, ReminderDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// In-memory executor for tests.
+  AppDatabase.forTesting(super.e);
+
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -93,6 +118,9 @@ class AppDatabase extends _$AppDatabase {
               user_id
             )
           ''');
+        }
+        if (from < 5) {
+          await m.createTable(reminders);
         }
       },
       onCreate: (m) async {
