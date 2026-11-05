@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/app_lock_service.dart';
 import '../theme.dart';
 
-/// Gate widget shown over the app when the app lock is enabled.
-///
-/// Locks on app start and whenever the app returns from the background. If
-/// the device has no unlock method enrolled, the lock stays open and disables
-/// itself rather than permanently locking the user out.
+/// Lock screen shown in front of the app whenever it starts or comes back
+/// from the background. Unlocking always requires biometrics or the device's
+/// screen lock. If the device has no lock method enrolled at all there is
+/// nothing to authenticate against, so the app opens (and the lock screen
+/// shows a hint to set one up).
 class AppLockGate extends StatefulWidget {
   const AppLockGate({super.key, required this.service, required this.child});
 
@@ -21,6 +21,7 @@ class AppLockGate extends StatefulWidget {
 class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   bool _checking = true;
   bool _locked = false;
+  bool _deviceCanAuthenticate = false;
   bool _authenticating = false;
 
   @override
@@ -37,39 +38,21 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 
   Future<void> _initialCheck() async {
-    final enabled = await widget.service.isEnabled();
-    if (!enabled || !mounted) {
-      if (mounted) setState(() => _checking = false);
-      return;
-    }
-    final canAuthenticate = await widget.service.canAuthenticate();
-    if (!canAuthenticate) {
-      // No biometrics or device credential enrolled: don't lock the user out.
-      await widget.service.setEnabled(false);
-      if (mounted) setState(() => _checking = false);
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _checking = false;
-        _locked = true;
-      });
-      _authenticate();
-    }
+    _deviceCanAuthenticate = await widget.service.canAuthenticate();
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _locked = _deviceCanAuthenticate;
+    });
+    if (_locked) _authenticate();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused &&
-        _locked == false &&
-        _checking == false) {
+    if (state == AppLifecycleState.paused && _deviceCanAuthenticate) {
       // Left the app; require unlock when it comes back.
-      widget.service.isEnabled().then((enabled) {
-        if (enabled && mounted) setState(() => _locked = true);
-      });
-    } else if (state == AppLifecycleState.resumed &&
-        _locked &&
-        !_authenticating) {
+      setState(() => _locked = true);
+    } else if (state == AppLifecycleState.resumed && _locked && !_authenticating) {
       _authenticate();
     }
   }
@@ -77,8 +60,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   Future<void> _authenticate() async {
     if (_authenticating) return;
     _authenticating = true;
-    final unlocked =
-        await widget.service.authenticate(reason: 'Unlock your notes');
+    final unlocked = await widget.service.authenticate(reason: 'Unlock your notes');
     _authenticating = false;
     if (mounted) setState(() => _locked = !unlocked);
   }
@@ -107,6 +89,16 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
                 color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
+            const SizedBox(height: 8),
+            if (!_deviceCanAuthenticate)
+              Text(
+                'Set up a screen lock or fingerprint on this device to unlock',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _authenticate,

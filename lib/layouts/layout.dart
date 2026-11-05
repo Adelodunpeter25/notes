@@ -114,6 +114,11 @@ class _AppLayoutState extends State<AppLayout> {
     final services = ServiceProvider.of(context);
     try {
       await services.syncService.syncData(_currentUser!.id);
+      // Reminders are device-local — the server never sees them — so after
+      // each sync we reconcile against the synced note state: reminders whose
+      // notes were deleted (here or on another device) are dropped and their
+      // pending notifications cancelled.
+      await services.reminderService.rescheduleAll();
     } on SessionExpiredException {
       // Token is no longer valid: sign out and return to the login screen.
       // Local notes and queued changes are kept and sync after the next login.
