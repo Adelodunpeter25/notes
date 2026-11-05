@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/service_provider.dart';
 import '../database/database.dart' hide User;
 import '../models/user.dart';
@@ -53,6 +54,7 @@ class _NoteListState extends State<NoteList> {
   Future<List<Note>>? _searchFuture;
   bool _isLoading = true;
   Map<String, String> _folderNames = {};
+  ScrollController? _scrollController;
 
   @override
   void didChangeDependencies() {
@@ -74,6 +76,17 @@ class _NoteListState extends State<NoteList> {
     
     final foldersList = await services.db.select(services.db.folders).get();
     final folderNames = {for (var f in foldersList) f.id: f.name};
+
+    // Load the persisted scroll offset before the list renders, so the scroll
+    // view can start at it. This covers cold starts; during a session an
+    // in-memory PageStorage value (kept by _listStorageKey) automatically
+    // takes precedence over the controller's initialScrollOffset.
+    if (_scrollController == null) {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      final saved = prefs.getDouble(_prefsScrollKey);
+      _scrollController = ScrollController(initialScrollOffset: saved ?? 0.0);
+    }
 
     if (mounted) {
       setState(() {
@@ -103,8 +116,22 @@ class _NoteListState extends State<NoteList> {
     });
   }
 
+  // Writes the current scroll offset to disk so the position survives app
+  // restarts. Called on scroll end; dispose captures the offset synchronously
+  // before awaiting the prefs instance.
+  void _saveScrollOffset() {
+    final controller = _scrollController;
+    if (controller == null || !controller.hasClients) return;
+    final offset = controller.offset;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setDouble(_prefsScrollKey, offset);
+    });
+  }
+
   @override
   void dispose() {
+    _saveScrollOffset();
+    _scrollController?.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -252,7 +279,7 @@ class _NoteListState extends State<NoteList> {
                       if (noteSnapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CupertinoActivityIndicator());
                       }
-                      return _buildNoteListView(noteSnapshot.data ?? [], isTrashView);
+                      return _buildNoteListView(noteSnapshot.data ?? [], isTrashView, storageKey: _listStorageKey);
                     },
                   ),
           ),
@@ -272,7 +299,15 @@ class _NoteListState extends State<NoteList> {
           : null,
     );
   }
-  Widget _buildNoteListView(List<Note> allNotes, bool isTrashView) {
+  // Persists the scroll offset for the main list across rebuilds and navigation.
+  // Keyed by filter so All Notes, each folder, and Trash keep separate positions.
+  PageStorageKey<String> get _listStorageKey =>
+      PageStorageKey('notes-list-${widget.filter.type}-${widget.filter.folderId}');
+
+  // SharedPreferences key for the same offset, so it also survives app restarts.
+  String get _prefsScrollKey => 'scroll-offset/${_listStorageKey.value}';
+
+  Widget _buildNoteListView(List<Note> allNotes, bool isTrashView, {PageStorageKey<String>? storageKey}) {
     final services = ServiceProvider.of(context);
 
     if (allNotes.isEmpty) {
@@ -320,8 +355,15 @@ class _NoteListState extends State<NoteList> {
     final unpinnedNotes = allNotes.where((n) => !n.isPinned).toList();
     final groupedUnpinned = _groupNotes(unpinnedNotes);
 
-    return CustomScrollView(
-      slivers: [
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollEndNotification) _saveScrollOffset();
+        return false;
+      },
+      child: CustomScrollView(
+        key: storageKey,
+        controller: storageKey != null ? _scrollController : null,
+        slivers: [
         if (pinnedNotes.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
@@ -412,6 +454,7 @@ class _NoteListState extends State<NoteList> {
 
         const SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
+      ),
     );
   }
 }
