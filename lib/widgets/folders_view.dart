@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../widgets/service_provider.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/app_bottom_sheet.dart';
+import '../widgets/settings_sheet.dart';
+import '../services/app_lock_service.dart';
 import '../widgets/sync_button.dart';
 import '../database/daos.dart';
 import '../utils/dialogs.dart';
@@ -87,6 +89,10 @@ class _FoldersViewState extends State<FoldersView> {
         ),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.gear_solid),
+            onPressed: () => showSettingsSheet(context, AppLockService()),
+          ),
           RotatingSyncButton(onSync: widget.onSync),
         ],
       ),
