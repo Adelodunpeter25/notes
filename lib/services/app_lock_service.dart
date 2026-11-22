@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// background switches.
 class AppLockService {
   static const String _lastUnlockedKey = 'app_lock_last_unlocked_at';
-  static const Duration defaultGracePeriod = Duration(minutes: 5);
+  static const Duration defaultGracePeriod = Duration(minutes: 20);
 
   AppLockService({
     LocalAuthentication? auth,
