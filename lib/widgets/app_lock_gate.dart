@@ -39,22 +39,37 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
 
   Future<void> _initialCheck() async {
     _deviceCanAuthenticate = await widget.service.canAuthenticate();
+    final withinGrace = _deviceCanAuthenticate
+        ? await widget.service.isWithinGracePeriod()
+        : true;
     if (!mounted) return;
     setState(() {
       _checking = false;
-      _locked = _deviceCanAuthenticate;
+      _locked = _deviceCanAuthenticate && !withinGrace;
     });
     if (_locked) _authenticate();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused && _deviceCanAuthenticate) {
-      // Left the app; require unlock when it comes back.
-      setState(() => _locked = true);
-    } else if (state == AppLifecycleState.resumed && _locked && !_authenticating) {
-      _authenticate();
+    if (!_deviceCanAuthenticate) return;
+    if (state == AppLifecycleState.paused && !_locked) {
+      // Record when the user left the app so the grace period starts from now.
+      widget.service.markUnlocked();
+    } else if (state == AppLifecycleState.resumed) {
+      _handleResume();
     }
+  }
+
+  Future<void> _handleResume() async {
+    if (_locked) {
+      if (!_authenticating) _authenticate();
+      return;
+    }
+    final withinGrace = await widget.service.isWithinGracePeriod();
+    if (!mounted || withinGrace) return;
+    setState(() => _locked = true);
+    _authenticate();
   }
 
   Future<void> _authenticate() async {
